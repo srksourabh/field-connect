@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { ChevronDown, Upload, Send, X, FileText } from "lucide-react";
+import { ChevronDown, Upload, Send, X, FileText, Calendar } from "lucide-react";
 import LeaveDurationBanner from "./LeaveDurationBanner";
 import { supabase } from "@/lib/supabase";
 
@@ -118,25 +118,31 @@ export default function LeaveApplicationForm({ onSubmit, submitting, privilegeEn
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Start Date
             </label>
-            <input
-              type="date"
-              value={startDate}
-              min={today}
-              onChange={(e) => handleStartDateChange(e.target.value)}
-              className="w-full bg-white dark:bg-[#1c2a36] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg pl-3 pr-2 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm [color-scheme:dark]"
-            />
+            <div className="relative">
+              <Calendar className="absolute left-3 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <input
+                type="date"
+                value={startDate}
+                min={today}
+                onChange={(e) => handleStartDateChange(e.target.value)}
+                className="w-full bg-white dark:bg-[#1c2a36] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg pl-10 pr-2 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm [color-scheme:dark]"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               End Date
             </label>
-            <input
-              type="date"
-              value={endDate}
-              min={startDate || today}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full bg-white dark:bg-[#1c2a36] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg pl-3 pr-2 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm [color-scheme:dark]"
-            />
+            <div className="relative">
+              <Calendar className="absolute left-3 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <input
+                type="date"
+                value={endDate}
+                min={startDate || today}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full bg-white dark:bg-[#1c2a36] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg pl-10 pr-2 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm [color-scheme:dark]"
+              />
+            </div>
           </div>
         </div>
 

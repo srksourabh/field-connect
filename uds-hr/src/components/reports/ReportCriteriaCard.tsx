@@ -26,23 +26,29 @@ export default function ReportCriteriaCard({
           <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
             Start Date
           </label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => onStartDateChange(e.target.value)}
-            className="uds-input text-sm [color-scheme:dark]"
-          />
+          <div className="relative">
+            <Calendar className="absolute left-3 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => onStartDateChange(e.target.value)}
+              className="uds-input text-sm pl-10 [color-scheme:dark]"
+            />
+          </div>
         </div>
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
             End Date
           </label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => onEndDateChange(e.target.value)}
-            className="uds-input text-sm [color-scheme:dark]"
-          />
+          <div className="relative">
+            <Calendar className="absolute left-3 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => onEndDateChange(e.target.value)}
+              className="uds-input text-sm pl-10 [color-scheme:dark]"
+            />
+          </div>
         </div>
       </div>
     </div>

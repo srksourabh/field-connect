@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { todayIST } from "./utils";
 import type { HrAttendance } from "./database.types";
 
 export async function createPunchIn(data: {
@@ -8,7 +9,7 @@ export async function createPunchIn(data: {
   punch_in_long: number | null;
 }): Promise<HrAttendance | null> {
   // Guard: if there's already an open session today, return it instead of creating a duplicate
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayIST();
   const { data: existing } = await supabase
     .from("hr_attendance")
     .select()
@@ -50,7 +51,7 @@ export async function updatePunchOut(data: {
   punch_out_long: number | null;
 }): Promise<HrAttendance | null> {
   // Find today's open record
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayIST();
   const { data: record, error } = await supabase
     .from("hr_attendance")
     .update({
@@ -72,7 +73,7 @@ export async function updatePunchOut(data: {
 }
 
 export async function getTodayAttendance(userId: string): Promise<HrAttendance | null> {
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayIST();
   const { data, error } = await supabase
     .from("hr_attendance")
     .select()
@@ -87,7 +88,7 @@ export async function getTodayAttendance(userId: string): Promise<HrAttendance |
 }
 
 export async function getTodayAllSessions(userId: string): Promise<HrAttendance[]> {
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayIST();
   const { data, error } = await supabase
     .from("hr_attendance")
     .select()
@@ -118,8 +119,11 @@ export async function getAttendanceByMonth(
   year: number,
   month: number
 ): Promise<HrAttendance[]> {
-  const startDate = new Date(year, month, 1).toISOString();
-  const endDate = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
+  // Build IST boundaries: first day 00:00 IST → last day 23:59:59 IST
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const startDate = `${year}-${pad(month + 1)}-01T00:00:00+05:30`;
+  const endDate = `${year}-${pad(month + 1)}-${pad(lastDay)}T23:59:59+05:30`;
 
   const { data, error } = await supabase
     .from("hr_attendance")
@@ -134,4 +138,30 @@ export async function getAttendanceByMonth(
     return [];
   }
   return data || [];
+}
+
+/** Close an open session from a previous IST day at 23:59 of its punch-in date */
+export async function closeStaleSession(
+  session: HrAttendance
+): Promise<HrAttendance | null> {
+  if (!session.punch_in_at || session.punch_out_at) return null;
+
+  // Build 23:59:00 IST on the punch-in date
+  const punchInDate = new Date(session.punch_in_at)
+    .toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const autoCloseTimestamp = `${punchInDate}T23:59:00+05:30`;
+
+  const { data, error } = await supabase
+    .from("hr_attendance")
+    .update({ punch_out_at: autoCloseTimestamp })
+    .eq("id", session.id)
+    .is("punch_out_at", null)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Auto close stale session error:", error);
+    return null;
+  }
+  return data;
 }

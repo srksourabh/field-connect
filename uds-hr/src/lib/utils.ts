@@ -27,3 +27,13 @@ export function formatDate(date: Date): string {
     year: "numeric",
   });
 }
+
+/** Returns YYYY-MM-DD in IST for any Date */
+export function toISTDateStr(date: Date): string {
+  return date.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+}
+
+/** Returns today's date as YYYY-MM-DD in IST */
+export function todayIST(): string {
+  return toISTDateStr(new Date());
+}

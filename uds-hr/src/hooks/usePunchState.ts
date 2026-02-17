@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { todayIST } from "@/lib/utils";
 
 interface PunchState {
   isPunchedIn: boolean;
@@ -9,10 +10,11 @@ interface PunchState {
   cumulativeSeconds: number;
   sessionCount: number;
   lastResetDate: string; // YYYY-MM-DD
+  autoClosedYesterday: boolean;
 }
 
 function todayStr(): string {
-  return new Date().toISOString().split("T")[0];
+  return todayIST();
 }
 
 function defaultState(): PunchState {
@@ -23,6 +25,7 @@ function defaultState(): PunchState {
     cumulativeSeconds: 0,
     sessionCount: 0,
     lastResetDate: todayStr(),
+    autoClosedYesterday: false,
   };
 }
 
@@ -36,12 +39,13 @@ function loadState(userId: string): PunchState {
     const stored = localStorage.getItem(storageKey(userId));
     if (stored) {
       const parsed = JSON.parse(stored) as PunchState;
-      // Day change — reset cumulative
+      // Day change — reset cumulative, flag auto-close if was punched in
       if (parsed.lastResetDate !== todayStr()) {
         return {
           ...defaultState(),
-          isPunchedIn: parsed.isPunchedIn,
-          punchInTime: parsed.isPunchedIn ? parsed.punchInTime : null,
+          isPunchedIn: false,
+          punchInTime: null,
+          autoClosedYesterday: parsed.isPunchedIn,
         };
       }
       return { ...defaultState(), ...parsed };
@@ -168,6 +172,14 @@ export function usePunchState(userId: string) {
     });
   }, [userId]);
 
+  const clearAutoClose = useCallback(() => {
+    setState((prev) => {
+      const next = { ...prev, autoClosedYesterday: false };
+      saveState(userId, next);
+      return next;
+    });
+  }, [userId]);
+
   const totalElapsedSeconds = state.cumulativeSeconds + state.elapsedSeconds;
 
   return {
@@ -176,8 +188,10 @@ export function usePunchState(userId: string) {
     elapsedSeconds: state.elapsedSeconds,
     totalElapsedSeconds,
     sessionCount: state.sessionCount,
+    autoClosedYesterday: state.autoClosedYesterday,
     punchIn,
     punchOut,
     initFromServer,
+    clearAutoClose,
   };
 }

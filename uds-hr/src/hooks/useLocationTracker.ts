@@ -3,13 +3,14 @@
 import { useEffect, useRef } from "react";
 import { insertLocationLog } from "@/lib/location-api";
 import { addToQueue } from "@/lib/sync-queue";
+import { todayIST } from "@/lib/utils";
 
 // Scheduled capture times (HH:MM in 24h)
 const SCHEDULE = ["09:30", "10:00", "13:00", "16:00", "19:00"];
 const TOLERANCE_MINUTES = 5;
 
 function todayKey(): string {
-  return `uds_location_captured_${new Date().toISOString().split("T")[0]}`;
+  return `uds_location_captured_${todayIST()}`;
 }
 
 function getCapturedSlots(): Set<string> {

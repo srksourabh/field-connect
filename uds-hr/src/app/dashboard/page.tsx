@@ -14,7 +14,8 @@ import { useSyncQueue } from "@/hooks/useSyncQueue";
 import { useLocationTracker } from "@/hooks/useLocationTracker";
 import { MapPin, FileText } from "lucide-react";
 import { addToQueue } from "@/lib/sync-queue";
-import { createPunchIn, updatePunchOut, getTodayAllSessions } from "@/lib/attendance-api";
+import { createPunchIn, updatePunchOut, getTodayAllSessions, closeStaleSession } from "@/lib/attendance-api";
+import { todayIST, toISTDateStr } from "@/lib/utils";
 import { insertLocationLog, getTodayLocationLogs, computeTotalDistanceKm } from "@/lib/location-api";
 import { getUserLeaveBalance, getPendingLeaveCount } from "@/lib/leave-api";
 import type { LeaveInfo } from "@/components/punch/TodayActivityGrid";
@@ -86,9 +87,20 @@ export default function DashboardHome() {
     setLastPunchLocation(null);
 
     (async () => {
-      const sessions = await getTodayAllSessions(userId);
-      const openSession = sessions.find((s) => !s.punch_out_at) ?? null;
-      // Always sync from server — clears stale localStorage state (e.g. yesterday's un-closed punch)
+      let sessions = await getTodayAllSessions(userId);
+      let openSession = sessions.find((s) => !s.punch_out_at) ?? null;
+
+      // Auto-close stale sessions from a previous IST day
+      if (openSession?.punch_in_at) {
+        const sessionDate = toISTDateStr(new Date(openSession.punch_in_at));
+        if (sessionDate !== todayIST()) {
+          await closeStaleSession(openSession);
+          // Re-fetch today's sessions (the stale one is now closed and from a past day)
+          sessions = await getTodayAllSessions(userId);
+          openSession = sessions.find((s) => !s.punch_out_at) ?? null;
+        }
+      }
+
       initFromServer(sessions, openSession ? { punch_in_at: openSession.punch_in_at! } : null);
       if (sessions.length > 0) {
         setFirstPunchIn(sessions[0].punch_in_at);
@@ -277,11 +289,15 @@ export default function DashboardHome() {
         <NotificationDropdown />
       </header>
 
-      {/* Live Clock */}
-      <p className="text-xs text-slate-500 dark:text-slate-400 -mt-1 mb-2">
-        {currentTime.toLocaleDateString("en-IN", { weekday: "long", day: "2-digit", month: "short", year: "numeric" })}
+      {/* Live Clock — IST */}
+      <p className="text-sm text-slate-600 dark:text-slate-300 -mt-1 mb-2">
+        {currentTime.toLocaleDateString("en-IN", { weekday: "long", day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata" })}
         {" \u2022 "}
-        {currentTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }).toUpperCase()}
+        <span className="font-bold">
+          {currentTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" }).toUpperCase()}
+        </span>
+        {" "}
+        <span className="text-xs font-medium text-slate-400">IST</span>
       </p>
 
       {/* Sync Status */}

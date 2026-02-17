@@ -1,12 +1,13 @@
 "use client";
 
-import { MapPin, CloudOff, Check } from "lucide-react";
+import { MapPin, CloudOff, Check, AlertTriangle } from "lucide-react";
 
 interface TimelineEvent {
   type: "punch_in" | "punch_out" | "break_start" | "break_end";
   time: string;
   location?: string;
   synced: boolean;
+  autoClose?: boolean;
 }
 
 interface AttendanceTimelineProps {
@@ -50,7 +51,12 @@ export default function AttendanceTimeline({ events }: AttendanceTimelineProps) 
                   </p>
                   <h4 className="text-lg font-bold">{event.time}</h4>
                 </div>
-                {event.synced ? (
+                {event.autoClose ? (
+                  <div className="flex items-center gap-1 text-amber-500">
+                    <span className="text-[10px] font-medium uppercase">Auto</span>
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                ) : event.synced ? (
                   <Check className="w-4 h-4 text-emerald-500" />
                 ) : (
                   <div className="flex items-center gap-1 text-yellow-500">

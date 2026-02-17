@@ -9,7 +9,7 @@ import AttendanceTimeline from "@/components/attendance/AttendanceTimeline";
 import { useAuth } from "@/lib/auth";
 import { getAttendanceByMonth } from "@/lib/attendance-api";
 import type { HrAttendance } from "@/lib/database.types";
-import { formatTime } from "@/lib/utils";
+import { formatTime, toISTDateStr } from "@/lib/utils";
 
 export default function AttendancePage() {
   const { user } = useAuth();
@@ -41,15 +41,15 @@ export default function AttendancePage() {
   // Transform records → calendar format
   const calendarRecords = useMemo(() => {
     return records.map((r) => {
-      const date = r.created_at.split("T")[0];
+      const date = toISTDateStr(new Date(r.created_at));
       return { date, status: r.status as "present" | "absent" | "late" | "half-day" | "on-leave" | "holiday" | "lwp" };
     });
   }, [records]);
 
   // Find selected day's record
-  const dateStr = selectedDate.toISOString().split("T")[0];
+  const dateStr = toISTDateStr(selectedDate);
   const selectedRecord = records.find(
-    (r) => r.created_at.split("T")[0] === dateStr
+    (r) => toISTDateStr(new Date(r.created_at)) === dateStr
   );
   const calendarEntry = calendarRecords.find((r) => r.date === dateStr);
 
@@ -69,7 +69,7 @@ export default function AttendancePage() {
   // Build timeline from record
   const timeline = useMemo(() => {
     if (!selectedRecord) return [];
-    const events: { type: "punch_in" | "punch_out"; time: string; location?: string; synced: boolean }[] = [];
+    const events: { type: "punch_in" | "punch_out"; time: string; location?: string; synced: boolean; autoClose?: boolean }[] = [];
     if (selectedRecord.punch_in_at) {
       events.push({
         type: "punch_in",
@@ -78,10 +78,15 @@ export default function AttendancePage() {
       });
     }
     if (selectedRecord.punch_out_at) {
+      // Detect auto-close: punch_out_at ends at 23:59 IST
+      const pOutDate = new Date(selectedRecord.punch_out_at);
+      const istTime = pOutDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
+      const isAutoClose = istTime === "23:59";
       events.push({
         type: "punch_out",
-        time: formatTime(new Date(selectedRecord.punch_out_at)),
+        time: formatTime(pOutDate),
         synced: selectedRecord.synced,
+        autoClose: isAutoClose,
       });
     }
     return events;
