@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, History } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import LeaveBalanceCards from "@/components/leave/LeaveBalanceCards";
 import LeaveApplicationForm from "@/components/leave/LeaveApplicationForm";
@@ -18,7 +18,6 @@ export default function LeavePage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [leaveHistory, setLeaveHistory] = useState<HrLeaveRequest[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
 
   const fetchBalance = useCallback(async () => {
     if (!user) return;
@@ -111,7 +110,6 @@ export default function LeavePage() {
     await fetchHistory();
     setSubmitting(false);
     setSuccess(true);
-    setShowHistory(true);
     setTimeout(() => setSuccess(false), 3000);
   };
 
@@ -128,12 +126,7 @@ export default function LeavePage() {
         <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
           Leave Application
         </h1>
-        <button
-          onClick={() => setShowHistory(!showHistory)}
-          className={`p-2 -mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors ${showHistory ? "text-primary" : ""}`}
-        >
-          <History className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-        </button>
+        <div className="w-9" />
       </header>
 
       {/* Content */}
@@ -146,15 +139,13 @@ export default function LeavePage() {
           </div>
         )}
 
-        {showHistory ? (
-          <LeaveHistoryList requests={leaveHistory} />
-        ) : (
-          <LeaveApplicationForm
-            onSubmit={handleSubmit}
-            submitting={submitting}
-            privilegeEnabled={(balance?.privilege_leave_total ?? 0) > 0}
-          />
-        )}
+        <LeaveApplicationForm
+          onSubmit={handleSubmit}
+          submitting={submitting}
+          privilegeEnabled={(balance?.privilege_leave_total ?? 0) > 0}
+        />
+
+        <LeaveHistoryList requests={leaveHistory} />
       </div>
     </div>
   );
