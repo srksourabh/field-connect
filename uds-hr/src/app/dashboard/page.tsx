@@ -301,7 +301,7 @@ export default function DashboardHome() {
         {currentTime.toLocaleDateString("en-IN", { weekday: "long", day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata" })}
         {" \u2022 "}
         <span className="font-bold">
-          {currentTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" })}
+          {currentTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" })}
         </span>
         {" "}
         <span className="text-xs font-medium text-slate-400">IST</span>

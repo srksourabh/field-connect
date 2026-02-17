@@ -56,11 +56,7 @@ export default function TodayActivityGrid({
       iconBg: "bg-primary/10",
       label: "Start",
       value: punchInDate ? formatTime(punchInDate) : "--:--",
-      suffix: punchInDate
-        ? punchInDate.getHours() < 12
-          ? "AM"
-          : "PM"
-        : "",
+      suffix: "",
     },
     {
       icon: TreePalm,
