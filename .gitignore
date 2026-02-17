@@ -1,0 +1,10 @@
+.vercel
+node_modules/
+.env*.local
+.env
+.next/
+out/
+nul
+conversation-*.txt
+*.tsbuildinfo
+next-env.d.ts

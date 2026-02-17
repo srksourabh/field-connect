@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f6f7f8;
+  --foreground: #0f172a;
+}
+
+.dark {
+  --background: #101922;
+  --foreground: #f1f5f9;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+@layer components {
+  .uds-card {
+    @apply bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4;
+  }
+
+  .uds-input {
+    @apply w-full rounded-lg bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 px-3 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-colors;
+  }
+
+  .uds-btn-primary {
+    @apply flex items-center justify-center gap-2 bg-primary text-white font-semibold rounded-xl px-6 py-3 text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-sm;
+  }
+
+  .uds-btn-secondary {
+    @apply flex items-center justify-center gap-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 font-medium rounded-xl px-6 py-3 text-sm hover:bg-gray-200 dark:hover:bg-slate-700 active:scale-[0.98] transition-all;
+  }
+
+  .uds-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+}
+
+@layer utilities {
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 20px);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}

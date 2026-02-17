@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Manager Leave Approval Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "primary-dark": "#0e62b6",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1c2531",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for horizontal scrolling if needed */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Simulating iOS Bottom Sheet Animation/Style */
+        .bottom-sheet {
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-800 dark:text-gray-100 min-h-screen flex flex-col antialiased selection:bg-primary/30">
+<!-- Header Area -->
+<header class="sticky top-0 z-20 bg-surface-light dark:bg-surface-dark/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 px-5 py-4 flex justify-between items-center transition-colors">
+<div class="flex flex-col">
+<h1 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Leave Approvals</h1>
+<span class="text-xs text-gray-500 dark:text-gray-400">Team Management</span>
+</div>
+<div class="relative">
+<img alt="User Profile Avatar" class="h-10 w-10 rounded-full border-2 border-white dark:border-gray-700 shadow-sm object-cover" data-alt="Close up of a smiling man in a suit" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCF94MEMvvsQFCbmYatmATmYwgRKmbazJxtRPDFSKrGVqk1ru4KFpUq5M4qMI7KVpr0v0gxpAkncHWL98ZGTIw3U8kweNCvsF5_K2M-9f-YIxHpkpEwae0NxzjfXrxAPJcz5Tr5sBJ5ToD0WPmVlnPez74iT0PZtJdOmzhnHYNjnQ0Ac1fANKRmGvnuUrh1mMskWdCbPTIn4SQZxjBJMk9GCJQQ1fAzytbDphKjrCbRR7hdmWsocL0Ttak64dwERcgZ2YkkgMVlAmA"/>
+<div class="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white dark:border-gray-800"></div>
+</div>
+</header>
+<main class="flex-grow flex flex-col p-4 pb-24 space-y-6">
+<!-- Summary Cards -->
+<section class="grid grid-cols-3 gap-3">
+<!-- Pending Requests -->
+<div class="bg-surface-light dark:bg-surface-dark p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-center text-center">
+<span class="text-3xl font-bold text-primary mb-1">8</span>
+<span class="text-xs font-medium text-gray-500 dark:text-gray-400 leading-tight">Pending Requests</span>
+</div>
+<!-- Approved Today -->
+<div class="bg-surface-light dark:bg-surface-dark p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-center text-center">
+<span class="text-3xl font-bold text-gray-800 dark:text-white mb-1">2</span>
+<span class="text-xs font-medium text-gray-500 dark:text-gray-400 leading-tight">Approved Today</span>
+</div>
+<!-- Team Capacity -->
+<div class="bg-surface-light dark:bg-surface-dark p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-center text-center relative overflow-hidden">
+<div class="relative z-10 flex flex-col items-center">
+<span class="text-3xl font-bold text-green-500 mb-1">85%</span>
+<span class="text-xs font-medium text-gray-500 dark:text-gray-400 leading-tight">Team Capacity</span>
+</div>
+<!-- Subtle progress background -->
+<div class="absolute bottom-0 left-0 h-1 bg-gray-200 dark:bg-gray-700 w-full">
+<div class="h-full bg-green-500 w-[85%] rounded-r-full"></div>
+</div>
+</div>
+</section>
+<!-- View Toggle (Segmented Control) -->
+<div class="bg-gray-200 dark:bg-gray-800 p-1 rounded-lg flex text-sm font-medium">
+<button class="flex-1 py-1.5 px-3 rounded shadow-sm bg-surface-light dark:bg-surface-dark text-primary dark:text-primary transition-all">
+                Pending
+            </button>
+<button class="flex-1 py-1.5 px-3 rounded text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all">
+                History
+            </button>
+</div>
+<!-- Request List -->
+<section class="space-y-4">
+<h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-1">Today</h2>
+<!-- Card 1 -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+<div class="p-4">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<img alt="Sarah Jenkins" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700" data-alt="Portrait of a woman with red hair" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2NSZmcjrbuzGdW8iI7IJJdwbqw1nOh5Ano3_dxDMu6Ba_7cW085Og__605ZbWgojql6R4KRQm2zy2zss-qztJXJ_dq5mWKq71rrf7ZUv6sHhuKENemVuScnT7y-3D-oNio6K90e8oegS1jWelL8jgFxfRSQdwVU9v8c-p3BQXoCdBmK4XNOe21EJLZ2f8qT5uT3p2-ujHVBmZ-jVYZjRfqKMTkCecaNUMbM2GQOt9tO-mgCTTbbEQuiwsZxSJ1osrEHrNXVLYPIQ"/>
+<div>
+<h3 class="font-semibold text-gray-900 dark:text-white leading-tight">Sarah Jenkins</h3>
+<p class="text-xs text-gray-500 dark:text-gray-400">UX Designer</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                            Sick Leave
+                        </span>
+</div>
+<div class="flex items-center gap-2 mb-2 text-sm text-gray-700 dark:text-gray-300">
+<span class="material-icons text-gray-400 text-sm">event</span>
+<span class="font-medium">Oct 24 - Oct 25</span>
+<span class="text-gray-400">•</span>
+<span class="text-gray-500 dark:text-gray-400">2 Days</span>
+</div>
+<p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2 mb-4">
+                        Not feeling well since morning, suspecting food poisoning. Need rest to recover properly.
+                    </p>
+<div class="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+<button class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium text-sm hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+<span class="material-icons text-sm">close</span> Reject
+                        </button>
+<button class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium text-sm hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+<span class="material-icons text-sm">check</span> Approve
+                        </button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+<div class="p-4">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<img alt="Michael Chen" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700" data-alt="Portrait of a man with glasses" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAhbpVUF6huCLj2nncI4pYP8AfKVLy9weTReFT3XOC0PeglmxMDI7IiKhH_0XutSlPtBiTO0_EcMtU7ls7atgKuSJVr2xxjjO92h7QQecWeGdVDYkjApLcQot8x25i9oUdIvgWtDSAiKsxnrLY_6kvQltROfLvwSqLICm3xY4bT5OszQa00gmRrdn4CqpIHeKOw0gO9LM9kkxtIzyy3IsjfHzuXD6046GKEeBUGMAelutGmMWf5ajuj86PsHSJry7V4-CJu8tikaw"/>
+<div>
+<h3 class="font-semibold text-gray-900 dark:text-white leading-tight">Michael Chen</h3>
+<p class="text-xs text-gray-500 dark:text-gray-400">Backend Engineer</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                            Vacation
+                        </span>
+</div>
+<div class="flex items-center gap-2 mb-2 text-sm text-gray-700 dark:text-gray-300">
+<span class="material-icons text-gray-400 text-sm">event</span>
+<span class="font-medium">Nov 01 - Nov 05</span>
+<span class="text-gray-400">•</span>
+<span class="text-gray-500 dark:text-gray-400">5 Days</span>
+</div>
+<p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2 mb-4">
+                        Family trip planned for the long weekend. Projects are handed over to Sarah.
+                    </p>
+<div class="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+<button class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium text-sm hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+<span class="material-icons text-sm">close</span> Reject
+                        </button>
+<button class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium text-sm hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+<span class="material-icons text-sm">check</span> Approve
+                        </button>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden opacity-90">
+<div class="p-4">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<img alt="Emily Davis" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700" data-alt="Portrait of a smiling woman" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbRRk1_EOtqhL35nWsPy_FTqbhIDqmzFMy9u1oPouWhw0-834-9bg1uE28dtqOQPFAoU5OJtVi_1F3WZglWv111STPxI-v1_qll4VdInJrJ2QdmqWH9W3-yD-pXfymPXyk_Z9lx6YQbv0MBEVhURA5UNeZ0TrCp86wXt6fpNlGVo4OnEO9SV_OmOl4Ai5y6hBSF3M2CsB09f51wz0dFYTej87l9A-CvxvbayBekv6RCQWZ64mTCE6vnmS_bBrINk1klbGr0dk5qU8"/>
+<div>
+<h3 class="font-semibold text-gray-900 dark:text-white leading-tight">Emily Davis</h3>
+<p class="text-xs text-gray-500 dark:text-gray-400">Product Manager</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                            Personal
+                        </span>
+</div>
+<div class="flex items-center gap-2 mb-2 text-sm text-gray-700 dark:text-gray-300">
+<span class="material-icons text-gray-400 text-sm">event</span>
+<span class="font-medium">Oct 26</span>
+<span class="text-gray-400">•</span>
+<span class="text-gray-500 dark:text-gray-400">1 Day</span>
+</div>
+<p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2 mb-4">
+                        Moving into a new apartment, need the day off to handle logistics.
+                    </p>
+<div class="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+<button class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium text-sm hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+<span class="material-icons text-sm">close</span> Reject
+                        </button>
+<button class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium text-sm hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+<span class="material-icons text-sm">check</span> Approve
+                        </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Modal (Sheet) Overlay - Hidden by default in logic but shown here for visualization -->
+<div aria-hidden="true" class="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] hidden"></div>
+<!-- Active Detail Modal (Simulated Open State) -->
+<!-- In a real app, this would slide up. Positioned absolutely at bottom for demo. -->
+<div class="fixed bottom-0 left-0 right-0 z-50 bg-surface-light dark:bg-surface-dark rounded-t-2xl bottom-sheet shadow-2xl border-t border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto flex flex-col">
+<!-- Drag Handle -->
+<div class="sticky top-0 bg-surface-light dark:bg-surface-dark z-10 pt-3 pb-2 flex justify-center rounded-t-2xl">
+<div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+</div>
+<!-- Modal Content -->
+<div class="px-6 pb-6 space-y-6">
+<!-- Header -->
+<div class="flex items-center gap-4">
+<img alt="Sarah Jenkins" class="w-16 h-16 rounded-full object-cover border-2 border-primary/20" data-alt="Portrait of a woman with red hair" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDF8zjxDrCvHLPI-vU2LWGvRxEbE39yzRxUjOjcC-ooRBnDIw5_dvvSuaXgE0QsX7C4CyQGw-LIsMx8ysEj4OtLSf6KvVJPimkDSAbZXtragjy9YvIHD8zn5c9pcexO9XBymfnIv8mJla-kJVWu8cNfbgmigsWHcRKIP47HJXqCAn0aqqzMnldKhBcQIxrJ4BQS4KFBQ6iejeQXuNp8JXCBkO-nT7ZTX3DCGP8EASD3lxq6BrZuw-IdVYfE9nam0Vkive7pAUnwFsw"/>
+<div>
+<h2 class="text-xl font-bold text-gray-900 dark:text-white">Sarah Jenkins</h2>
+<p class="text-sm text-gray-500 dark:text-gray-400">Applied on Oct 23, 10:30 AM</p>
+</div>
+</div>
+<!-- Details Grid -->
+<div class="grid grid-cols-2 gap-4">
+<div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+<label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Leave Type</label>
+<span class="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1 mt-1">
+<span class="w-2 h-2 rounded-full bg-red-500"></span> Sick Leave
+                    </span>
+</div>
+<div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+<label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Duration</label>
+<span class="text-sm font-semibold text-gray-900 dark:text-white mt-1">2 Days</span>
+</div>
+<div class="col-span-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+<label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date Range</label>
+<span class="text-sm font-semibold text-gray-900 dark:text-white mt-1">Oct 24, 2023 - Oct 25, 2023</span>
+</div>
+</div>
+<!-- Reason -->
+<div>
+<label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-2">Reason</label>
+<p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+                    Not feeling well since morning, suspecting food poisoning. Need rest to recover properly. I have updated my status on Slack and handed over urgent tasks to Mark.
+                </p>
+</div>
+<!-- Attachments -->
+<div>
+<label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-2">Attachments</label>
+<a class="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group" href="#">
+<div class="h-10 w-10 bg-red-100 dark:bg-red-900/30 rounded flex items-center justify-center text-red-600 dark:text-red-400 mr-3">
+<span class="material-icons">picture_as_pdf</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary transition-colors">Medical_Certificate.pdf</p>
+<p class="text-xs text-gray-500">2.4 MB</p>
+</div>
+<span class="material-icons text-gray-400">chevron_right</span>
+</a>
+</div>
+<!-- Manager Remarks Input -->
+<div>
+<label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-2" for="remarks">Manager Remarks (Optional)</label>
+<textarea class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:ring-primary focus:border-primary placeholder-gray-400" id="remarks" placeholder="Add a note..." rows="2"></textarea>
+</div>
+<!-- Sticky Footer Actions -->
+<div class="pt-2 flex gap-3 pb-4">
+<button class="flex-1 py-3 px-4 rounded-xl border border-red-200 dark:border-red-900 bg-white dark:bg-background-dark text-red-600 dark:text-red-400 font-semibold shadow-sm hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+<span class="material-icons text-lg">close</span> Reject
+                </button>
+<button class="flex-1 py-3 px-4 rounded-xl bg-primary text-white font-semibold shadow-md shadow-primary/20 hover:bg-primary-dark active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+<span class="material-icons text-lg">check</span> Approve
+                </button>
+</div>
+</div>
+</div>
+</body></html>

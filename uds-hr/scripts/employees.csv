@@ -1,0 +1,224 @@
+id,Project,employeeCode,Employee Name,designation,phoneNumber,userId,Password,address,city,state,pincode,dateOfJoining,reportingManagerId,reportingManager Name
+2,POS,UDSPL1384,Mohammed Shahid,Field Engineer,9121025720,,,"Phonix bay, Haddo, Sri bijaya puram, Pin-744101",Haddo,Andaman,744101,01-09-2025,UDSPL1305,Rinku Mittra
+3,POS,UDSPL1101,Abdul Salam,Field Engineer,9476016024,,,"Aberdeen Bazar, Port Blair, Andaman",Port Blair,Andaman,744101,27-07-2020,UDSPL1305,Rinku Mittra
+4,POS,UDSPL1179,Amitav Mitra,Field Engineer,7377971169,,,"AT HERAGOHIRI SAHI, PURI-752001",PURI,Odisha,752001,01-01-2017,UDSPL1184,Dev Narayan Samal
+5,POS,UDSPL1330,Bhakta Charan Das,Field Engineer,7684839367,,,"Patraput, Gudra, PO- Patraput, Dist- Nabarangapur, Odisha- 764049",Nabarangapur,Odisha,764049,05-09-2024,UDSPL1197,Priyanka Priyadarsani Nayak
+6,POS,UDSPL1333,Biswajeet Sahoo,Field Engineer,8618132832,,,"At- Sripadganj W.No- 25, Po- Baripada, Ps-Baripada Town, Dist.- Mayurbhanj, Pin- 757001",Mayurbhanj,Odisha,757001,27-12-2024,UDSPL1184,Dev Narayan Samal
+7,POS,UDSPL1183,Chandan Sahoo,Field Engineer,7377590536,,,"BIRAMANIPUR, Jajpur road, Jajpur, Odisha 755019",JAJPUR,Odisha,755019,14-03-2023,UDSPL1184,Dev Narayan Samal
+8,POS,UDSPL1381,Debendra Kumar Jal,Field Engineer,9556724589,,,"House of Sunil Sahu pearpeta 4th line jeypore, Dist-Koraput,Pin -764003 /// At:Gambhariguda, Po: gambhariguda, Ps: chandahandi, Dist: Nabarangpur, Odisha,Pin: 764077",Koraput,Odisha,764003,01-08-2025,UDSPL1197,Priyanka Priyadarsani Nayak
+9,POS,UDSPL1366,Deepak Kumar Panda,Field Engineer,9937414124,,,"At- HATTA CHHAK, NEAR- SRI GURU OPTICAL, Po- Pipili,Dist- Puri, Pin- 752104(Odisha)",Puri,Odisha,752104,20-06-2025,UDSPL1197,Priyanka Priyadarsani Nayak
+10,POS,UDSPL1185,Dinabandhu Naik,Field Engineer,9078232330,,,"Shiv Mandir Road, Harijan Sahi, Kasipur, Odisha 765015",RAYAGADA,Odisha,765015,01-01-2022,UDSPL1197,Priyanka Priyadarsani Nayak
+11,POS,UDSPL1186,Hrudayaballava Rout,Field Engineer,9668547126,,,"Duaghat,Malarpada,Turmunga,Keonjhar, Odisha,758045",Keonjhar,Odisha,758045,01-05-2024,UDSPL1184,Dev Narayan Samal
+12,POS,UDSPL1188,Jitender Kumar Sahu,Field Engineer,7978121405,,,"SECTOR-20,NEHURPALLI, MISHRAKHATAL, ROURKELA, 769005",ROURKELA,Odisha,769005,01-01-2019,UDSPL1197,Priyanka Priyadarsani Nayak
+13,POS,UDSPL1189,Jyotish Chandra Nag,Field Engineer,9938823343,,,"SECTOR-20,ROURKELA",ROURKELA,Odisha,769005,01-01-2017,UDSPL1197,Priyanka Priyadarsani Nayak
+14,POS,UDSPL1191,Mukesh Sahoo,Field Engineer,9937990629,,,"CHAHATA NAGAR, RING ROAD,BIDANASI, CUTTACK",CUTTACK,Odisha,753001,01-01-2018,UDSPL1184,Dev Narayan Samal
+15,POS,UDSPL1192,Nirmal Kumar Behera,Field Engineer,8637206779,,,"SADANANDAPUR, PO- Amarda Road, Basta, BALASORE, 756030",Basta,Odisha,756030,01-01-2018,UDSPL1184,Dev Narayan Samal
+16,POS,UDSPL1195,Prabin Kumar Munda,Field Engineer,7381441889,,,"TILINGAPALI, PO- BADBAHAL ,SUNDARGARH, 770019",Bhasma,Odisha,770019,01-01-2018,UDSPL1197,Priyanka Priyadarsani Nayak
+17,POS,UDSPL1376,Prahallad Sahoo,Field Engineer,9348225100,,,"At - malinga, P.O. Nemalo, P.S. Nemalo, Dist. Cuttack, Pin 754293",Cuttack,Odisha,754293,01-08-2025,UDSPL1184,Dev Narayan Samal
+18,POS,UDSPL1198,Rajiba Lochan Sethi,Field Engineer,9937249341,,,"Engg add- At/po - Contractorpada, Via-phulbani, Ps-phulbani sadar, Pin-762002",Kandhamal,Odisha,762002,17-06-2024,UDSPL1197,Priyanka Priyadarsani Nayak
+19,POS,UDSPL1389,Raki Rout,Field Engineer,7381949079,,,"At-Ghatakuri,Po-Kharia,Ps-Kotinada,Dist-Ganjam,State-Odisha 761111 ///
+ Gajapati Nagar,Berhmapur,Ganjam 760010",Ganjam,Odisha,761111,15-09-2025,UDSPL1197,Priyanka Priyadarsani Nayak
+20,POS,UDSPL1201,Samar Singh Sahoo,Field Engineer,9658690752,,,"At/ PO -Bangarsingha, Badamba Block, Cuttack, 754031",CUTTACK,Odisha,754031,01-01-2018,UDSPL1184,Dev Narayan Samal
+21,POS,UDSPL1369,Sameer Siya,Field Engineer,6370125472,,,"At-Railpalli,Po-Gunthapada,Ps-Aska,Dist-Ganjam,State-Odisha 761115 ",Ganjam,Odisha,761115,15-07-2025,UDSPL1197,Priyanka Priyadarsani Nayak
+22,POS,UDSPL1203,Santosh Kumar Beura,Field Engineer,9337854147,,,"At Chasanara, PO- Purunatigiria, Cuttack",CUTTACK,Odisha,754030,01-01-2018,UDSPL1184,Dev Narayan Samal
+23,POS,UDSPL1204,Saroj Kumar Das,Field Engineer,7873845679,,,"SAILO GOVINDPUR, NUAGAON,CUTTACK-754003",CUTTACK,Odisha,754003,01-01-2018,UDSPL1184,Dev Narayan Samal
+24,POS,UDSPL1205,Sattyaranjan Mallick,Field Engineer,8327724311,,,"LINK ROAD,CUTTACK",CUTTACK,Odisha,753010,01-01-2018,UDSPL1184,Dev Narayan Samal
+25,POS,UDSPL1206,Seikh Samim,Field Engineer,9556434037,,,"S/o- Abdul Hamid, Khetipada, Motijharan, Sambalpur",Sambalpur,Odisha,768001,01-12-2022,UDSPL1197,Priyanka Priyadarsani Nayak
+26,POS,UDSPL1385,Soubhagya Chandra Sahu,Field Engineer,9938565056,,,"AT/PO BALARAM PRASAD P/S NALCO NAGAR, VIA BANARPAL, DIST. ANGUL, Pin -759128",Angul,Odisha,759128,20-08-2025,UDSPL1197,Priyanka Priyadarsani Nayak
+27,POS,UDSPL1339,Sriram Parimanik,Field Engineer,9337227913,,,"Vill.-Duaghat,P.O.-Malarpada, P.S.-Turumunga,Dist-Keonjhar– 758045,Odisha",Keonjhar,Odisha,758045,02-09-2024,UDSPL1184,Dev Narayan Samal
+28,POS,UDSPL1208,Sudhir Kumar Beura,Field Engineer,9861653782,,,"Chasanara,PO- Puruna Tigiria,PS- Tigiria, Dist- Cuttack,Pin- 754030/// To,
+ C/o-R K mohanty,Plot .96/1701,Bhoinagar bbsr,751022
+ Sudhir Kumar Beura- 9861653782",CUTTACK,Odisha,754030,01-08-2023,UDSPL1184,Dev Narayan Samal
+29,POS,UDSPL1209,Sumanta Naik,Field Engineer,6370197694,,,"BHWANIPATANA,KALAHANDI, BAHADURBAGICHA PADA LANE NO-7, 766001",BHAWANIPATNA,Odisha,766001,01-01-2018,UDSPL1197,Priyanka Priyadarsani Nayak
+30,POS,UDSPL1210,Sunil Deep,Field Engineer,7205373401,,,"KANSHARPADA, SAINTALA,BALANGIR -767032",Balangir,Odisha,767032,01-01-2018,UDSPL1197,Priyanka Priyadarsani Nayak
+31,POS,UDSPL1396,Abdul Safique,Field Engineer,9101940176,,,"House No 07, Minhaj Path, Sljubari Hatigaon, PO & PS - Hatigaon, Dist. - Kamrup(M), Guwahati - 781038",Kamrup,Assam,781038,02-06-2025,1185,Sourav Ghatak
+32,POS,UDSPL1141,Akil Alfaz Hussain,Field Engineer,7577814032,,,"To,
+ AKIL ALFAZ
+ C/O - NAZBUL HUSSAIN
+ SIVASAGAR BG ROAD NEAR TECHNICAL SCHOOL 
+ PIN CODE - 785640
+ PHONE NO - 7002067353",SIVASAGAR,ASSAM,785640,01-01-2018,1185,Sourav Ghatak
+33,POS,UDSPL1142,Amit Talukdar,Field Engineer,9101417232,,,"Kamrup, Guwahati, Assam",GUWAHATI,ASSAM,781040,01-01-2017,1185,Sourav Ghatak
+34,POS,UDSPL1370,Amrit Das,Field Engineer,9365814662,,,Vill/Town - Lanka Town Bishnurmam Tauli Path Ward No-10 PS Lanka Lanka (mab) Hojai Assam -782446,Hojai,Assam,782446,01-08-2025,1534,Bhaben Borah
+35,POS,UDSPL1312,Anisuz Zaman Laskar,Field Engineer,6009774965,,,DURDLANG NEAR( ELEVEN RESTURANT ),Aizwal,Mizoram,796001,01-08-2024,1534,Bhaben Borah
+36,POS,UDSPL1367,Aparup Barua,Field Engineer,8837363667,,,6/169 INDRANAGAR P.O- ABHAYNAGAR AGARTALA PIN 799005,AGARTALA,Tripura,799005,21-06-2025,1534,Bhaben Borah
+37,POS,UDSPL1318,Ashmaul Hussain,Stock Executive,9864739931,,,"VILL-KUMARPATA PO: PUTHIMARI,PS: RANGIA, DIST- KAMRUP- 781380",GUWAHATI,ASSAM,781380,25-04-2025,1185,Sourav Ghatak
+38,POS,UDSPL1145,Bhupen Pathak,Field Engineer,7002666678,,,"To,
+ BHUPEN PATHAK
+ C/O - PRATAP PATHAK
+ VILL- KHUDRA MAKHIBAHA (KAMARPARA)
+ P.O- MAKHIBAHA
+ DISTRICT - NALBARI
+ PIN CODE-781374
+ PHONE NO - 7002666678",NALBARI,ASSAM,781374,01-01-2018,1534,Bhaben Borah
+39,POS,UDSPL1149,Bishnu Das,Field Engineer,7576864096,,,"To,
+ BISHNU DAS
+ C/O- BISHWA DAS
+ VILL - MOHNA GHAT, NEAR MAHINDRA DEALER
+ ASSAM
+ PO - MOHANA GHAT
+ PIN CODE - 786008
+ PHONE NO - 7576864096",Dibrugarh,ASSAM,786008,26-09-2020,1185,Sourav Ghatak
+40,POS,UDSPL1154,Dhiren Konwar,Field Engineer,8638659598,,,"To,
+ DHIREN KONWAR
+ TITADIMORU HARABARI GAON
+ PO - MOHANBARI
+ DIST - DIBRUGARH
+ PIN CODE-786012
+ ASSAM
+ PHONE NO - 8638659598",DIBRUGARH,ASSAM,786012,01-12-2023,1185,Sourav Ghatak
+41,POS,UDSPL1157,Gourab Sarkar,Field Engineer,6003901880,,,"Bokajan Ward No. --4 Saraswati Colony, Near Ram Thakur Mandir, Karbi Anglong, Assam, Pin - 782480",Karbi Anglong,ASSAM,782480,21-05-2024,1185,Sourav Ghatak
+42,POS,UDSPL1319,Inautombi Singh,Field Engineer,6009833481,,,"Nagabazar Colony, Kohima, Nagaland 797001",Kohima,Nagaland,797001,02-12-2024,1185,Sourav Ghatak
+43,POS,UDSPL1395,Jyotirmoy Talukdar,Field Engineer,7896742772,,,"H/No. 7, Umacharan Boro Path, Rupnagar, P.O. Indrapur, P.S. Paltan Bazar, Dist-Kamrup(M), Assam, Pin-781032",Kamrup,Assam,781032,08-09-2025,1534,Bhaben Borah
+44,POS,UDSPL1372,Lablu Mallick,Field Engineer,9394127010,,,"Vill-Tinghari
+ P.O-Telikhalerpar,
+ Dist-Karimganj,Assam
+ Pin-788711",Karimganj,Assam,788711,09-07-2025,1534,Bhaben Borah
+45,POS,UDSPL1386,Lakhon Nialang,Field Engineer,7005149450,,,"H NO-20, VILL- LEJIRI, EAST JAINTIA HILLS MEGHALAYA 793200",EAST JAINTIA,Meghalaya,793200,21-08-2025,1534,Bhaben Borah
+46,POS,UDSPL1161,Matiur Rahman,Field Engineer,6001262705,,,"MATIUR RAHMAN
+ C/O - SULEMAN ALI
+ VILL - JURGORH
+ P/O-BHOJKHUWA CHAPORI
+ DIST-SONITPUR (ASSAM)
+ CITY-TEZPUR
+ PIN CODE - 784027
+ PHONE NO - 6001262705",TEZPUR,ASSAM,784027,05-06-2023,1185,Sourav Ghatak
+47,POS,UDSPL1162,Mohsin Akhter Hussain,Field Engineer,6000592996,,,"To,
+ MOHSIN AKHTER HUSSAIN 
+ VILLAGE - BENGANAKHOWA 
+ PS - DIHINGIA
+ PIN CODE - 785630
+ DIST - JORHAT
+ ASSAM
+ PHONE NO - 6000592996",GOLAGHAT,ASSAM,785630,03-11-2021,1185,Sourav Ghatak
+48,POS,UDSPL1163,Moin Uddin Sayed,Field Engineer,9132240710,,,"To,
+ MOIN UDDIN SAYED
+ VILL- JAJORI
+ PO- JAJORI 
+ DIST NAGAON (ASSAM) 
+ PIN 782142
+ PH- 9132240710",Nagaon,ASSAM,782142,02-08-2022,1185,Sourav Ghatak
+49,POS,UDSPL1323,Mridul Rao,Field Engineer,9101012781,,,"Vill:- Ratanpur Gaon PO:-Boruajan PS- Titabor, Dist- Jorhat Pin- 785630",Jorhat,ASSAM,785630,11-01-2025,1185,Sourav Ghatak
+50,POS,UDSPL1164,Mriganka Baruah,Field Engineer,8638363974,,,"To,
+ MRIGANKA BARUAH
+ VILL- PATASING PARA
+ MANGALDAI,ASSAM
+ PO - AULACHOWKA 
+ PIN CODE - 784529
+ PHONE NO - 8638363974",MANGALDAI,ASSAM,784529,01-01-2017,1534,Bhaben Borah
+51,POS,UDSPL1165,Paban Chakraborty,Field Engineer,8638242946,,,"To,
+ PABAN CHAKRABORTY
+ C/O - BIJOY CHAKRABORTY
+ VILL - CHUNGAPOTA,NEAR SANKU MONA STORE
+ PO - NEW BONGAIGAON
+ DIST - BONGAIGAON
+ PIN CODE - 783381
+ PHONE NO - 8638242946",NEW BONGAIGAON,ASSAM,783381,30-12-2022,1534,Bhaben Borah
+52,POS,UDSPL1377,Pankaj Das,Field Engineer,7086769623,,,"Puranimati Satra Gaon, P/O-Panichakua, Jorhat, Assam, Pin- 785006",Jorhat,Assam,785006,12-06-2025,1185,Sourav Ghatak
+53,POS,UDSPL1168,Rahim Saikia,Field Engineer,6002108379,,,"To,
+ RAHIM SAIKIA
+ C/O - POWAL SAIKIA
+ DEURIGAON
+ SONIT PURI
+ ASSAM
+ PIN CODE - 784169
+ PHONE NO - 8099818373",GAHPUR,ASSAM,784169,01-01-2017,1185,Sourav Ghatak
+54,POS,UDSPL1325,Rama Shankar Gorh,Field Engineer,7035731675,,,"Jogipara, Dist- Cachar, Silchar, Assam- 788010",CACHAR,ASSAM,788010,07-09-2024,1534,Bhaben Borah
+55,POS,UDSPL1371,Sadiar Rahman,Field Engineer,9365576618,,,"SADIAR RAHAMAN, C/O - GOLER RAHAMAN VTC - FOTANGA PT -III , P.O - TUKURA, SUB DISTRICT - MATIA DIST- GOALPARA, STATE - ASSAM, PIN - 783126",Goalpara,Assam,783126,03-07-2025,1534,Bhaben Borah
+56,POS,UDSPL1170,Sama Kanta Singh,Field Engineer,9774433722,,,"To,
+ SAMA KANTA SINGH
+ LAMBOIKHONGNANGKHONG
+ IMPHAL WEST, NEAR UFLC GROUND
+ PIN CODE - 795004
+ PHONE NO - 9774433722/7005534479",IMPHAL,MANIPUR,795008,01-01-2017,1185,Sourav Ghatak
+57,POS,UDSPL1173,Suresh Singha,Field Engineer,9476657292,,,"To,
+ SURESH SINGHA
+ SIGNAL BAZAAR HOMELITE NEAR AXIS BANK 
+ PIN CODE - 797112
+ PHONE NO - 9366193876",DIMAPUR,NAGALAND,797112,01-01-2017,1534,Bhaben Borah
+58,POS,UDSPL1326,Tankeshwar Sahu,Field Engineer,8720991951,,,"To,
+ TANKESHWAR SAHU
+ C/O - LATE RATAN SAHU
+ ADDRESS - MOHANBARI BAZAR NEAR INDIAN BANK 
+ PO - MOHANBARI
+ PS - LAHOWAL
+ DISTRICT - DIBRUGARH
+ PIN NO - 786012
+ PHONE NO - 8720991951",DIBRUGARH,ASSAM,786012,01-01-2017,1185,Sourav Ghatak
+59,POS,UDSPL1174,Tasing Kodak,Field Engineer,8787840693,,,"To,TASING KODAK
+ CHIMPU, NEAR TEMPO STAND ITANAGAR,
+ DISTRICT - PAPUM PARE
+ STATE - ARUNACHAL PRADESH.
+ PIN CODE - 791113
+ PHONE NO - 8787840693",Papum Pare,ARUNACHAL PRADESH,791113,06-10-2022,1534,Bhaben Borah
+60,POS,UDSPL1175,Tenzin Tsering,Field Engineer,8119994934,,,"To,
+ TENZIN TSERING 
+ VILL - SENGA DIRANG
+ WEST KAMRENG 
+ DIST - ARUNACHAL PRADESH
+ PIN CODE - 790101 
+ PHONE NO- 8119994934/ 7642943204",BOMDILA,ARUNACHAL PRADESH,790001,01-01-2018,1534,Bhaben Borah
+61,POS,UDSPL1327,Walseng N Sangma,Field Engineer,6009585868,,,"Vill- Lower Danakgre, PO- Dakopgre, PS- Araimile New Tura, Dist- West Garo Hills, Meghalaya- 794101",West Garo Hills,Meghalaya,794101,03-07-2024,1534,Bhaben Borah
+62,POS,UDSPL1211,Alok Kahar,Field Engineer,6295669129,,,"Vill-Depara,Landmark -Natni High school, P.o-beraberi, p.s-ashoknagar,dist north 24pgs ,pin -743711",NORTH 24 PARGANAS,West Bengal,743711,01-01-2019,UDSPL1388,Jayanta Mondal
+63,POS,UDSPL1212,Anish Sundas,Field Engineer,6296690321,,,"LowerArithang Gangtok East Sikkim,Pin Code-737101",EAST SIKKIM,SIKKIM,737101,01-01-2023,UDSPL1132,Ujjwal Chatterjee
+64,POS,UDSPL1213,Biswajit Bagdi,Field Engineer,9800675494,,,"VILL-Nelegarh,Post –Illambazar, DIST - Birbhum,State - West Bengal, Pin-731214",Birbhum,West Bengal,731214,10-06-2024,UDSPL1132,Ujjwal Chatterjee
+65,POS,UDSPL1214,Bubai Banerjee,Field Engineer,7866054905,,,"NARSHING BANDH, HIRAPUR, BURNPUR,PASCHIM BARHDAMAN, PIN – 713325",PASCHIM BARHDAMAN,West Bengal,713325,10-06-2024,UDSPL1132,Ujjwal Chatterjee
+66,POS,UDSPL1349,Debasish Mondal,Field Engineer,7890112034,,,"Abhayanagar, Radhaballavpur, Kultali, South 24 Parganas- 743349",SOUTH 24 PARGANAS,West Bengal,743349,10-09-2024,UDSPL1388,Jayanta Mondal
+67,POS,UDSPL1216,Dipak Chandra Barman,Field Engineer,7865882825,,,"Vill +po- Mowamari, PS- Kotwali, Dist- Coochbihar",COOCH BEHAR,West Bengal,736134,01-01-2019,UDSPL1132,Ujjwal Chatterjee
+68,POS,UDSPL1350,Dipendu Dey,Field Engineer,8250142769,,,"Surya Sen Colony Block C, Ward- 34, P.O- Silguri Town, P.S.- New Jalpaiguri, Dist- Jalpaiguri, Pin- 734004",DARJILING,West Bengal,734004,02-09-2024,UDSPL1132,Ujjwal Chatterjee
+69,POS,UDSPL1218,Hemanta Pramanik,Field Engineer,7679588187,,,"VILL-GOURADAG, PO-BELDIH, PS-ARSHA, DIST-PURULIA,PIN – 723102",PURULIYA,West Bengal,723102,15-10-2023,UDSPL1132,Ujjwal Chatterjee
+70,POS,UDSPL1353,Himayan Sarkar,Field Engineer,7001437725,,,"Vill- Rasiladaha Colony, Po- Nageswarpur, Ps+Dist- Malda, State- West Bengal, Pin Code- 732142",Malda,West Bengal,732142,29-11-2024,UDSPL1132,Ujjwal Chatterjee
+71,POS,UDSPL1219,Jagadish Sahoo,Field Engineer,9593036188,,,"Vill- Sarisa,P.o- phandar,P.s- Belda,Dist.- Paschim medinipur,West Bengal",WEST MIDNAPORE,West Bengal,721424,01-01-2019,UDSPL1132,Ujjwal Chatterjee
+72,POS,UDSPL1368,Kamal Roy,Field Engineer,8172086817,,,"Village – Sebagram, P.O - Debnagar, P.S - Kotwali, District - Jalpaiguri,Pin – 735102",Jalpaiguri,West Bengal,735102,02-07-2025,UDSPL1132,Ujjwal Chatterjee
+73,POS,UDSPL1221,Nasir Iqbal,Field Engineer,9073857972,,,"23 Palm Avenue, Kolkata-700019",KOLKATA,West Bengal,700019,14-08-2023,UDSPL1388,Jayanta Mondal
+74,POS,UDSPL1224,Pradip Das,Field Engineer,8617509630,,,"VILL – HATSIMUL, P.S –BURDWAN SADAR,DIST – BURDWAN, PIN – 713101",BURDWAN,West Bengal,713101,10-06-2024,UDSPL1132,Ujjwal Chatterjee
+75,POS,UDSPL1225,Ratan Manna,Field Engineer,9679721696,,,"Village - Erenda, City - Egra,Dist - East Midanapur 
+ State - West Bengal",EAST MIDNAPORE,West Bengal,721429,01-01-2023,UDSPL1132,Ujjwal Chatterjee
+76,POS,UDSPL1358,Rishikesh Shaw,Field Engineer,8617276765,,,"9, Shanti park ,jhele bherry, daspara, mukandapur, Kolkata -700152",Kolkata,West Bengal,700152,18-11-2024,UDSPL1388,Jayanta Mondal
+77,POS,UDSPL1359,Sagar Biswas,Field Engineer,9064597942,,,"Shikarpur,P.O- B R Ashram, Nadia- 741248",NADIA,West Bengal,741248,14-11-2024,UDSPL1132,Ujjwal Chatterjee
+78,POS,UDSPL1228,Sourav Ghosh,Field Engineer,6290370300,,,"HARIT , POLBA DADPUR 
+ VILL- BADINAN MONDIR TOLA 
+ DIST- HOOGHLY",HOOGHLY,West Bengal,712305,01-01-2019,UDSPL1132,Ujjwal Chatterjee
+79,POS,UDSPL1360,Soutick Ghosh,Field Engineer,7047752825,,,"VILL:- DIGHANESWAR,PO:- NAGBAL,PS:- DADPUR,PIN:- 712305",Hooghly,West Bengal,712305,07-11-2024,UDSPL1132,Ujjwal Chatterjee
+80,POS,UDSPL1393,Souvik Ghosh,Field Engineer,8250468936,,,"Viil+P.O.- Netra, P.S- Diamond Harbour, Dist- South 24 pgs, Pin- 743368",Diamond Harbour,West Bengal,743368,24-09-2025,UDSPL1388,Jayanta Mondal
+81,POS,UDSPL1229,Subham Majumdar,Field Engineer,8617519192,,,"Durgadas Colony, Netaji Subhash Road, Subhash Pally, Ward No:.20, Siliguri, Darjeeling",DARJILING,West Bengal,734001,01-06-2021,UDSPL1132,Ujjwal Chatterjee
+82,POS,UDSPL1230,Subhankar Das,Field Engineer,9046879650,,,"Thanapara, P.o + p.s = Kaliaganj,North Dinajpur",NORTH DINAJPUR,West Bengal,733129,01-01-2019,UDSPL1132,Ujjwal Chatterjee
+83,POS,UDSPL1231,Subhra Das,Field Engineer,7797212289,,,"Jashodananda Pramanik Street, Ashananda Para, Santipur, Nadia, Pin- 741404",NADIA,West Bengal,741404,11-03-2024,UDSPL1132,Ujjwal Chatterjee
+84,POS,UDSPL1233,Surajit Sur,Field Engineer,9834527995,,,"VILL-JASHRA, PO-RAPATGANG, PS-SONAMUKHI, DIST-BANKURA-722207; VILL-DABRA, PO-JAGADALLA, PS+DIST-BANKURA- 722172",BANKURA,West Bengal,722207,01-12-2023,UDSPL1132,Ujjwal Chatterjee
+85,POS,UDSPL1235,Tapas Das,Field Engineer,7468848236,,,"Majiara ,kalla road ,P.O- Majiara,Asansol ,bardhaman",BARDHAMAN,West Bengal,713330,01-07-2021,UDSPL1132,Ujjwal Chatterjee
+86,POS,UDSPL1236,Tohidul Islam,Field Engineer,9734680253,,,"Kahi Nagar, Murarai, Birbhum",BIRBHUM,West Bengal,731219,01-01-2019,UDSPL1132,Ujjwal Chatterjee
+87,POS,UDSPL1307,Badal Kumar Panjiyara,Field Engineer,6200371231,,,"Vill+Po- Nemotari Jamnipaharpur, Ps- Godda, Dist- Godda, Jharkhand- 814133",Godda,Jharkhand,814133,24-09-2024,1556,Puspita Bhaduri
+88,POS,UDSPL1373,Brahmdeo Mahto,Field Engineer,8789276982,,,"Subhash Colony, Near Devgiri Apartment P.S.- Kadru, Dist- Ranchi Jharkhand - 834002 /// Permanent address: Vill + Po- Chapri, P.S.- Nawadih, Dist- Bokaro 829144",Ranchi,Jharkhand,834002,02-08-2025,1556,Puspita Bhaduri
+89,POS,UDSPL1140,Shivam Kumar Mehta,Field Engineer,8969080226,,,"At- Behradih, P.O + P.S- Domchanch, Dist- Koderma, Jharkhand- 825407",Koderma,Jharkhand,825407,26-12-2025,1556,Puspita Bhaduri
+90,POS,UDSPL1398,Anand Kumar,Field Engineer,9508133518,,,"Vill :- Gamhariya Hat, P.o :- Gamhariya Hat, P. S. :- Ramgarh,Dist :- Dumka (Jharkhand), Pin :- 814102",Dumka,Jharkhand,814102,17-12-2025,1556,Puspita Bhaduri
+91,POS,UDSPL1399,Shivshankar Dhobi,Field Engineer,8789206704,,,"AT.- Bhagabandh Basti, P.O – Bhagabandh, P.S.- Putki, Dist.- Dhanbad, State- Jharkhand, Pin –828111",Dhanbad,Jharkhand,828111,13-12-2025,1556,Puspita Bhaduri
+92,POS,UDSPL1153,Dhiraj Sarma,Field Engineer,9101768298,,,"Vill-Nizkhana,PO-Jalkhana,PS-Tihu,Dist-Nalbari",Nalbari,ASSAM,781374,01-10-2021,1534,Bhaben Borah
+93,POS,UDSPL1400,Gobinda Biswas,Field Engineer,7044239597,,,"VILL-HEMANTANAGR,TALBANDA ,POST-JUGBERIA,DIST-NORTH 24 PARGANAS PIN-700110",NORTH 24 PARGANAS,West Bengal,700110,07-01-2026,UDSPL1388,Jayanta Mondal
+94,POS,UDSPL1401,Samir Rajbanshi,Field Engineer,7797765658,,,"76,NETAJI ROAD SUBHASH COLONI BERHAMPORE,MURSIDABAD PIN-742101",MURSHIDABAD,West Bengal,742101,07-01-2026,UDSPL1132,Ujjwal Chatterjee
+95,POS,UDSPL1402,Abhay Shaw,Field Engineer,7679926199,,,"6 No Mechuya Bazar Lane, Po-Khagra, Ps-Berhampore, Murshidabad, West Bengal, Pin- 742103",MURSHIDABAD,West Bengal,742103,10-01-2026,UDSPL1132,Ujjwal Chatterjee
+96,POS,UDSPL1117,Akram Khan,Manager Logistic,9883641314,,,,KOLKATA,West Bengal,,01-01-2016,UDSPL1126,Samiran Mukherjee
+97,POS,1174,Chiranjit Das,Sr. Accounts Executive,7003366167,,,"Andul Road, Chandrabati, Howrah",Howrah,West Bengal,711109,10-02-2019,UDSPL1403,Santanu Mondal
+98,POS,UDSPL1123,Mousumi Das,MIS Analyst,8910935865,,,,,West Bengal,,01-01-2024,UDSPL1404,Rakesh Dutta
+99,POS,UDSPL1126,Samiran Mukherjee,Regional Manager- Logistic,7439321910,,,,KOLKATA,West Bengal,,01-01-2024,UDSPL1403,Santanu Mondal
+100,POS,1007,Somen Halder,Project Development Manager,6291289505,,,,NORTH 24 PARGANAS,West Bengal,,01-01-2017,UDSPL1403,Santanu Mondal
+101,POS,UDSPL1232,Suman Bhowal,Logistics-Executive,7003232358,,,"Garia, East balia shitala apartment, Kolkata",SOUTH 24 PARGANAS,West Bengal,700084,01-01-2023,UDSPL1126,Samiran Mukherjee
+102,POS,1556,Puspita Bhaduri,Co-ordinator Operation,9330969206,,,,HOOGHLY,West Bengal,,01-01-2019,UDSPL1403,Santanu Mondal
+103,POS,UDSPL1375,Mousumi Samanta,Back Office Executive,6291926801,,,H/21 shil thakur bari road kolkata 700038,KOLKATA,West Bengal,700038,01-08-2025,UDSPL1404,Rakesh Dutta
+104,POS,UDSPL1121,Arundranath Sardar,Sr. Logistic Executive,9734729816,,,,SOUTH 24 PARGANAS,West Bengal,,01-01-2019,UDSPL1126,Samiran Mukherjee
+105,POS,UDSPL1388,Jayanta Mondal,Co-ordinator Operation,8116268484,,,"VILL-SHIRPURA, PO-TILURI, PS-SALTORA, DIST-BANKURA, PIN-722153",Bankura,West Bengal,722153,22-09-2025,1007,Somen Halder
+106,POS,UDSPL1304,Monisha Bag Chatterjee,Back Office Exexutive,9547411521,,,"VILL-SHIRPURA,PO-TILURI,DIST-BANKURA PIN-722153",Bankura,West Bengal,722153,04-04-2025,UDSPL1404,Rakesh Dutta
+107,POS,UDSPL1132,Ujjwal Chatterjee,Co-ordinator Operation,9064663877,,,"VILL – SHIRPURA, P.O – TILURI,P.S – SALTORA,DIST – BANKURA, PIN – 722153",Bankura,West Bengal,722153,10-06-2024,1007,Somen Halder
+108,POS,1185,Sourav Ghatak,Manager Operation,6291844951,,,FLAT NO 1A AMIYADHAM APPARTMENT DHANIAPARA MAIN ROAD P.O.BARRACKPUR Kolkata 700122,NORTH 24 PARGANAS,West Bengal,700122,01-01-2021,UDSPL1403,Santanu Mondal
+109,POS,UDSPL1318,Ashmaul Hussain,Logistics-Executive,9864739931,,,"VILL-KUMARPATA PO: PUTHIMARI,PS: RANGIA, DIST- KAMRUP- 781380",Kamrup,ASSAM,781380,25-04-2025,1534,Bhaben Borah
+110,POS,1534,Bhaben Borah,Manager -Operation,8876422538,,,Vill-Phutchang P.O - Muwamari P.S - Jengraimukh Dist. - Majuli ,Majuli,Assam,785105,01-01-2018,UDSPL1403,Santanu Mondal
+111,POS,UDSPL1150,Chandan Mili,Logistics-Executive,9101134542,,,"Survey, Chandan Nagar Path, House No.45",GUWAHATI,ASSAM,781028,21-05-2021,1534,Bhaben Borah
+112,POS,UDSPL1305,Rinku Mittra,Co-ordinator Operation,8961012321,,,FLAT NO 1A AMIYADHAM APPARTMENT DHANIAPARA MAIN ROAD P.O.BARRACKPUR Kolkata 700122,NORTH 24 PARGANAS,West Bengal,700122,08-02-2025,1007,Somen Halder
+113,POS,1199,Babuli Mallick,State Manager- Operation,9040067855,,,"PLOT NO 2F/461 CDA SECTOR 11,MARKAT NAGAR CUTTACK PIN-753015",CUTTACK,ODISHA,753015,01-01-2013,UDSPL1403,Santanu Mondal
+114,POS,UDSPL1182,Bratadeep Biswal,Logistics-Executive,9348251771,,,"At- Nuapatnan, po- kayalapada, ps- choudwar, dist- Cuttack, pin- 754027",Cuttack,Odisha,754027,01-11-2025,1199,Babuli Mallick
+115,POS,UDSPL1184,Dev Narayan Samal,Co-ordinator Operation,8018384178,,,,,Odisha,,01-01-2022,1199,Babuli Mallick
+116,POS,UDSPL1197,Priyanka Priyadarsani Nayak,Co-ordinator Operation,7205350666,,,"At- Kaithadiha, PO- Padhani, Dist- Bhadrak, Pin- 756117",Padhani,Odisha,756117,22-09-2023,1199,Babuli Mallick
+117,POS,UDSPL1392,Ruchismita Behera,Back Office Executive,7751813674,,,"Arakhapari, Alanaghat, Naugaon, Jagatsinghpur,754107",,,,20-09-2025,UDSPL1404,Rakesh Dutta
+118,POS,UDSPL1403,Santanu Mondal,POS Operation & Business Head,9903413751,,,H/21 shil thakur bari road kolkata 700038,KOLKATA,West Bengal,700038,01-01-2015,1,Sourabh Bhaumik
+119,POS,UDSPL1404,Rakesh Dutta,Project Manager - Operation,6362791270,,,,MURSHIDABAD,West Bengal,,01-01-2025,UDSPL1405,Susanta Mandal
+120,POS,UDSPL1405,Susanta Mandal,Vice President,9851790599,,,,KOLKATA,West Bengal,,01-01-2026,1,Sourabh Bhaumik
+121,,,,,,,,,,,,,,

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Employee Punch Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "surface-dark": "#182430",
+                        "surface-light": "#ffffff",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Scrollbar for hidden feel on mobile */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        /* iOS Safe Area adjustments */
+        .safe-top {
+            padding-top: env(safe-area-inset-top, 20px);
+        }
+        .safe-bottom {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+        
+        /* Toggle Switch Animation */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #137fec;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #137fec;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased h-screen overflow-hidden flex flex-col relative selection:bg-primary/30">
+<!-- Top Status Bar Placeholder (iOS) -->
+<div class="w-full h-12 bg-background-light dark:bg-background-dark shrink-0 safe-top flex items-end justify-between px-6 pb-2 z-20">
+<span class="text-xs font-medium dark:text-slate-400">9:41</span>
+<div class="flex space-x-1.5 items-center">
+<span class="material-icons text-[14px] dark:text-slate-400">signal_cellular_alt</span>
+<span class="material-icons text-[14px] dark:text-slate-400">wifi</span>
+<span class="material-icons text-[14px] dark:text-slate-400">battery_full</span>
+</div>
+</div>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto pb-24 px-5">
+<!-- Header Section -->
+<header class="flex justify-between items-center py-4 mb-2">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Profile Avatar" class="w-10 h-10 rounded-full border-2 border-primary/30 object-cover" data-alt="User profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDB9EwYuG4DCeiY6r9cHgaT-iS9jvgv9WjPuTK_YmQ8HhzitqomQEFbqUQGGOPJCrPFPCyo1HM4D4mieGImqTKlpM-4tkZb1arAvl12ogjv5cYbDdvG6HTjt8UiALpGWfiY6TXceTuw9wc5rd7sf7S07Z37jEKSO81jSCF5sSIc2dgkXBaU7scJ2c5VxwL803xKjTNhSNzdR3RDsvNYcRqDJypBFaZ46-5ePfSDie4w9YuV405HUP2dHx_zXuffaDPJnw3CeKidyis"/>
+<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background-light dark:border-background-dark rounded-full"></span>
+</div>
+<div>
+<h1 class="text-sm font-medium text-slate-500 dark:text-slate-400">Good Morning,</h1>
+<p class="text-lg font-bold leading-none">Alex Morgan</p>
+</div>
+</div>
+<button class="p-2 rounded-full bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors relative">
+<span class="material-icons text-slate-600 dark:text-slate-300">notifications_none</span>
+<span class="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+</button>
+</header>
+<!-- Offline Mode Indicator (Conditional) -->
+<div class="mb-6 flex items-center justify-center gap-2 py-1.5 px-3 bg-amber-500/10 border border-amber-500/20 rounded-full w-fit mx-auto">
+<span class="material-icons text-amber-500 text-sm">wifi_off</span>
+<span class="text-xs font-medium text-amber-500">Offline Mode • Data Cached</span>
+</div>
+<!-- Main Punch Action Card -->
+<section class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/50 p-6 mb-6 relative overflow-hidden group">
+<!-- Background Glow Effect -->
+<div class="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
+<div class="flex flex-col items-center text-center relative z-10">
+<h2 class="text-sm font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-6">Current Status</h2>
+<!-- Timer Display -->
+<div class="mb-8">
+<div class="text-5xl font-bold font-mono tracking-tight tabular-nums text-slate-800 dark:text-white drop-shadow-sm">
+                        04:23:12
+                    </div>
+<p class="text-sm text-primary font-medium mt-1">Time Since Punch In</p>
+</div>
+<!-- Punch Switch Mechanism -->
+<div class="relative inline-block w-full max-w-[280px] h-16 select-none mb-4">
+<input checked="" class="toggle-checkbox absolute block w-14 h-14 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 top-1 transition-all duration-300 ease-in-out left-1 border-slate-300 dark:border-slate-600 checked:border-primary shadow-lg" id="punch-toggle" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-16 rounded-full bg-slate-200 dark:bg-slate-800 cursor-pointer transition-colors duration-300 ease-in-out relative border border-inner dark:border-slate-700" for="punch-toggle">
+<span class="absolute left-4 top-0 bottom-0 flex items-center text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide opacity-100 transition-opacity duration-300">Swipe to Punch In</span>
+<span class="absolute right-20 top-0 bottom-0 flex items-center justify-center w-full text-base font-bold text-white uppercase tracking-wide opacity-0 transition-opacity duration-300" style="margin-right: -100%;">Punched In</span>
+</label>
+<!-- Custom CSS hack for label text visibility based on checkbox state would usually be JS, simulating active state visually here -->
+<div class="pointer-events-none absolute inset-0 flex items-center justify-center text-white font-bold tracking-wider opacity-0 peer-checked:opacity-100">
+                        PUNCHED IN
+                    </div>
+</div>
+<p class="text-xs text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    Syncing location...
+                </p>
+</div>
+</section>
+<!-- Location Widget -->
+<section class="mb-6">
+<div class="flex justify-between items-center mb-3">
+<h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Current Location</h3>
+<button class="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1">
+<span class="material-icons text-[14px]">refresh</span> Refresh
+                </button>
+</div>
+<div class="relative h-32 w-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/50">
+<!-- Map Background Image -->
+<div class="absolute inset-0 bg-slate-800" data-alt="Map view of city streets with dark overlay" data-location="Seattle" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD4CU-sjAy2AtgSMmgiUdfkxJw6IoHuoJQ6a7P1l2W3hiBgkhJwcy52e61fFnMxoe5rMatHd01u-3BfyevGOsK3Y0aO_i_GBiUDddZ5nNsDxLtvXMkYVlm1qlXq1lHYzyTGXUAqFu39q6FIGarMvIHNUM6mAWw0zSe4rea-pujdsY_h6x2HY3nq0nvxM4G7xYizCwGZypMsAF_iVaDWeF772u_MfS6yvO56DuoQYGrbZXiopcHMkCROdRARvNitjNVwrsGykYWAvac'); background-size: cover; background-position: center; opacity: 0.6;"></div>
+<!-- Map Overlay Gradient -->
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark/80 via-transparent to-transparent"></div>
+<!-- Pin & Details -->
+<div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+<div class="relative">
+<span class="material-icons text-primary text-4xl drop-shadow-lg">location_on</span>
+<div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 w-3 h-1.5 bg-black/50 rounded-[100%] blur-[2px]"></div>
+</div>
+</div>
+<div class="absolute bottom-3 left-3 right-3 flex justify-between items-end">
+<div>
+<p class="text-xs text-white/70 font-medium">Near</p>
+<p class="text-sm text-white font-semibold truncate w-48">124 Westlake Ave, Seattle</p>
+</div>
+<div class="bg-surface-dark/80 backdrop-blur-md p-1.5 rounded-lg border border-white/10">
+<span class="material-icons text-white text-sm">my_location</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Today's Status Grid -->
+<section>
+<h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Today's Activity</h3>
+<div class="grid grid-cols-2 gap-3">
+<!-- Card 1 -->
+<div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 flex flex-col justify-between h-24">
+<div class="flex justify-between items-start">
+<span class="material-icons text-primary/80 bg-primary/10 p-1.5 rounded-lg text-lg">login</span>
+<span class="text-xs text-slate-400 font-medium">Start</span>
+</div>
+<div>
+<p class="text-lg font-bold text-slate-800 dark:text-white">09:00 <span class="text-xs font-normal text-slate-500">AM</span></p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 flex flex-col justify-between h-24">
+<div class="flex justify-between items-start">
+<span class="material-icons text-orange-500/80 bg-orange-500/10 p-1.5 rounded-lg text-lg">logout</span>
+<span class="text-xs text-slate-400 font-medium">Est. End</span>
+</div>
+<div>
+<p class="text-lg font-bold text-slate-800 dark:text-white">06:00 <span class="text-xs font-normal text-slate-500">PM</span></p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 flex flex-col justify-between h-24">
+<div class="flex justify-between items-start">
+<span class="material-icons text-purple-500/80 bg-purple-500/10 p-1.5 rounded-lg text-lg">timelapse</span>
+<span class="text-xs text-slate-400 font-medium">Total</span>
+</div>
+<div>
+<p class="text-lg font-bold text-slate-800 dark:text-white">8h 30m</p>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 flex flex-col justify-between h-24">
+<div class="flex justify-between items-start">
+<span class="material-icons text-emerald-500/80 bg-emerald-500/10 p-1.5 rounded-lg text-lg">event_available</span>
+<span class="text-xs text-slate-400 font-medium">Leaves</span>
+</div>
+<div>
+<p class="text-lg font-bold text-slate-800 dark:text-white">12 <span class="text-xs font-normal text-slate-500">Days</span></p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 pb-safe z-30 safe-bottom">
+<div class="flex justify-around items-center h-16 px-2">
+<button class="flex flex-col items-center justify-center w-full h-full space-y-1 text-primary">
+<span class="material-icons">dashboard</span>
+<span class="text-[10px] font-medium">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full space-y-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+<span class="material-icons">history</span>
+<span class="text-[10px] font-medium">Logs</span>
+</button>
+<!-- Floating FAB Center (Optional Visual Style) -->
+<div class="relative -top-5">
+<button class="w-14 h-14 bg-gradient-to-tr from-primary to-blue-500 rounded-full shadow-lg shadow-primary/40 flex items-center justify-center text-white transform transition hover:scale-105 active:scale-95 border-4 border-background-light dark:border-background-dark">
+<span class="material-icons">qr_code_scanner</span>
+</button>
+</div>
+<button class="flex flex-col items-center justify-center w-full h-full space-y-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+<span class="material-icons">beach_access</span>
+<span class="text-[10px] font-medium">Leaves</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full space-y-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+<span class="material-icons">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</button>
+</div>
+</nav>
+<!-- Simulation Script for Toggle Visuals (No functionality, purely presentation logic for the switch state in design preview) -->
+<style>
+        #punch-toggle:checked ~ .toggle-label {
+            background-color: #137fec; /* Primary */
+            border-color: #137fec;
+        }
+        #punch-toggle:checked ~ .toggle-label span:first-child {
+            opacity: 0;
+            transform: translateX(10px);
+        }
+        #punch-toggle:checked ~ .toggle-label span:last-child {
+            opacity: 1;
+        }
+    </style>
+</body></html>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Field Team Live Tracking Map</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hide for clean mobile look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Pulse animation for live status */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.33); opacity: 1; }
+            80%, 100% { opacity: 0; }
+        }
+        @keyframes pulse-dot {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1); }
+            100% { transform: scale(0.8); }
+        }
+        .live-pulse-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            animation: pulse-ring 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+            background-color: #137fec;
+            opacity: 0.6;
+        }
+        .live-dot {
+            position: relative;
+            border-radius: 50%;
+            background-color: #137fec;
+            animation: pulse-dot 2.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) -0.4s infinite;
+        }
+
+        /* Breadcrumb path SVG styling */
+        .path-line {
+            stroke-dasharray: 10;
+            animation: dash 30s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: -1000; }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-100 overflow-hidden h-screen w-full relative">
+<!-- Map Background -->
+<div class="absolute inset-0 z-0 bg-slate-200 dark:bg-slate-800">
+<!-- Placeholder for actual map implementation (e.g., Google Maps / Apple Maps) -->
+<img alt="Light grayscale city map view" class="w-full h-full object-cover opacity-80 dark:opacity-40 grayscale" data-alt="Light grayscale city map view" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPN5V8vGUx5vX6-GpQT0Gb-lQBHGA230xObsOzJ8IaXUJoFav2B2H--yzouyqQpSRQqg9Ee5iWJ1HgLjquHjwL9MIlq4QlsAEPUsxARYkD4URqmvaqGgo8IsBciKzf9wDFqjjeanRoHQ4cPXPGbtx5TCQceEYrpDt1LhbroF--0o1rls9xKjnfBps6Xu9pvN_-KVsgKxUOjEuHusk0YKVkPd4Ivc5QKVP705UEOXviKCEUIGg_eNnwE5XOO1LHE7cnvpJy6JTJ1Nc"/>
+<!-- SVG Overlay for Route Path (Breadcrumb) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none z-10" style="opacity: 0.8;">
+<!-- Path for Sarah Jenkins -->
+<path class="path-line shadow-lg" d="M 120 150 Q 150 250 220 320 T 320 450" fill="none" stroke="#137fec" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" style="filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.1));"></path>
+<!-- Start Point Dot -->
+<circle cx="120" cy="150" fill="white" r="6" stroke="#137fec" stroke-width="3"></circle>
+</svg>
+<!-- Map Marker: Active User (Sarah Jenkins) -->
+<div class="absolute z-20 top-[430px] left-[300px] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+<div class="relative group">
+<!-- Marker Body -->
+<div class="w-12 h-12 rounded-full border-4 border-white dark:border-slate-700 bg-white shadow-xl overflow-hidden relative z-10">
+<img alt="Woman smiling face avatar" class="w-full h-full object-cover" data-alt="Woman smiling face avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZZ7YEeZG72PHqgAB0JD0djJhbGGizSb3gGCuaZmnHUJUjjm4fb0u-zpIuryZMLZskhF5GcLi-c9eLEFr0OKJaAh2yQdDKbCHP3tmYRCGTXonO37hKxwqFSvto_V4DrGLL5GP4d20Z7kt2DibNjz_h6id_cyT7_VuOexMaeyaRPaqHfW3EnmWFyZMlz-a81XHJWfE_mXvDcBZ_aDlHYU3Qnd_66OuMtxjTB4PNAN6FKx3KrxyHH0EVFap6K0wxPQNI_R3EhGF0W2o"/>
+</div>
+<!-- Triangle Pointer -->
+<div class="w-4 h-4 bg-white dark:bg-slate-700 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2 z-0 shadow-sm"></div>
+<!-- Pulsing Effect -->
+<div class="absolute -inset-2 bg-primary/30 rounded-full animate-ping opacity-75 z-0"></div>
+<!-- Tooltip Label -->
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 px-2 py-1 rounded shadow-md whitespace-nowrap text-xs font-semibold text-slate-800 dark:text-white transform scale-0 group-hover:scale-100 transition-transform origin-bottom duration-200">
+                    Sarah J.
+                </div>
+</div>
+</div>
+<!-- Map Marker: Inactive User (Mike Ross) -->
+<div class="absolute z-10 top-[220px] left-[80px] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center opacity-80 hover:opacity-100 hover:z-30 transition-all">
+<div class="relative group">
+<div class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-700 bg-slate-200 shadow-md overflow-hidden relative z-10">
+<img alt="Man serious face avatar" class="w-full h-full object-cover grayscale" data-alt="Man serious face avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeeBlfsxNE_Zy_MHNwPHtjEeJuhjbKCbwIEC87r_xH6U7MtrMuGd0XV9DC_5RI9N5dVcmzm8jq0Gnm1LfW7Hz8MT7isfYkHFCcx9VRJsOlsSDAQkaA3LSq6ka4KE_SFHnlJtTYOPrEuFIq4HUCmW5rQM8nskkzgdYDCImKMlr4fQxLK8dg9ptl86WwX11agyGLVhk0KxtXbB_dELK2sA07YIeAy7loGfr0HqhIQCM9GTIUi8qm2E27dYXKIl57ZXpMdSvXvDp5TFQ"/>
+</div>
+<div class="w-3 h-3 bg-white dark:bg-slate-700 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2 z-0"></div>
+</div>
+</div>
+<!-- Map Marker: Cluster -->
+<div class="absolute z-10 top-[180px] left-[260px] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-primary border-2 border-white dark:border-slate-700 shadow-lg flex items-center justify-center text-white font-bold text-sm">
+                3
+            </div>
+</div>
+</div>
+<!-- Top Overlay Controls -->
+<header class="absolute top-0 left-0 right-0 z-30 pt-12 px-4 pointer-events-none"> <!-- pt-12 for status bar area -->
+<div class="flex justify-between items-start pointer-events-auto">
+<!-- Live Status Badge -->
+<div class="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-sm rounded-lg px-3 py-2 flex items-center gap-2 border border-slate-200/50 dark:border-slate-700/50">
+<div class="relative w-3 h-3 flex items-center justify-center">
+<div class="live-pulse-ring"></div>
+<div class="w-2 h-2 live-dot"></div>
+</div>
+<div>
+<span class="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide block">Live Tracking</span>
+<span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Updated just now</span>
+</div>
+</div>
+<!-- Map Controls Stack -->
+<div class="flex flex-col gap-3">
+<button class="w-10 h-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-lg shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-95 transition-transform border border-slate-200/50 dark:border-slate-700/50">
+<span class="material-icons text-xl">layers</span>
+</button>
+<button class="w-10 h-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-lg shadow-sm flex items-center justify-center text-primary active:scale-95 transition-transform border border-slate-200/50 dark:border-slate-700/50">
+<span class="material-icons text-xl">my_location</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Bottom Sheet / Side Panel -->
+<div class="absolute bottom-0 left-0 right-0 z-40 flex flex-col h-[45vh] bg-background-light dark:bg-background-dark rounded-t-xl shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-out transform translate-y-0">
+<!-- Handle for dragging -->
+<div class="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing">
+<div class="w-12 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+</div>
+<!-- Sheet Header & Search -->
+<div class="px-5 pb-4 border-b border-slate-200 dark:border-slate-700">
+<div class="flex items-center justify-between mb-3">
+<h2 class="text-lg font-bold text-slate-800 dark:text-white">Field Team <span class="text-primary text-sm font-medium ml-1">(8 Active)</span></h2>
+<button class="text-xs font-semibold text-primary hover:text-blue-600 dark:hover:text-blue-400">View All</button>
+</div>
+<div class="relative">
+<span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/50 placeholder-slate-400 dark:text-white transition-shadow" placeholder="Search employee..." type="text"/>
+</div>
+</div>
+<!-- Employee List -->
+<div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3">
+<!-- Active Selected Card -->
+<div class="bg-white dark:bg-slate-800 p-3 rounded-lg border border-primary/30 shadow-sm relative group cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-750">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-lg"></div>
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Sarah Jenkins profile" class="w-10 h-10 rounded-full object-cover border border-slate-100 dark:border-slate-600" data-alt="Sarah Jenkins profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKjrKyUZj41_Rm9JKhSyBv7oLcGYTC_0nDlgSLHwFlAG6kxu6MJP79kNmLbPXJrdCq6ZYfmq1Sn5IZu9lCLKq5N0f85d436-SkWzSayzX1hbkU4UhqR63I9WLaHSK06D_hF7eYxepYcoGnQsz6Qo8KiP_TskkOHxIPgnEnL9RPGuseuubfyssxs558MMXbexV11oSC2GVuonOTSzQmT8P8uuN2k7YJUAO2N2KkdZUb1NWvm3QwqLtfkNMeGgJTq2VS6ljwVaG_xhc"/>
+<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full"></span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-semibold text-sm text-slate-900 dark:text-white truncate">Sarah Jenkins</h3>
+<span class="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full whitespace-nowrap">Live</span>
+</div>
+<div class="flex justify-between items-end mt-1">
+<p class="text-xs text-slate-500 dark:text-slate-400 truncate">Sales Rep • Downtown Zone</p>
+</div>
+</div>
+</div>
+<!-- Stats Row -->
+<div class="mt-3 flex items-center gap-4 border-t border-slate-100 dark:border-slate-700/50 pt-2">
+<div class="flex items-center gap-1.5">
+<span class="material-icons text-slate-400 text-[16px]">directions_car</span>
+<span class="text-xs font-semibold text-slate-700 dark:text-slate-300">14.2 km</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-icons text-slate-400 text-[16px]">schedule</span>
+<span class="text-xs text-slate-500 dark:text-slate-400">In: 8:00 AM</span>
+</div>
+<button class="ml-auto text-primary text-xs font-medium hover:underline">View Route</button>
+</div>
+</div>
+<!-- Inactive Card 1 -->
+<div class="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm cursor-pointer hover:border-primary/20 transition-colors">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Mike Ross profile" class="w-10 h-10 rounded-full object-cover border border-slate-100 dark:border-slate-600 grayscale" data-alt="Mike Ross profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPwkO7IoNEik4FFOqjq5sEWvlgiFbVUx0OYbo2GuOBeHfxaMH1_2UPbnqDXqFuXm5Ssp7r5pDJryfWJGMw52NHkPqTVghIfzbPQ8n10kN1yxi0SUNxmanINuNLKNjPPmD1bGz8tu_zWvBWXzrabsdNfM7Utg9O5d27kCJ3JMXQBBJd8UVaJ9QD_PDlzvkbbKJ5bQfru2EhO5vKIs4Fl-y9ZACNUaXiFSjC1KJNNy04HswRpXzDHVWTHTv3IQSFg4oAznFWvWJu_BA"/>
+<span class="absolute bottom-0 right-0 w-3 h-3 bg-slate-400 border-2 border-white dark:border-slate-800 rounded-full"></span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-semibold text-sm text-slate-900 dark:text-white truncate">Mike Ross</h3>
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full whitespace-nowrap">Last seen 15m</span>
+</div>
+<div class="flex justify-between items-end mt-1">
+<p class="text-xs text-slate-500 dark:text-slate-400 truncate">Technician • Sector 4</p>
+<span class="text-xs font-medium text-slate-600 dark:text-slate-300">8.5 km</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Inactive Card 2 -->
+<div class="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm cursor-pointer hover:border-primary/20 transition-colors">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="David Chen profile" class="w-10 h-10 rounded-full object-cover border border-slate-100 dark:border-slate-600 grayscale" data-alt="David Chen profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCs1P8M4wTXwRp1vMOohiqETP6WP9L5TiHEx5m40QVRVyoavsb-CON2LH16M2pUsqn3_cwgCFzRgaS3PEgFmSUzU8wsx9aKWe4IepmmYbOBTUSQfH6C2FEZUf4WnEpZ5gT0xO-dTMD33T6TO-906OltnlbcOgByhEPUittQcq6CwPQhuO2EIJo_oSAGMMdpsI9esndfk6ViXnMnkJL_xGMPm4OaJ6BkELV-z6-cEtBM0vKVZxYQwXw5LL0MwiWxX0xHOPSwcuKe7b8"/>
+<span class="absolute bottom-0 right-0 w-3 h-3 bg-slate-400 border-2 border-white dark:border-slate-800 rounded-full"></span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-semibold text-sm text-slate-900 dark:text-white truncate">David Chen</h3>
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full whitespace-nowrap">Checked Out</span>
+</div>
+<div class="flex justify-between items-end mt-1">
+<p class="text-xs text-slate-500 dark:text-slate-400 truncate">Delivery • North Hub</p>
+<span class="text-xs font-medium text-slate-600 dark:text-slate-300">22.1 km</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Inactive Card 3 -->
+<div class="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm cursor-pointer hover:border-primary/20 transition-colors">
+<div class="flex items-center gap-3">
+<div class="relative">
+<div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 font-bold text-sm border border-slate-100 dark:border-slate-600">
+                            EL
+                        </div>
+<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full"></span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-semibold text-sm text-slate-900 dark:text-white truncate">Emily Lewis</h3>
+<span class="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full whitespace-nowrap">Live</span>
+</div>
+<div class="flex justify-between items-end mt-1">
+<p class="text-xs text-slate-500 dark:text-slate-400 truncate">Field Audit • South Gate</p>
+<span class="text-xs font-medium text-slate-600 dark:text-slate-300">4.3 km</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Safe Area Spacer -->
+<div class="h-6 w-full bg-background-light dark:bg-background-dark"></div>
+</div>
+</body></html>

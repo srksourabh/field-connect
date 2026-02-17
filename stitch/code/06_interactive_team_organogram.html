@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Interactive Team Organogram</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom styles for tree connectors */
+        .tree-line-vertical {
+            width: 2px;
+            background-color: #cbd5e1; /* slate-300 */
+        }
+        .dark .tree-line-vertical {
+            background-color: #334155; /* slate-700 */
+        }
+        
+        .tree-connector-elbow {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 50%;
+            height: 24px;
+            border-left: 2px solid #cbd5e1;
+            border-bottom: 2px solid #cbd5e1;
+            border-bottom-left-radius: 12px;
+            transform: translateX(-100%);
+        }
+        .dark .tree-connector-elbow {
+            border-color: #334155;
+        }
+
+        .tree-connector-elbow-right {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 50%;
+            height: 24px;
+            border-right: 2px solid #cbd5e1;
+            border-bottom: 2px solid #cbd5e1;
+            border-bottom-right-radius: 12px;
+        }
+        .dark .tree-connector-elbow-right {
+            border-color: #334155;
+        }
+
+        .tree-connector-straight {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            height: 24px;
+            width: 2px;
+            background-color: #cbd5e1;
+            transform: translateX(-50%);
+        }
+        .dark .tree-connector-straight {
+            background-color: #334155;
+        }
+
+        /* Hide scrollbar for cleaner look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-100 min-h-screen flex justify-center">
+<!-- Mobile Container -->
+<div class="w-full max-w-md bg-white dark:bg-slate-900 min-h-screen shadow-2xl relative overflow-hidden flex flex-col">
+<!-- Header -->
+<header class="bg-white dark:bg-slate-900 z-20 sticky top-0 px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<button class="text-slate-500 hover:text-primary transition-colors">
+<span class="material-icons-round">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold text-slate-900 dark:text-white">Team Structure</h1>
+</div>
+<button class="text-slate-500 hover:text-primary transition-colors bg-slate-50 dark:bg-slate-800 p-2 rounded-full">
+<span class="material-icons-round text-xl">search</span>
+</button>
+</header>
+<!-- Main Content: Organogram -->
+<main class="flex-1 overflow-y-auto no-scrollbar p-6 pb-24 bg-background-light dark:bg-background-dark relative">
+<!-- Manager Root Node -->
+<div class="flex flex-col items-center relative z-10">
+<div class="w-full max-w-[280px] bg-white dark:bg-slate-800 rounded-xl shadow-lg border-t-4 border-primary p-4 relative group cursor-pointer hover:shadow-xl transition-all duration-300">
+<div class="flex items-center gap-4">
+<div class="relative">
+<img alt="Manager Profile Picture" class="w-14 h-14 rounded-full object-cover border-2 border-slate-100 dark:border-slate-700" data-alt="Professional woman in business attire" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDNmrpSoqRRRpCyN8oB4AGf2pRP6G1XgGqZjC0qXoQj76FpPiSTKdtZDWKRwZ5slkF-p425QQZqnk4oPTfAY0GrIvhndRbm0YkIkQCSeO7KSv36L9rtmpgEuisd1g7km3LjfZx2eCTIsKImOQ5MLGIxu8jMXSjnUN1p2MQ6MhhwMyb4KryTdC8QGiCsDVov1DzpvWNihPNFbOINBWuqSzOsyLJev1EuXvUgMd9GMInB4F6onvkr0LzrGqIB5QZwErTi3zMaOmJ8c0"/>
+<span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full"></span>
+</div>
+<div class="flex-1">
+<h2 class="text-base font-bold text-slate-900 dark:text-white leading-tight">Sarah Jenkins</h2>
+<p class="text-xs text-primary font-medium mt-0.5">Regional Director</p>
+<div class="mt-2 flex items-center gap-2">
+<span class="px-2 py-0.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-[10px] font-semibold rounded-full border border-green-100 dark:border-green-800/30">
+                                    Active Now
+                                </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Connector Line Vertical from Root -->
+<div class="h-8 w-0.5 bg-slate-300 dark:bg-slate-700"></div>
+</div>
+<!-- Level 1 Container -->
+<div class="relative flex flex-col items-center">
+<!-- Horizontal Branching Line (Top of T) -->
+<!-- This creates the connector for multiple children. Width depends on number of children. -->
+<div class="absolute top-0 w-[85%] h-6 border-t-2 border-slate-300 dark:border-slate-700"></div>
+<!-- Children Grid -->
+<div class="grid grid-cols-1 gap-6 w-full mt-6 relative">
+<!-- Child 1 (Expanded) -->
+<div class="relative pl-8">
+<!-- Connector Elbow -->
+<div class="absolute top-[-24px] left-[20px] w-6 h-[calc(100%+24px)] border-l-2 border-b-2 border-slate-300 dark:border-slate-700 rounded-bl-xl -z-10"></div>
+<!-- Card -->
+<div class="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-slate-200 dark:border-slate-700/50 flex flex-col gap-3 relative">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Employee Portrait" class="w-10 h-10 rounded-full object-cover" data-alt="Man with glasses smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUr0Z702MKJt62W1RqhjlMEW9JXKQSbmzWu8aJ5x7ExK55lw7iUdLUNndE48Fb4s9CEaQQ3B6h4ivP0wrJAhHfp-w9pixALzmxsxOPf9U9_m-l1l_ChIossMP4xwSDgZWeaza-IJGl8RYyFOi-wjV812qLLjMtz6qCCI9MWeLLjo-ykmaJErkKeSTk05MULgjagyRPaBME1fAp3KBwaubqd2OfNqUQtb4KwQGoHOxrgIDv3HQ03z1Yyshg16S9G21YgOBCfWCdbPo"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full"></span>
+</div>
+<div>
+<h3 class="text-sm font-semibold text-slate-900 dark:text-white">David Lo</h3>
+<p class="text-[11px] text-slate-500 dark:text-slate-400">Senior Manager</p>
+</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all transform rotate-180">
+<span class="material-icons-round text-lg">expand_less</span>
+</button>
+</div>
+<!-- Sub-tree (Level 2) nested inside -->
+<div class="ml-4 pl-4 border-l-2 border-slate-200 dark:border-slate-700 space-y-4 pt-2">
+<!-- Grandchild 1 -->
+<div class="relative">
+<div class="absolute top-1/2 -left-4 w-4 h-0.5 bg-slate-200 dark:bg-slate-700"></div>
+<div class="bg-white dark:bg-slate-800 rounded-lg p-2.5 shadow-sm border border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="relative">
+<div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-300 font-bold text-xs">
+                                                    JD
+                                                </div>
+<span class="absolute bottom-0 right-0 w-2 h-2 bg-slate-400 border border-white dark:border-slate-800 rounded-full"></span>
+</div>
+<div>
+<h4 class="text-xs font-semibold text-slate-800 dark:text-slate-200">John Doe</h4>
+<p class="text-[10px] text-slate-400">Analyst</p>
+</div>
+</div>
+<span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 text-[9px] font-medium rounded">Offline</span>
+</div>
+</div>
+<!-- Grandchild 2 -->
+<div class="relative">
+<div class="absolute top-1/2 -left-4 w-4 h-0.5 bg-slate-200 dark:bg-slate-700"></div>
+<div class="bg-white dark:bg-slate-800 rounded-lg p-2.5 shadow-sm border border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<img alt="Employee Portrait" class="w-8 h-8 rounded-full object-cover" data-alt="Woman smiling looking at camera" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4tjYcNjIFBVZrI2L6XZfphuNgwPdcuqNzo4cPIieag1BpPpKFaeVZpO1DS6qQs_rKY_C1ikjuVGdrM698-xJiKmDjdR13JRoqKg1ym_WWwr4Z5i5NY9PSXOu-nnqCkEaBvhzPaJb77B_PKD-2xbctGVVNOY9Uocv1Xd2Btsh6-4bFMvoQefLJ4ip55D2HLaEPQHqj5z9RsqXYMmKGgYb3gR4H9PJKoLVePyYc4rg9UsLK3DLdL9bv2dj6FxkTx2ijjhsXujP48UM"/>
+<div>
+<h4 class="text-xs font-semibold text-slate-800 dark:text-slate-200">Emily Chen</h4>
+<p class="text-[10px] text-slate-400">Associate</p>
+</div>
+</div>
+<span class="px-1.5 py-0.5 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-[9px] font-medium rounded">Punched In</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Child 2 -->
+<div class="relative pl-8">
+<!-- Connector Elbow for middle child - simplified to look connected -->
+<div class="absolute top-[-50px] left-[20px] w-6 h-[calc(100%+50px)] border-l-2 border-b-2 border-slate-300 dark:border-slate-700 rounded-bl-xl -z-10"></div>
+<div class="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-slate-200 dark:border-slate-700/50 flex flex-col gap-2 relative group active:scale-[0.98] transition-transform">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Employee Portrait" class="w-10 h-10 rounded-full object-cover grayscale opacity-90" data-alt="Serious woman looking forward" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVg3c-U5HN2LeCLtEKb9IqOJsegfkstbMv4PAF_v44cpP4IheG_XzzPogIkbddbuKSiN76knAUUaDLh91ompI0DP8q2sLcV2Vt___hIXOLx7QE5tr9pcpr3VIYEMtEqPhHxwa_984aXn79qnAYf81Kx9VCP3gVZysdWRCex4V72_dpjbnMBnTTyaylJq5E9RQZT73-iYznuWTO9i2OLJbuxViCK43TAwywEWKbdm3rlJGunBICAmtR9ZWT_VULrbWPpYqTgfKy57Y"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-amber-500 border-2 border-white dark:border-slate-800 rounded-full"></span>
+</div>
+<div>
+<h3 class="text-sm font-semibold text-slate-900 dark:text-white">Anita Roy</h3>
+<p class="text-[11px] text-slate-500 dark:text-slate-400">Team Lead</p>
+</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons-round text-lg">expand_more</span>
+</button>
+</div>
+<!-- Status Badge inline for closed cards -->
+<div class="pl-[52px]">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                                    On Leave
+                                </span>
+</div>
+</div>
+</div>
+<!-- Child 3 -->
+<div class="relative pl-8 pb-4">
+<!-- Connector Elbow for last child -->
+<div class="absolute top-[-50px] left-[20px] w-6 h-[calc(100%+24px)] border-l-2 border-b-2 border-slate-300 dark:border-slate-700 rounded-bl-xl -z-10"></div>
+<!-- Mask to hide the vertical line continuing down past last child -->
+<div class="absolute left-[18px] top-[calc(50%+10px)] bottom-0 w-1 bg-background-light dark:bg-background-dark -z-0"></div>
+<div class="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-slate-200 dark:border-slate-700/50 flex flex-col gap-2 relative group active:scale-[0.98] transition-transform">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="relative">
+<div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-primary font-bold text-sm">
+                                            MC
+                                        </div>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-slate-400 border-2 border-white dark:border-slate-800 rounded-full"></span>
+</div>
+<div>
+<h3 class="text-sm font-semibold text-slate-900 dark:text-white">Marcus Chen</h3>
+<p class="text-[11px] text-slate-500 dark:text-slate-400">Analyst</p>
+</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons-round text-lg">expand_more</span>
+</button>
+</div>
+<div class="pl-[52px]">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                                    Offline • 2h ago
+                                </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="h-12"></div> <!-- Spacer -->
+</main>
+<!-- Floating Action Button -->
+<div class="absolute bottom-6 right-6 z-30">
+<button class="bg-primary hover:bg-blue-600 text-white w-14 h-14 rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95">
+<span class="material-icons-round text-2xl">person_add</span>
+</button>
+</div>
+<!-- Bottom Navigation (Contextual) -->
+<nav class="bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 px-6 py-3 flex justify-between items-center text-xs font-medium text-slate-400 z-20">
+<button class="flex flex-col items-center gap-1 hover:text-primary transition-colors">
+<span class="material-icons-round text-xl">dashboard</span>
+<span>Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-icons-round text-xl">account_tree</span>
+<span>Team</span>
+</button>
+<button class="flex flex-col items-center gap-1 hover:text-primary transition-colors">
+<span class="material-icons-round text-xl">schedule</span>
+<span>Shifts</span>
+</button>
+<button class="flex flex-col items-center gap-1 hover:text-primary transition-colors">
+<span class="material-icons-round text-xl">settings</span>
+<span>Settings</span>
+</button>
+</nav>
+</div>
+</body></html>

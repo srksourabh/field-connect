@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Admin Attendance Report Generator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased min-h-screen pb-10">
+<!-- Mobile Header (iOS Style) -->
+<header class="sticky top-0 z-50 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center justify-between px-4 py-3">
+<button class="p-2 -ml-2 text-primary hover:bg-primary/10 rounded-full transition-colors">
+<span class="material-icons text-2xl">chevron_left</span>
+</button>
+<h1 class="text-lg font-semibold text-center flex-grow pr-8">Attendance Reports</h1>
+<button class="p-2 -mr-2 text-primary hover:bg-primary/10 rounded-full transition-colors">
+<span class="material-icons text-xl">help_outline</span>
+</button>
+</div>
+</header>
+<main class="max-w-md mx-auto px-4 py-6 space-y-6">
+<!-- Report Criteria Section -->
+<section class="space-y-4">
+<h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">Report Criteria</h2>
+<!-- Date Range Card -->
+<div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-100 dark:border-slate-700">
+<div class="flex items-center space-x-2 mb-4">
+<span class="bg-primary/10 p-1.5 rounded-lg text-primary">
+<span class="material-icons text-sm">date_range</span>
+</span>
+<h3 class="font-medium text-slate-900 dark:text-white text-sm">Date Range</h3>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-slate-500 dark:text-slate-400">Start Date</label>
+<div class="relative">
+<input class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-lg text-sm px-3 py-2.5 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white" type="date" value="2023-10-01"/>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-slate-500 dark:text-slate-400">End Date</label>
+<div class="relative">
+<input class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-lg text-sm px-3 py-2.5 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white" type="date" value="2023-10-31"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Filters Card -->
+<div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 space-y-4">
+<div class="flex items-center space-x-2 mb-2">
+<span class="bg-primary/10 p-1.5 rounded-lg text-primary">
+<span class="material-icons text-sm">filter_alt</span>
+</span>
+<h3 class="font-medium text-slate-900 dark:text-white text-sm">Data Filters</h3>
+</div>
+<!-- Project Select -->
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-slate-500 dark:text-slate-400">Project</label>
+<div class="relative">
+<select class="w-full appearance-none bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-lg text-sm px-3 py-2.5 pr-8 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white">
+<option>All Projects</option>
+<option selected="">UDS-POS System Upgrade</option>
+<option>Internal HR Portal</option>
+<option>Legacy Maintenance</option>
+</select>
+<span class="material-icons absolute right-2.5 top-2.5 text-slate-400 text-lg pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Department Select -->
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-slate-500 dark:text-slate-400">Department</label>
+<div class="relative">
+<select class="w-full appearance-none bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-lg text-sm px-3 py-2.5 pr-8 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white">
+<option>All Departments</option>
+<option>Engineering</option>
+<option>Human Resources</option>
+<option selected="">Sales &amp; Marketing</option>
+</select>
+<span class="material-icons absolute right-2.5 top-2.5 text-slate-400 text-lg pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Employee Multi-select Simulation -->
+<div class="space-y-1.5">
+<label class="text-xs font-medium text-slate-500 dark:text-slate-400">Employee(s)</label>
+<div class="relative cursor-pointer group">
+<div class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-lg text-sm px-3 py-2.5 flex items-center justify-between group-hover:border-primary/50 transition-colors">
+<span class="text-slate-500 dark:text-slate-400">Select employees...</span>
+<span class="material-icons text-slate-400 text-lg">search</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 pt-1">
+<span class="inline-flex items-center px-2 py-1 rounded bg-primary/10 text-primary text-xs font-medium border border-primary/20">
+                            John Doe
+                            <button class="ml-1 hover:text-red-500"><span class="material-icons text-[14px]">close</span></button>
+</span>
+<span class="inline-flex items-center px-2 py-1 rounded bg-primary/10 text-primary text-xs font-medium border border-primary/20">
+                            Jane Smith
+                            <button class="ml-1 hover:text-red-500"><span class="material-icons text-[14px]">close</span></button>
+</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Action Buttons -->
+<section class="grid grid-cols-2 gap-3 pt-2">
+<button class="flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border border-primary text-primary bg-white dark:bg-transparent hover:bg-primary/5 active:bg-primary/10 transition-all font-medium text-sm">
+<span class="material-icons text-lg">visibility</span>
+<span>Preview</span>
+</button>
+<button class="flex items-center justify-center space-x-2 px-4 py-3 rounded-lg bg-primary text-white hover:bg-blue-600 active:bg-blue-700 shadow-lg shadow-primary/20 transition-all font-medium text-sm">
+<span class="material-icons text-lg">download</span>
+<span>Download CSV</span>
+</button>
+</section>
+<!-- Data Preview Section -->
+<section class="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-4">
+<div class="flex items-center justify-between px-1">
+<h2 class="text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-2">
+                    Data Preview
+                    <span class="text-xs font-normal text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">5 of 124</span>
+</h2>
+<button class="text-xs text-primary font-medium hover:underline">View All</button>
+</div>
+<!-- Scrollable Table Card -->
+<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+<div class="overflow-x-auto no-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+<th class="p-3 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap pl-4">ID</th>
+<th class="p-3 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Employee</th>
+<th class="p-3 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Date</th>
+<th class="p-3 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap text-right">Hrs</th>
+<th class="p-3 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap text-right">Dist. (KM)</th>
+<th class="p-3 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap text-center pr-4">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+<!-- Row 1 -->
+<tr class="group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+<td class="p-3 pl-4 text-xs font-medium text-slate-400 dark:text-slate-500 font-mono">#E001</td>
+<td class="p-3 text-sm font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">
+<img alt="John Doe Portrait" class="w-full h-full object-cover" data-alt="Small avatar of John Doe" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzcAzBpHjEEtzkclM-g6MNI3EE140GUvjeFzAq2kurTdwdL4kGcU2dwEr1PN1QeXfTEBuDjlFZoh4syIxDQqYSW1b2PoxRcP1ZsWuqWp7nEIKgxJ8uoCjgYJuQ1XjSBcvi9F7nHRRsnnSqwuR48B1o7sRY8fQPN2hUP6r2rGP34LDDu-L8LDKGUrl2Cps5cI12a8scoapk2oKkpJAPE5pxwuPiC20t1S6oprjKENQVL7jkAfUKHBzoYTZxImBSY2inmM2NR4cHrE8"/>
+</div>
+                                        John Doe
+                                    </div>
+</td>
+<td class="p-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">Oct 24</td>
+<td class="p-3 text-sm font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap text-right font-mono">8.5</td>
+<td class="p-3 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap text-right font-mono">12.4</td>
+<td class="p-3 text-center pr-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                        Present
+                                    </span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+<td class="p-3 pl-4 text-xs font-medium text-slate-400 dark:text-slate-500 font-mono">#E042</td>
+<td class="p-3 text-sm font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">
+<img alt="Sarah Connor Portrait" class="w-full h-full object-cover" data-alt="Small avatar of Sarah Connor" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-K6noTo9pR0QLU9b7v2-lZwlrpIs6MVJmXgY9JtVl3OjbRxfzrYbB8I5814mBDxUU4lr15hfHLI4V4yX6qYTFCRy4wMmL5T_oY-c8MMwIO1BVqWyRoqWnlMEroAp1o-2ajTMxYLF6CUE_WJ2iUQlswqGUlEBPE3x_3444UETZizxqDRCUgUOXNX9qma6-WrKa_bhhj9062fi-a2ds4uTBgzvj7gVLJHt1uUTuCMw2Yqu4C-QJ2pRX7YUf9xr7wqd77apxFttC6Jw"/>
+</div>
+                                        Sarah C.
+                                    </div>
+</td>
+<td class="p-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">Oct 24</td>
+<td class="p-3 text-sm font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap text-right font-mono">9.2</td>
+<td class="p-3 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap text-right font-mono">4.1</td>
+<td class="p-3 text-center pr-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                        Present
+                                    </span>
+</td>
+</tr>
+<!-- Row 3 (Absent) -->
+<tr class="group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+<td class="p-3 pl-4 text-xs font-medium text-slate-400 dark:text-slate-500 font-mono">#E015</td>
+<td class="p-3 text-sm font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                                            MK
+                                        </div>
+                                        Mike K.
+                                    </div>
+</td>
+<td class="p-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">Oct 24</td>
+<td class="p-3 text-sm font-medium text-slate-400 dark:text-slate-500 whitespace-nowrap text-right font-mono">-</td>
+<td class="p-3 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap text-right font-mono">-</td>
+<td class="p-3 text-center pr-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400">
+                                        Absent
+                                    </span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+<td class="p-3 pl-4 text-xs font-medium text-slate-400 dark:text-slate-500 font-mono">#E088</td>
+<td class="p-3 text-sm font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">
+<img alt="Alex Turner Portrait" class="w-full h-full object-cover" data-alt="Small avatar of Alex Turner" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAL53NTdaSwXipEtJtdNfLe2esL6CtTaUJFsP1oJWiuvYjgp7v9T5R0N7AU-kGpFDNId4h7Jj4fz0CqZwFWf0qBAMKs7MOTKrHRmh9PGR74K-Pzl_18n0s63Qk0F6jv189a_xw34sqCVmSym4Brl9Yz4tyM3ExM9hxKAkdlCw6QSnpjbRK57qBQDz1Y6FewrJQiezqE404Zwh-JSPqjOUMSoo_Eh6IswS843QdK9GBv1nu09ffSmdgdVzS5wg34-Cz6N4nFxQmKbVs"/>
+</div>
+                                        Alex T.
+                                    </div>
+</td>
+<td class="p-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">Oct 23</td>
+<td class="p-3 text-sm font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap text-right font-mono">7.8</td>
+<td class="p-3 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap text-right font-mono">22.0</td>
+<td class="p-3 text-center pr-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                        Present
+                                    </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer Fade -->
+<div class="p-2 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-center text-xs text-slate-400 dark:text-slate-500">
+                    Scroll horizontally to view more columns
+                </div>
+</div>
+</section>
+</main>
+<!-- Map overlay for visual context (blurred background element, not interactive) -->
+<div class="fixed top-0 left-0 w-full h-full -z-10 opacity-5 pointer-events-none overflow-hidden">
+<div class="absolute top-1/4 -right-20 w-80 h-80 bg-primary rounded-full blur-[100px]"></div>
+<div class="absolute bottom-1/4 -left-20 w-80 h-80 bg-blue-400 rounded-full blur-[100px]"></div>
+</div>
+</body></html>
