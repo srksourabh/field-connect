@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import type { User, Session } from "@supabase/supabase-js";
 import type { HrProfile } from "@/lib/database.types";
+import { cacheSet, cacheGet } from "@/lib/offline-cache";
 
 interface AuthContextType {
   user: User | null;
@@ -42,12 +43,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from("hr_profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    setProfile(data);
+    // Restore cached profile immediately for offline/instant display
+    const cached = cacheGet<HrProfile>(userId, "profile");
+    if (cached) setProfile(cached.data);
+
+    try {
+      const { data } = await supabase
+        .from("hr_profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      if (data) {
+        setProfile(data);
+        cacheSet(userId, "profile", data);
+      }
+    } catch {
+      // Offline — cached profile (if any) is already set above
+    }
   }, []);
 
   useEffect(() => {

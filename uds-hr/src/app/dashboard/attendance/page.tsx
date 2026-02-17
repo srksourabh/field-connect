@@ -8,6 +8,7 @@ import DaySummary from "@/components/attendance/DaySummary";
 import AttendanceTimeline from "@/components/attendance/AttendanceTimeline";
 import { useAuth } from "@/lib/auth";
 import { getAttendanceByMonth } from "@/lib/attendance-api";
+import { cacheSet, cacheGet } from "@/lib/offline-cache";
 import type { HrAttendance } from "@/lib/database.types";
 import { formatTime, toISTDateStr } from "@/lib/utils";
 
@@ -16,13 +17,31 @@ export default function AttendancePage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [records, setRecords] = useState<HrAttendance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cachedAt, setCachedAt] = useState<number | null>(null);
 
   const fetchMonth = useCallback(
     async (year: number, month: number) => {
       if (!user) return;
       setLoading(true);
-      const data = await getAttendanceByMonth(user.id, year, month);
-      setRecords(data);
+      setCachedAt(null);
+
+      // Restore cached data immediately
+      const cacheKey = `attendance_${year}_${month}`;
+      const cached = cacheGet<HrAttendance[]>(user.id, cacheKey);
+      if (cached) {
+        setRecords(cached.data);
+        setCachedAt(cached.updatedAt);
+        setLoading(false);
+      }
+
+      try {
+        const data = await getAttendanceByMonth(user.id, year, month);
+        setRecords(data);
+        cacheSet(user.id, cacheKey, data);
+        setCachedAt(null); // Fresh data — no need to show timestamp
+      } catch {
+        // Offline — cached data already loaded above
+      }
       setLoading(false);
     },
     [user]
@@ -123,6 +142,13 @@ export default function AttendancePage() {
         onSelectDate={setSelectedDate}
         onMonthChange={handleMonthChange}
       />
+
+      {/* Cached data indicator */}
+      {cachedAt && (
+        <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-1">
+          Last updated: {new Date(cachedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}
+        </p>
+      )}
 
       {/* Day Summary & Timeline */}
       <div className="p-6">

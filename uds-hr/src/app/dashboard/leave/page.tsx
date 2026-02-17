@@ -10,30 +10,55 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { createNotification } from "@/lib/notification-api";
 import { getUserLeaveRequests } from "@/lib/leave-api";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { addToQueue } from "@/lib/sync-queue";
+import { cacheSet, cacheGet } from "@/lib/offline-cache";
 import type { HrLeaveBalance, HrLeaveRequest } from "@/lib/database.types";
 
 export default function LeavePage() {
   const { user, profile } = useAuth();
+  const isOnline = useOnlineStatus();
   const [balance, setBalance] = useState<HrLeaveBalance | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [leaveHistory, setLeaveHistory] = useState<HrLeaveRequest[]>([]);
 
+  // Restore cached data immediately for offline/instant display
+  useEffect(() => {
+    if (!user) return;
+    const cachedBalance = cacheGet<HrLeaveBalance>(user.id, "leave_balance_full");
+    if (cachedBalance) setBalance(cachedBalance.data);
+    const cachedHistory = cacheGet<HrLeaveRequest[]>(user.id, "leave_history");
+    if (cachedHistory) setLeaveHistory(cachedHistory.data);
+  }, [user]);
+
   const fetchBalance = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("hr_leave_balances")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("year", new Date().getFullYear())
-      .single();
-    setBalance(data);
+    try {
+      const { data } = await supabase
+        .from("hr_leave_balances")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("year", new Date().getFullYear())
+        .single();
+      if (data) {
+        setBalance(data);
+        cacheSet(user.id, "leave_balance_full", data);
+      }
+    } catch {
+      // Offline — cached data already loaded
+    }
   }, [user]);
 
   const fetchHistory = useCallback(async () => {
     if (!user) return;
-    const requests = await getUserLeaveRequests(user.id);
-    setLeaveHistory(requests);
+    try {
+      const requests = await getUserLeaveRequests(user.id);
+      setLeaveHistory(requests);
+      cacheSet(user.id, "leave_history", requests);
+    } catch {
+      // Offline — cached data already loaded
+    }
   }, [user]);
 
   useEffect(() => {
@@ -48,46 +73,64 @@ export default function LeavePage() {
     reason: string;
     attachmentUrl: string | null;
   }) => {
-    if (!user || !balance) return;
+    if (!user) return;
 
     setSubmitting(true);
     setSuccess(false);
 
-    // Calculate days
-    const start = new Date(data.startDate);
-    const end = new Date(data.endDate);
-    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-    // Check balance — compoff columns don't have "_leave_" prefix
     const typeKey = data.type as "sick" | "casual" | "compoff" | "privilege";
-    const totalKeyMap: Record<string, string> = {
-      sick: "sick_leave_total", casual: "casual_leave_total",
-      privilege: "privilege_leave_total", compoff: "compoff_total",
-    };
-    const usedKeyMap: Record<string, string> = {
-      sick: "sick_leave_used", casual: "casual_leave_used",
-      privilege: "privilege_leave_used", compoff: "compoff_used",
-    };
-    const totalKey = (totalKeyMap[typeKey] || `${typeKey}_leave_total`) as keyof HrLeaveBalance;
-    const usedKey = (usedKeyMap[typeKey] || `${typeKey}_leave_used`) as keyof HrLeaveBalance;
-    const remaining = (balance[totalKey] as number) - (balance[usedKey] as number);
-
-    if (days > remaining) {
-      alert(`Not enough ${data.type} leave. You have ${remaining} day(s) remaining.`);
-      setSubmitting(false);
-      return;
-    }
-
-    // Create leave request
-    const { error: reqError } = await supabase.from("hr_leave_requests").insert({
+    const insertPayload = {
       user_id: user.id,
       type: typeKey,
       start_date: data.startDate,
       end_date: data.endDate,
       reason: data.reason || null,
       attachment_url: data.attachmentUrl || null,
-      status: "pending",
-    });
+      status: "pending" as const,
+    };
+
+    // Calculate days
+    const start = new Date(data.startDate);
+    const end = new Date(data.endDate);
+    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    if (!isOnline) {
+      // Queue for sync when back online — skip balance check (validated server-side on approval)
+      addToQueue({
+        id: crypto.randomUUID(),
+        type: "leave_request",
+        payload: insertPayload,
+        timestamp: new Date().toISOString(),
+      });
+      setSubmitting(false);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+      return;
+    }
+
+    // Online path — validate balance
+    if (balance) {
+      const totalKeyMap: Record<string, string> = {
+        sick: "sick_leave_total", casual: "casual_leave_total",
+        privilege: "privilege_leave_total", compoff: "compoff_total",
+      };
+      const usedKeyMap: Record<string, string> = {
+        sick: "sick_leave_used", casual: "casual_leave_used",
+        privilege: "privilege_leave_used", compoff: "compoff_used",
+      };
+      const totalKey = (totalKeyMap[typeKey] || `${typeKey}_leave_total`) as keyof HrLeaveBalance;
+      const usedKey = (usedKeyMap[typeKey] || `${typeKey}_leave_used`) as keyof HrLeaveBalance;
+      const remaining = (balance[totalKey] as number) - (balance[usedKey] as number);
+
+      if (days > remaining) {
+        alert(`Not enough ${data.type} leave. You have ${remaining} day(s) remaining.`);
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    // Create leave request
+    const { error: reqError } = await supabase.from("hr_leave_requests").insert(insertPayload);
 
     if (reqError) {
       alert("Failed to submit: " + reqError.message);

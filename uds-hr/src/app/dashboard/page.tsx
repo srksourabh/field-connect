@@ -14,6 +14,7 @@ import { useSyncQueue } from "@/hooks/useSyncQueue";
 import { useLocationTracker } from "@/hooks/useLocationTracker";
 import { MapPin, FileText } from "lucide-react";
 import { addToQueue } from "@/lib/sync-queue";
+import { cacheSet, cacheGet } from "@/lib/offline-cache";
 import { createPunchIn, updatePunchOut, getTodayAllSessions, closeStaleSession } from "@/lib/attendance-api";
 import { todayIST, toISTDateStr } from "@/lib/utils";
 import { insertLocationLog, getTodayLocationLogs, computeTotalDistanceKm } from "@/lib/location-api";
@@ -86,6 +87,10 @@ export default function DashboardHome() {
     setLeaveInfo(null);
     setLastPunchLocation(null);
 
+    // Restore cached leave info immediately for offline/instant display
+    const cachedLeave = cacheGet<LeaveInfo>(userId, "leave_balance_dashboard");
+    if (cachedLeave) setLeaveInfo(cachedLeave.data);
+
     (async () => {
       let sessions = await getTodayAllSessions(userId);
       let openSession = sessions.find((s) => !s.punch_out_at) ?? null;
@@ -123,12 +128,14 @@ export default function DashboardHome() {
         getPendingLeaveCount(userId),
       ]);
       if (balance) {
-        setLeaveInfo({
+        const info: LeaveInfo = {
           sickRemaining: balance.sick_total - balance.sick_used,
           casualRemaining: balance.casual_total - balance.casual_used,
           privilegeRemaining: balance.privilege_total - balance.privilege_used,
           pending,
-        });
+        };
+        setLeaveInfo(info);
+        cacheSet(userId, "leave_balance_dashboard", info);
       }
     })();
   }, [userId, initFromServer]);
