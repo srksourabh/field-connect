@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Eye, EyeOff, Phone, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import PWAInstallPrompt from "@/components/ui/PWAInstallPrompt";
 
 const SLIDES = [
   "/login-bg/slide-1.webp",
@@ -190,6 +191,9 @@ export default function LoginPage() {
             </form>
           </div>
         </div>
+
+        {/* PWA Install Prompt */}
+        <PWAInstallPrompt variant="overlay" />
 
         {/* Bottom — Slide caption + dots */}
         <div className="text-center pb-4">

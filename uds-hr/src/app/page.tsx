@@ -19,6 +19,7 @@ import {
   ChevronRight,
   ArrowRight,
 } from "lucide-react";
+import PWAInstallPrompt from "@/components/ui/PWAInstallPrompt";
 
 /* ── Hero Slides ── */
 const heroSlides = [
@@ -449,6 +450,9 @@ export default function LandingPage() {
           </Link>
         </div>
       </section>
+
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt variant="inline" />
 
       {/* ── Footer ── */}
       <footer className="border-t border-gray-100 bg-white">
