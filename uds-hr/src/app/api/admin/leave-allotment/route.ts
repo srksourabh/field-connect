@@ -63,6 +63,7 @@ export async function POST(request: Request) {
   const year = body.year || new Date().getFullYear();
   const sickTotal = body.sick_total ?? 5;
   const casualTotal = body.casual_total ?? 10;
+  const privilegeTotal = body.privilege_total ?? 15;
 
   // Get all employees
   const { data: employees } = await supabaseAdmin
@@ -93,6 +94,8 @@ export async function POST(request: Request) {
     casual_leave_used: 0,
     compoff_total: 0,
     compoff_used: 0,
+    privilege_leave_total: privilegeTotal,
+    privilege_leave_used: 0,
   }));
 
   const { error } = await supabaseAdmin
@@ -122,6 +125,7 @@ export async function PATCH(request: Request) {
     "sick_leave_total", "sick_leave_used",
     "casual_leave_total", "casual_leave_used",
     "compoff_total", "compoff_used",
+    "privilege_leave_total", "privilege_leave_used",
   ];
 
   const filtered: Record<string, number> = {};

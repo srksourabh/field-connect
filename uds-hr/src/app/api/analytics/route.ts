@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     .eq("id", user.id)
     .single();
 
-  if (!profile || (profile.role !== "admin" && profile.role !== "manager")) {
+  if (!profile || (profile.role !== "admin" && profile.role !== "manager" && profile.role !== "super_admin")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -42,9 +42,10 @@ export async function GET(request: Request) {
     endDate = now;
   }
 
-  const startStr = startDate.toISOString();
-  const endStr = endDate.toISOString();
-  const today = new Date().toISOString().split("T")[0];
+  const pad2 = (n: number) => n.toString().padStart(2, "0");
+  const startStr = `${startDate.getFullYear()}-${pad2(startDate.getMonth() + 1)}-${pad2(startDate.getDate())}T00:00:00+05:30`;
+  const endStr = `${endDate.getFullYear()}-${pad2(endDate.getMonth() + 1)}-${pad2(endDate.getDate())}T23:59:59+05:30`;
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
   // Get employees scoped by role
   let employeesQuery = supabaseAdmin
@@ -54,6 +55,7 @@ export async function GET(request: Request) {
   if (profile.role === "manager") {
     employeesQuery = employeesQuery.eq("reporting_manager_id", user.id);
   }
+  // admin and super_admin see all employees (no filter)
 
   const { data: employees } = await employeesQuery;
   if (!employees || employees.length === 0) {

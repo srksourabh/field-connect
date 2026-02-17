@@ -153,7 +153,7 @@ export async function closeStaleSession(
 
   const { data, error } = await supabase
     .from("hr_attendance")
-    .update({ punch_out_at: autoCloseTimestamp })
+    .update({ punch_out_at: autoCloseTimestamp, status: "half-day" })
     .eq("id", session.id)
     .is("punch_out_at", null)
     .select()

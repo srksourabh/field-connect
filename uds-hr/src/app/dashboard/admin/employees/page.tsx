@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, UserPlus, Loader2, Check } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+
+interface ManagerOption {
+  id: string;
+  full_name: string;
+}
 
 export default function AddEmployeePage() {
   const { profile, session } = useAuth();
@@ -14,8 +20,22 @@ export default function AddEmployeePage() {
   const [department, setDepartment] = useState("");
   const [project, setProject] = useState("in-house");
   const [role, setRole] = useState("employee");
+  const [reportingManagerId, setReportingManagerId] = useState("");
+  const [managers, setManagers] = useState<ManagerOption[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    async function fetchManagers() {
+      const { data } = await supabase
+        .from("hr_profiles")
+        .select("id, full_name")
+        .in("role", ["manager", "admin", "super_admin"])
+        .order("full_name");
+      setManagers(data || []);
+    }
+    fetchManagers();
+  }, []);
 
   if (profile && !["admin", "super_admin"].includes(profile.role)) {
     return (
@@ -39,7 +59,7 @@ export default function AddEmployeePage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ fullName, email, phone, designation, department, project, role }),
+        body: JSON.stringify({ fullName, email, phone, designation, department, project, role, reportingManagerId: reportingManagerId || null }),
       });
       const data = await res.json();
 
@@ -51,6 +71,7 @@ export default function AddEmployeePage() {
         setDepartment("");
         setProject("in-house");
         setRole("employee");
+        setReportingManagerId("");
       } else {
         setResult({ type: "error", text: data.error || "Failed to add employee." });
       }
@@ -161,6 +182,20 @@ export default function AddEmployeePage() {
               <option value="admin">Admin</option>
             </select>
           </div>
+        </div>
+
+        <div>
+          <label className="text-xs font-medium text-gray-500 mb-1.5 block">Reporting Manager</label>
+          <select
+            value={reportingManagerId}
+            onChange={(e) => setReportingManagerId(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            <option value="">None</option>
+            {managers.map((m) => (
+              <option key={m.id} value={m.id}>{m.full_name}</option>
+            ))}
+          </select>
         </div>
 
         <p className="text-xs text-gray-400">

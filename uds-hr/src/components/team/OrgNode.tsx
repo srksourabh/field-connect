@@ -9,6 +9,7 @@ interface OrgNodeData {
   name: string;
   designation: string;
   avatar?: string;
+  phone?: string;
   status: "online" | "away" | "offline";
   children?: OrgNodeData[];
 }
@@ -83,18 +84,34 @@ export default function OrgNode({ node, isRoot = false, onSelect }: OrgNodeProps
         </div>
         {/* Action buttons */}
         <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-          <button
-            onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
-          >
-            <Phone className="w-3.5 h-3.5 text-primary" />
-          </button>
-          <button
-            onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
-          >
-            <MessageCircle className="w-3.5 h-3.5 text-primary" />
-          </button>
+          {node.phone ? (
+            <a
+              href={`tel:${node.phone}`}
+              onClick={(e) => e.stopPropagation()}
+              className="p-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+            >
+              <Phone className="w-3.5 h-3.5 text-primary" />
+            </a>
+          ) : (
+            <span className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-50">
+              <Phone className="w-3.5 h-3.5 text-gray-400" />
+            </span>
+          )}
+          {node.phone ? (
+            <a
+              href={`https://wa.me/91${node.phone.replace(/\D/g, "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="p-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+            >
+              <MessageCircle className="w-3.5 h-3.5 text-primary" />
+            </a>
+          ) : (
+            <span className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-50">
+              <MessageCircle className="w-3.5 h-3.5 text-gray-400" />
+            </span>
+          )}
           {hasChildren && (
             <span className="ml-auto text-xs text-gray-400">
               {node.children!.length} report{node.children!.length > 1 ? "s" : ""}

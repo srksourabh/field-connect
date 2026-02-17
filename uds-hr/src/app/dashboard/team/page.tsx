@@ -106,6 +106,7 @@ export default function TeamPage() {
             id: profile.id,
             name: profile.full_name,
             designation: profile.designation || "Employee",
+            phone: profile.phone || undefined,
             status: "offline",
             children: children.length > 0 ? children.map(buildNode) : undefined,
           };

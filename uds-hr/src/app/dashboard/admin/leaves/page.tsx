@@ -184,7 +184,7 @@ export default function LeaveAllotmentPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ year, sick_total: 5, casual_total: 10 }),
+        body: JSON.stringify({ year, sick_total: 5, casual_total: 10, privilege_total: 15 }),
       });
       const data = await res.json();
       setMessage({ type: "success", text: data.message });

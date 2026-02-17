@@ -2,13 +2,15 @@
 
 import StatusBadge from "@/components/ui/StatusBadge";
 
+type ReportStatus = "present" | "absent" | "late" | "half-day" | "on-leave" | "holiday" | "lwp";
+
 interface ReportRow {
   name: string;
   date: string;
   punchIn: string;
   punchOut: string;
   hours: string;
-  status: "present" | "absent" | "late";
+  status: ReportStatus;
 }
 
 interface DataPreviewTableProps {
@@ -16,10 +18,14 @@ interface DataPreviewTableProps {
   total: number;
 }
 
-const statusVariant = {
-  present: "success" as const,
-  absent: "error" as const,
-  late: "warning" as const,
+const statusVariant: Record<ReportStatus, "success" | "error" | "warning" | "info"> = {
+  present: "success",
+  absent: "error",
+  late: "warning",
+  "half-day": "warning",
+  "on-leave": "info",
+  holiday: "info",
+  lwp: "error",
 };
 
 export default function DataPreviewTable({ rows, total }: DataPreviewTableProps) {
@@ -55,8 +61,8 @@ export default function DataPreviewTable({ rows, total }: DataPreviewTableProps)
                 <td className="py-3 px-4 whitespace-nowrap">{row.punchOut}</td>
                 <td className="py-3 px-4 whitespace-nowrap">{row.hours}</td>
                 <td className="py-3 px-4">
-                  <StatusBadge variant={statusVariant[row.status]}>
-                    {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
+                  <StatusBadge variant={statusVariant[row.status] || "neutral"}>
+                    {row.status.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join("-")}
                   </StatusBadge>
                 </td>
               </tr>

@@ -45,7 +45,7 @@ export async function GET(request: Request) {
   }
 
   const employeeIds = employees.map((e) => e.id);
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
   // Get today's attendance for all employees
   const { data: attendance } = await supabaseAdmin

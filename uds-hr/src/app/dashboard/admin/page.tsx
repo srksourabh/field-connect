@@ -19,6 +19,11 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import type { HrProfile } from "@/lib/database.types";
 
+interface ManagerOption {
+  id: string;
+  full_name: string;
+}
+
 export default function EmployeeManagementPage() {
   const { user, profile, session } = useAuth();
   const [profiles, setProfiles] = useState<HrProfile[]>([]);
@@ -29,6 +34,7 @@ export default function EmployeeManagementPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
+  const [managers, setManagers] = useState<ManagerOption[]>([]);
 
   const isUniversal =
     profile?.role === "super_admin" ||
@@ -55,6 +61,18 @@ export default function EmployeeManagementPage() {
   useEffect(() => {
     if (profile) fetchProfiles();
   }, [profile, fetchProfiles]);
+
+  useEffect(() => {
+    async function fetchManagers() {
+      const { data } = await supabase
+        .from("hr_profiles")
+        .select("id, full_name")
+        .in("role", ["manager", "admin", "super_admin"])
+        .order("full_name");
+      setManagers(data || []);
+    }
+    fetchManagers();
+  }, []);
 
   const filteredProfiles = useMemo(() => {
     let result = profiles;
@@ -88,6 +106,7 @@ export default function EmployeeManagementPage() {
   const counts = useMemo(() => {
     const active = profiles.filter((p) => !p.deactivated_at);
     return {
+      total: active.length,
       admins: active.filter((p) => p.role === "admin" || p.role === "super_admin").length,
       managers: active.filter((p) => p.role === "manager").length,
       employees: active.filter((p) => p.role === "employee").length,
@@ -149,6 +168,7 @@ export default function EmployeeManagementPage() {
       department: p.department || "",
       project_id: p.project_id || "",
       role: p.role,
+      reporting_manager_id: p.reporting_manager_id || "",
     });
   };
 
@@ -238,7 +258,10 @@ export default function EmployeeManagementPage() {
       </header>
 
       {/* Count badges */}
-      <div className="px-6 pt-4 flex gap-3 text-xs">
+      <div className="px-6 pt-4 flex gap-3 text-xs flex-wrap">
+        <span className="px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">
+          {counts.total} active
+        </span>
         <span className="px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium">
           {counts.admins} admins
         </span>
@@ -378,6 +401,16 @@ export default function EmployeeManagementPage() {
                             <option key={r} value={r}>
                               {r}
                             </option>
+                          ))}
+                        </select>
+                        <select
+                          value={editValues.reporting_manager_id}
+                          onChange={(e) => setEditValues((v) => ({ ...v, reporting_manager_id: e.target.value }))}
+                          className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm col-span-2"
+                        >
+                          <option value="">No Manager</option>
+                          {managers.map((m) => (
+                            <option key={m.id} value={m.id}>{m.full_name}</option>
                           ))}
                         </select>
                       </div>

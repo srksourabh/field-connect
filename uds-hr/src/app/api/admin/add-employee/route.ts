@@ -6,7 +6,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { fullName, email, phone, designation, department, project, role } = body;
+  const { fullName, email, phone, designation, department, project, role, reportingManagerId } = body;
 
   if (!fullName || !email || !phone) {
     return NextResponse.json(
@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
     department: department || null,
     project_id: effectiveProject,
     role: role || "employee",
+    reporting_manager_id: reportingManagerId || null,
   });
 
   if (profileError) {
