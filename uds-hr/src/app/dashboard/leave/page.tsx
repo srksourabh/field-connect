@@ -9,7 +9,7 @@ import LeaveHistoryList from "@/components/leave/LeaveHistoryList";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { createNotification } from "@/lib/notification-api";
-import { getUserLeaveRequests } from "@/lib/leave-api";
+import { getUserLeaveRequests, withdrawLeaveRequest } from "@/lib/leave-api";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { addToQueue } from "@/lib/sync-queue";
 import { cacheSet, cacheGet } from "@/lib/offline-cache";
@@ -188,7 +188,17 @@ export default function LeavePage() {
           privilegeEnabled={(balance?.privilege_leave_total ?? 0) > 0}
         />
 
-        <LeaveHistoryList requests={leaveHistory} />
+        <LeaveHistoryList
+          requests={leaveHistory}
+          onWithdraw={async (requestId) => {
+            if (!user) return;
+            const ok = await withdrawLeaveRequest(requestId, user.id);
+            if (ok) {
+              await fetchHistory();
+              await fetchBalance();
+            }
+          }}
+        />
       </div>
     </div>
   );

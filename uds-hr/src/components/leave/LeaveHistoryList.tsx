@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { Undo2 } from "lucide-react";
 import type { HrLeaveRequest } from "@/lib/database.types";
 
 const typeLabels: Record<string, string> = {
@@ -20,6 +22,7 @@ const statusBadge: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
   approved: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
   rejected: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+  withdrawn: "bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400",
 };
 
 function formatDate(dateStr: string) {
@@ -37,21 +40,31 @@ function calcDays(start: string, end: string) {
 
 interface LeaveHistoryListProps {
   requests: HrLeaveRequest[];
+  onWithdraw?: (requestId: string) => Promise<void>;
 }
 
-export default function LeaveHistoryList({ requests }: LeaveHistoryListProps) {
+export default function LeaveHistoryList({ requests, onWithdraw }: LeaveHistoryListProps) {
+  const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
+
   if (requests.length === 0) {
     return (
       <div className="px-6 py-8 text-center text-sm text-gray-400">
-        No leave requests yet
+        No leave applications yet
       </div>
     );
   }
 
+  const handleWithdraw = async (id: string) => {
+    if (!onWithdraw || !confirm("Withdraw this leave request?")) return;
+    setWithdrawingId(id);
+    await onWithdraw(id);
+    setWithdrawingId(null);
+  };
+
   return (
     <section className="px-6 pb-8">
       <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">
-        Leave History
+        Application History
       </h2>
       <div className="space-y-3">
         {requests.map((req) => {
@@ -79,6 +92,16 @@ export default function LeaveHistoryList({ requests }: LeaveHistoryListProps) {
                   {days} day{days > 1 ? "s" : ""}
                   {req.reason ? ` \u2022 ${req.reason}` : ""}
                 </span>
+                {req.status === "pending" && onWithdraw && (
+                  <button
+                    onClick={() => handleWithdraw(req.id)}
+                    disabled={withdrawingId === req.id}
+                    className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 font-medium disabled:opacity-50"
+                  >
+                    <Undo2 className="w-3.5 h-3.5" />
+                    {withdrawingId === req.id ? "Withdrawing..." : "Withdraw"}
+                  </button>
+                )}
               </div>
               {req.reviewer_comment && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic border-t border-gray-100 dark:border-gray-700 pt-2">

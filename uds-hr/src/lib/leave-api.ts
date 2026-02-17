@@ -242,6 +242,56 @@ export async function getPendingLeaveCount(userId: string): Promise<number> {
   return count ?? 0;
 }
 
+export async function withdrawLeaveRequest(
+  requestId: string,
+  userId: string
+): Promise<boolean> {
+  // 1. Get the request to verify ownership and get manager info
+  const { data: request, error: fetchError } = await supabase
+    .from("hr_leave_requests")
+    .select()
+    .eq("id", requestId)
+    .eq("user_id", userId)
+    .eq("status", "pending")
+    .single();
+
+  if (fetchError || !request) {
+    console.error("Fetch leave request for withdraw error:", fetchError);
+    return false;
+  }
+
+  // 2. Update status to withdrawn
+  const { error } = await supabase
+    .from("hr_leave_requests")
+    .update({ status: "withdrawn" })
+    .eq("id", requestId);
+
+  if (error) {
+    console.error("Withdraw leave error:", error);
+    return false;
+  }
+
+  // 3. Notify reporting manager
+  const { data: profile } = await supabase
+    .from("hr_profiles")
+    .select("full_name, reporting_manager_id")
+    .eq("id", userId)
+    .single();
+
+  if (profile?.reporting_manager_id) {
+    await createNotification({
+      user_id: profile.reporting_manager_id,
+      title: "Leave Request Withdrawn",
+      body: `${profile.full_name} withdrew their ${request.type} leave request from ${request.start_date} to ${request.end_date}.`,
+      type: "leave_withdrawn",
+      reference_id: requestId,
+      reference_type: "leave_request",
+    });
+  }
+
+  return true;
+}
+
 export async function getUserLeaveRequests(
   userId: string
 ): Promise<HrLeaveRequest[]> {

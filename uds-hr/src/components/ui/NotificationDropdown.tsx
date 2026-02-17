@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, CheckCheck, Mail, MailOpen, FileCheck, FileX, AlertCircle, Megaphone } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import {
@@ -33,8 +34,19 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
+const typeRoute: Record<string, string> = {
+  leave_request: "/dashboard/team/approvals",
+  leave_approved: "/dashboard/leave",
+  leave_rejected: "/dashboard/leave",
+  leave_withdrawn: "/dashboard/team/approvals",
+  rectification_request: "/dashboard/team/approvals",
+  rectification_approved: "/dashboard/attendance",
+  rectification_rejected: "/dashboard/attendance",
+};
+
 export default function NotificationDropdown() {
   const { user } = useAuth();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<HrNotification[]>([]);
   const [unread, setUnread] = useState(0);
@@ -75,6 +87,12 @@ export default function NotificationDropdown() {
       setNotifications((prev) =>
         prev.map((item) => (item.id === n.id ? { ...item, is_read: true } : item))
       );
+    }
+    // Navigate to relevant page
+    const route = typeRoute[n.type];
+    if (route) {
+      setOpen(false);
+      router.push(route);
     }
   };
 

@@ -18,6 +18,7 @@ interface TodayActivityGridProps {
   distanceKm?: number;
   leaveInfo?: LeaveInfo | null;
   sessionCount?: number;
+  onKmClick?: () => void;
 }
 
 export default function TodayActivityGrid({
@@ -26,6 +27,7 @@ export default function TodayActivityGrid({
   distanceKm = 0,
   leaveInfo,
   sessionCount = 0,
+  onKmClick,
 }: TodayActivityGridProps) {
   const router = useRouter();
   const punchInDate = punchInTime ? new Date(punchInTime) : null;
@@ -82,6 +84,7 @@ export default function TodayActivityGrid({
       label: "KM Today",
       value: distanceKm > 0 ? distanceKm.toFixed(1) : "0",
       suffix: "km",
+      onClick: onKmClick,
     },
     {
       icon: Repeat,

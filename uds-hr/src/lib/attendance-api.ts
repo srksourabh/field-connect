@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { todayIST } from "./utils";
+import { todayISTTimestamp } from "./utils";
 import type { HrAttendance } from "./database.types";
 
 export async function createPunchIn(data: {
@@ -9,7 +9,7 @@ export async function createPunchIn(data: {
   punch_in_long: number | null;
 }): Promise<HrAttendance | null> {
   // Guard: if there's already an open session today, return it instead of creating a duplicate
-  const today = todayIST();
+  const today = todayISTTimestamp();
   const { data: existing } = await supabase
     .from("hr_attendance")
     .select()
@@ -51,7 +51,7 @@ export async function updatePunchOut(data: {
   punch_out_long: number | null;
 }): Promise<HrAttendance | null> {
   // Find today's open record
-  const today = todayIST();
+  const today = todayISTTimestamp();
   const { data: record, error } = await supabase
     .from("hr_attendance")
     .update({
@@ -73,7 +73,7 @@ export async function updatePunchOut(data: {
 }
 
 export async function getTodayAttendance(userId: string): Promise<HrAttendance | null> {
-  const today = todayIST();
+  const today = todayISTTimestamp();
   const { data, error } = await supabase
     .from("hr_attendance")
     .select()
@@ -88,7 +88,7 @@ export async function getTodayAttendance(userId: string): Promise<HrAttendance |
 }
 
 export async function getTodayAllSessions(userId: string): Promise<HrAttendance[]> {
-  const today = todayIST();
+  const today = todayISTTimestamp();
   const { data, error } = await supabase
     .from("hr_attendance")
     .select()
@@ -112,6 +112,21 @@ export function computeCumulativeSeconds(sessions: HrAttendance[]): number {
     }
   }
   return total;
+}
+
+/** After punch-out, update attendance status based on cumulative hours: >=8h → present, <8h → half-day */
+export async function updateAttendanceStatus(userId: string): Promise<void> {
+  const sessions = await getTodayAllSessions(userId);
+  const totalSecs = computeCumulativeSeconds(sessions);
+  const status = totalSecs >= 8 * 3600 ? "present" : "half-day";
+
+  // Update all of today's sessions to the computed status
+  const today = todayISTTimestamp();
+  await supabase
+    .from("hr_attendance")
+    .update({ status })
+    .eq("user_id", userId)
+    .gte("created_at", today);
 }
 
 export async function getAttendanceByMonth(

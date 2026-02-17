@@ -11,7 +11,7 @@ interface LeaveRequestCardProps {
     startDate: string;
     endDate: string;
     reason: string;
-    status: "pending" | "approved" | "rejected";
+    status: "pending" | "approved" | "rejected" | "withdrawn";
     days: number;
     reviewerComment?: string | null;
   };
@@ -54,6 +54,8 @@ export default function LeaveRequestCard({ request, onApprove, onReject }: Leave
               ? "success"
               : request.status === "rejected"
               ? "error"
+              : request.status === "withdrawn"
+              ? "neutral"
               : "warning"
           }
         >

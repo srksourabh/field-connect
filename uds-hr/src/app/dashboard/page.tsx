@@ -15,9 +15,11 @@ import { useLocationTracker } from "@/hooks/useLocationTracker";
 import { MapPin, FileText } from "lucide-react";
 import { addToQueue } from "@/lib/sync-queue";
 import { cacheSet, cacheGet } from "@/lib/offline-cache";
-import { createPunchIn, updatePunchOut, getTodayAllSessions, closeStaleSession } from "@/lib/attendance-api";
+import { createPunchIn, updatePunchOut, getTodayAllSessions, closeStaleSession, updateAttendanceStatus } from "@/lib/attendance-api";
 import { todayIST, toISTDateStr } from "@/lib/utils";
 import { insertLocationLog, getTodayLocationLogs, computeTotalDistanceKm } from "@/lib/location-api";
+import RouteMapModal from "@/components/punch/RouteMapModal";
+import type { HrLocationLog } from "@/lib/database.types";
 import { getUserLeaveBalance, getPendingLeaveCount } from "@/lib/leave-api";
 import type { LeaveInfo } from "@/components/punch/TodayActivityGrid";
 import { useAuth } from "@/lib/auth";
@@ -41,6 +43,8 @@ export default function DashboardHome() {
   const [leaveInfo, setLeaveInfo] = useState<LeaveInfo | null>(null);
   const [lastPunchLocation, setLastPunchLocation] = useState<string | null>(null);
   const [hrPolicyUrl, setHrPolicyUrl] = useState<string | null>(null);
+  const [locationLogs, setLocationLogs] = useState<HrLocationLog[]>([]);
+  const [routeMapOpen, setRouteMapOpen] = useState(false);
   const lastInitUserId = useRef("");
   const punchingRef = useRef(false); // debounce guard
 
@@ -120,6 +124,7 @@ export default function DashboardHome() {
 
       // Get distance from location logs
       const logs = await getTodayLocationLogs(userId);
+      setLocationLogs(logs);
       setDistanceKm(computeTotalDistanceKm(logs));
 
       // Fetch leave balance + pending count
@@ -214,6 +219,8 @@ export default function DashboardHome() {
       if (isOnline) {
         await updatePunchOut(payload);
         setLastPunchOut(now);
+        // Update attendance status based on 8-hour rule
+        await updateAttendanceStatus(userId);
         // Log punch-out location
         if (geo.lat != null && geo.long != null) {
           await insertLocationLog({
@@ -225,6 +232,7 @@ export default function DashboardHome() {
           });
           // Recompute distance
           const logs = await getTodayLocationLogs(userId);
+          setLocationLogs(logs);
           setDistanceKm(computeTotalDistanceKm(logs));
         }
       } else {
@@ -341,6 +349,15 @@ export default function DashboardHome() {
         distanceKm={distanceKm}
         leaveInfo={leaveInfo}
         sessionCount={sessionCount}
+        onKmClick={() => setRouteMapOpen(true)}
+      />
+
+      {/* Route Map Modal */}
+      <RouteMapModal
+        open={routeMapOpen}
+        onClose={() => setRouteMapOpen(false)}
+        logs={locationLogs}
+        distanceKm={distanceKm}
       />
 
       {/* HR Policy */}

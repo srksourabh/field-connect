@@ -113,7 +113,7 @@ export type Database = {
           end_date: string;
           reason: string | null;
           attachment_url: string | null;
-          status: "pending" | "approved" | "rejected";
+          status: "pending" | "approved" | "rejected" | "withdrawn";
           reviewed_by: string | null;
           reviewed_at: string | null;
           reviewer_comment: string | null;
@@ -127,7 +127,7 @@ export type Database = {
           end_date: string;
           reason?: string | null;
           attachment_url?: string | null;
-          status?: "pending" | "approved" | "rejected";
+          status?: "pending" | "approved" | "rejected" | "withdrawn";
           reviewed_by?: string | null;
           reviewed_at?: string | null;
           reviewer_comment?: string | null;
