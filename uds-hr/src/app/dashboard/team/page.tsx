@@ -66,6 +66,53 @@ export default function TeamPage() {
           return;
         }
 
+        // Fetch today's attendance to determine live status
+        const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+        const todayStartIST = today + "T00:00:00+05:30";
+        const employeeIds = profiles.map((p) => p.id);
+
+        const [{ data: todayAttendance }, { data: todayLocations }] = await Promise.all([
+          supabase
+            .from("hr_attendance")
+            .select("user_id, punch_out_at")
+            .in("user_id", employeeIds)
+            .gte("created_at", todayStartIST),
+          supabase
+            .from("hr_location_logs")
+            .select("user_id, captured_at")
+            .in("user_id", employeeIds)
+            .gte("captured_at", todayStartIST)
+            .order("captured_at", { ascending: false }),
+        ]);
+
+        // Build status lookup: open session = online/away, closed session = offline
+        const statusMap = new Map<string, "online" | "away" | "offline">();
+        const openSessionUsers = new Set<string>();
+        for (const a of (todayAttendance || [])) {
+          if (!a.punch_out_at) openSessionUsers.add(a.user_id);
+        }
+
+        // Latest location log per user
+        const latestLogTime = new Map<string, number>();
+        for (const l of (todayLocations || [])) {
+          if (!latestLogTime.has(l.user_id)) {
+            latestLogTime.set(l.user_id, new Date(l.captured_at).getTime());
+          }
+        }
+
+        for (const p of profiles) {
+          if (openSessionUsers.has(p.id)) {
+            const logTime = latestLogTime.get(p.id);
+            if (logTime && Date.now() - logTime < 15 * 60 * 1000) {
+              statusMap.set(p.id, "online");
+            } else {
+              statusMap.set(p.id, "away");
+            }
+          } else {
+            statusMap.set(p.id, "offline");
+          }
+        }
+
         // Build employee details lookup
         const details: Record<string, EmployeeDetail> = {};
         for (const p of profiles) {
@@ -73,7 +120,7 @@ export default function TeamPage() {
             name: p.full_name,
             designation: p.designation || "Employee",
             department: p.department || "General",
-            status: "offline",
+            status: statusMap.get(p.id) || "offline",
             phone: p.phone || undefined,
             location: p.city || undefined,
           };
@@ -107,7 +154,7 @@ export default function TeamPage() {
             name: profile.full_name,
             designation: profile.designation || "Employee",
             phone: profile.phone || undefined,
-            status: "offline",
+            status: statusMap.get(profile.id) || "offline",
             children: children.length > 0 ? children.map(buildNode) : undefined,
           };
         }

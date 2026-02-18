@@ -7,6 +7,18 @@ import LiveTrackingMap from "@/components/tracking/LiveTrackingMap";
 import type { TrackedEmployee } from "@/components/tracking/LiveTrackingMap";
 import { useAuth } from "@/lib/auth";
 
+interface ApiEmployee {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  lat: number | null;
+  lng: number | null;
+  status: string;
+  lastSeen: string;
+  trail?: { lat: number; lng: number }[];
+}
+
 export default function TrackingPage() {
   const { session } = useAuth();
   const [employees, setEmployees] = useState<TrackedEmployee[]>([]);
@@ -23,14 +35,16 @@ export default function TrackingPage() {
         if (!res.ok) return;
         const data = await res.json();
         const mapped: TrackedEmployee[] = (data.employees || [])
-          .filter((e: { lat: number | null }) => e.lat != null)
-          .map((e: { id: string; name: string; lat: number; lng: number; status: string; lastSeen: string }) => ({
+          .filter((e: ApiEmployee) => e.lat != null)
+          .map((e: ApiEmployee) => ({
             id: e.id,
             name: e.name,
-            lat: e.lat,
-            lng: e.lng,
+            phone: e.phone,
+            email: e.email,
+            lat: e.lat!,
+            lng: e.lng!,
             status: e.status as "online" | "away" | "offline",
-            lastSeen: e.lastSeen,
+            trail: e.trail || [],
           }));
         setEmployees(mapped);
       } catch (err) {
@@ -106,7 +120,10 @@ export default function TrackingPage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium">{emp.name}</p>
-                      <p className="text-xs text-gray-500">{emp.lastSeen}</p>
+                      <p className="text-xs text-gray-500">
+                        {emp.trail.length > 0 ? `${emp.trail.length} GPS points` : "No trail data"}
+                        {emp.phone && ` · ${emp.phone}`}
+                      </p>
                     </div>
                   </div>
                 </div>

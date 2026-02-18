@@ -2,30 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { MapPin, Users } from "lucide-react";
-
-interface TrackedEmployee {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  status: "online" | "away" | "offline";
-  lastSeen: string;
-}
+import type { MapEmployee } from "./AdminLeafletMap";
 
 interface LiveTrackingMapProps {
-  employees: TrackedEmployee[];
+  employees: MapEmployee[];
   onSelectEmployee?: (id: string) => void;
 }
 
 export default function LiveTrackingMap({ employees, onSelectEmployee }: LiveTrackingMapProps) {
   const [MapComponent, setMapComponent] = useState<React.ComponentType<{
-    employees: TrackedEmployee[];
+    employees: MapEmployee[];
     onSelectEmployee?: (id: string) => void;
   }> | null>(null);
 
-  // Dynamically import Leaflet (SSR-safe)
+  // Dynamically import AdminLeafletMap (SSR-safe) — has trails, phone, email in popups
   useEffect(() => {
-    import("./LeafletMap").then((mod) => {
+    import("./AdminLeafletMap").then((mod) => {
       setMapComponent(() => mod.default);
     });
   }, []);
@@ -61,4 +53,4 @@ export default function LiveTrackingMap({ employees, onSelectEmployee }: LiveTra
   );
 }
 
-export type { TrackedEmployee };
+export type { MapEmployee as TrackedEmployee };

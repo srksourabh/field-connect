@@ -91,6 +91,12 @@ export async function GET(request: Request) {
       }
     }
 
+    // Build GPS trail from today's logs (ascending order for polyline)
+    const trail = empLogs
+      .filter((l) => l.lat != null && l.long != null)
+      .reverse()
+      .map((l) => ({ lat: l.lat, lng: l.long }));
+
     return {
       id: emp.id,
       name: emp.full_name,
@@ -102,6 +108,7 @@ export async function GET(request: Request) {
       lng: latestLog?.long ?? null,
       status,
       lastSeen,
+      trail,
     };
   });
 

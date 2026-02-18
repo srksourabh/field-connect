@@ -70,20 +70,30 @@ export async function GET(request: Request) {
 
   const employeeIds = employees.map((e) => e.id);
 
-  // Get all attendance for the period
+  // Get all attendance for the period (use punch_in_at for consistency with reports)
   const { data: attendance } = await supabaseAdmin
     .from("hr_attendance")
     .select()
     .in("user_id", employeeIds)
+    .gte("punch_in_at", startStr)
+    .lte("punch_in_at", endStr);
+
+  // Also get leave-day attendance records (no punch_in_at, filtered by created_at)
+  const { data: leaveAttendance } = await supabaseAdmin
+    .from("hr_attendance")
+    .select()
+    .in("user_id", employeeIds)
+    .in("status", ["on-leave", "holiday"])
     .gte("created_at", startStr)
     .lte("created_at", endStr);
 
   // Get today's attendance
+  const todayStartIST = today + "T00:00:00+05:30";
   const { data: todayAttendance } = await supabaseAdmin
     .from("hr_attendance")
     .select()
     .in("user_id", employeeIds)
-    .gte("created_at", today);
+    .or(`punch_in_at.gte.${todayStartIST},and(punch_in_at.is.null,created_at.gte.${todayStartIST})`);
 
   // Get today's leave requests
   const { data: todayLeaves } = await supabaseAdmin
@@ -99,7 +109,18 @@ export async function GET(request: Request) {
     .from("hr_location_logs")
     .select("user_id")
     .in("user_id", employeeIds)
-    .gte("captured_at", today);
+    .gte("captured_at", todayStartIST);
+
+  // Merge attendance + leave attendance (deduplicated)
+  const allRecordIds = new Set<string>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const allRecords: any[] = [];
+  for (const rec of [...(attendance || []), ...(leaveAttendance || [])]) {
+    if (!allRecordIds.has(rec.id)) {
+      allRecordIds.add(rec.id);
+      allRecords.push(rec);
+    }
+  }
 
   // Summary
   const presentTodayIds = new Set((todayAttendance || []).map((a) => a.user_id));
@@ -118,7 +139,6 @@ export async function GET(request: Request) {
   };
 
   // Attendance stats
-  const allRecords = attendance || [];
   let totalHours = 0;
   let recordsWithHours = 0;
   let lateCount = 0;
@@ -128,7 +148,9 @@ export async function GET(request: Request) {
   const hoursByEmployee = new Map<string, number>();
 
   for (const rec of allRecords) {
-    const day = rec.created_at.split("T")[0];
+    // Use punch_in_at for day determination (IST), fall back to created_at for leave records
+    const ts = rec.punch_in_at || rec.created_at;
+    const day = new Date(ts).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
     // Track working days
     if (!workingDaysByEmployee.has(rec.user_id)) workingDaysByEmployee.set(rec.user_id, new Set());
@@ -143,9 +165,12 @@ export async function GET(request: Request) {
 
     if (rec.punch_in_at) {
       const punchIn = new Date(rec.punch_in_at);
-      const mins = punchIn.getHours() * 60 + punchIn.getMinutes();
+      // Convert to IST for late detection (UTC+5:30)
+      const istHours = (punchIn.getUTCHours() + 5 + Math.floor((punchIn.getUTCMinutes() + 30) / 60)) % 24;
+      const istMinutes = (punchIn.getUTCMinutes() + 30) % 60;
+      const mins = istHours * 60 + istMinutes;
       punchInMinutes.push(mins);
-      // Late if punch-in after 10:00 AM
+      // Late if punch-in after 10:00 AM IST
       if (mins > 600) {
         lateCount++;
         lateDaysByEmployee.set(rec.user_id, (lateDaysByEmployee.get(rec.user_id) || 0) + 1);
@@ -206,7 +231,8 @@ export async function GET(request: Request) {
   // Daily trends (present count per day)
   const dayMap = new Map<string, Set<string>>();
   for (const rec of allRecords) {
-    const day = rec.created_at.split("T")[0];
+    const ts = rec.punch_in_at || rec.created_at;
+    const day = new Date(ts).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
     if (!dayMap.has(day)) dayMap.set(day, new Set());
     dayMap.get(day)!.add(rec.user_id);
   }

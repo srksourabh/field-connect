@@ -110,12 +110,14 @@ export async function approveLeaveRequest(
   // 4. Mark attendance records as "on-leave" for each day in the leave period
   const leaveStart = new Date(request.start_date);
   const leaveEnd = new Date(request.end_date);
-  const leaveRecords: { user_id: string; created_at: string; status: string; synced: boolean }[] = [];
+  const leaveRecords: { user_id: string; created_at: string; punch_in_at: string; status: string; synced: boolean }[] = [];
   for (let d = new Date(leaveStart); d <= leaveEnd; d.setDate(d.getDate() + 1)) {
     const dateStr = d.toISOString().split("T")[0];
+    const istTimestamp = `${dateStr}T00:00:00+05:30`;
     leaveRecords.push({
       user_id: request.user_id,
-      created_at: `${dateStr}T00:00:00.000Z`,
+      created_at: istTimestamp,
+      punch_in_at: istTimestamp,
       status: "on-leave",
       synced: true,
     });
