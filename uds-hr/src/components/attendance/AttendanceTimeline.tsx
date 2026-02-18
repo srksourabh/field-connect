@@ -8,6 +8,7 @@ interface TimelineEvent {
   location?: string;
   synced: boolean;
   autoClose?: boolean;
+  sessionDuration?: string;
 }
 
 interface AttendanceTimelineProps {
@@ -65,6 +66,11 @@ export default function AttendanceTimeline({ events }: AttendanceTimelineProps) 
                   </div>
                 )}
               </div>
+              {event.sessionDuration && (
+                <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mt-1">
+                  {event.sessionDuration}
+                </p>
+              )}
               {event.location && (
                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
                   <MapPin className="w-3.5 h-3.5 shrink-0" />

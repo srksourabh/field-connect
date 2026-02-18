@@ -7,6 +7,7 @@ import RectificationForm from "@/components/rectification/RectificationForm";
 import { useAuth } from "@/lib/auth";
 import { createRectificationRequest } from "@/lib/rectification-api";
 import { createNotification } from "@/lib/notification-api";
+import { showToast } from "@/components/ui/Toast";
 
 export default function RectificationPage() {
   const { user, profile } = useAuth();
@@ -52,7 +53,7 @@ export default function RectificationPage() {
       }
       setSubmitted(true);
     } else {
-      alert("Failed to submit rectification. Please try again.");
+      showToast("Failed to submit rectification. Please try again.", "error");
     }
     setSubmitting(false);
   };

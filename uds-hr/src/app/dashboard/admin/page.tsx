@@ -17,6 +17,8 @@ import {
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { showConfirm } from "@/components/ui/Dialog";
+import { showToast } from "@/components/ui/Toast";
 import type { HrProfile } from "@/lib/database.types";
 
 interface ManagerOption {
@@ -114,23 +116,27 @@ export default function EmployeeManagementPage() {
   }, [profiles]);
 
   const handleResetPassword = async (targetUser: HrProfile) => {
-    const confirmReset = confirm(
-      `Reset password for ${targetUser.full_name}?\n\nNew password will be: first 4 letters of name (lowercase) + last 4 digits of phone.`
+    const confirmReset = await showConfirm(
+      "Reset Password",
+      `Reset password for ${targetUser.full_name}? New password will be: first 4 letters of name (lowercase) + last 4 digits of phone.`
     );
     if (!confirmReset) return;
 
     setActionLoading(targetUser.id);
     const res = await fetch("/api/admin/reset-password", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token}`,
+      },
       body: JSON.stringify({ userId: targetUser.id }),
     });
 
     if (res.ok) {
-      alert(`Password reset for ${targetUser.full_name}.`);
+      showToast(`Password reset for ${targetUser.full_name}.`, "success");
     } else {
       const data = await res.json();
-      alert(data.error || "Failed to reset password.");
+      showToast(data.error || "Failed to reset password.", "error");
     }
     setActionLoading(null);
   };
@@ -138,7 +144,11 @@ export default function EmployeeManagementPage() {
   const handleDeactivate = async (targetUser: HrProfile) => {
     const isDeactivated = !!targetUser.deactivated_at;
     const action = isDeactivated ? "restore" : "deactivate";
-    if (!confirm(`${isDeactivated ? "Restore" : "Deactivate"} ${targetUser.full_name}?`)) return;
+    const confirmed = await showConfirm(
+      isDeactivated ? "Restore Employee" : "Deactivate Employee",
+      `${isDeactivated ? "Restore" : "Deactivate"} ${targetUser.full_name}?`
+    );
+    if (!confirmed) return;
 
     setActionLoading(targetUser.id);
     const res = await fetch("/api/admin/deactivate-employee", {
@@ -154,7 +164,7 @@ export default function EmployeeManagementPage() {
       await fetchProfiles();
     } else {
       const data = await res.json();
-      alert(data.error || `Failed to ${action}.`);
+      showToast(data.error || `Failed to ${action}.`, "error");
     }
     setActionLoading(null);
   };
@@ -190,14 +200,14 @@ export default function EmployeeManagementPage() {
       await fetchProfiles();
     } else {
       const data = await res.json();
-      alert(data.error || "Failed to save.");
+      showToast(data.error || "Failed to save.", "error");
     }
     setActionLoading(null);
   };
 
   const handleRoleChange = async (targetUser: HrProfile, newRole: string) => {
     if (targetUser.id === user?.id) {
-      alert("You cannot change your own role.");
+      showToast("You cannot change your own role.", "error");
       return;
     }
     setActionLoading(targetUser.id);
@@ -210,7 +220,7 @@ export default function EmployeeManagementPage() {
       await fetchProfiles();
     } else {
       const data = await res.json();
-      alert(data.error || "Failed to update role.");
+      showToast(data.error || "Failed to update role.", "error");
     }
     setActionLoading(null);
   };

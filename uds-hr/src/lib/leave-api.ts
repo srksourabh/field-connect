@@ -92,11 +92,13 @@ export async function approveLeaveRequest(
   };
   const usedKey = usedKeyMap[request.type] || `${request.type}_leave_used`;
 
+  // Use the leave request's start year, not current year
+  const requestYear = new Date(request.start_date).getFullYear();
   const { data: balance } = await supabase
     .from("hr_leave_balances")
     .select()
     .eq("user_id", request.user_id)
-    .eq("year", new Date().getFullYear())
+    .eq("year", requestYear)
     .single();
 
   if (balance) {
@@ -131,8 +133,8 @@ export async function approveLeaveRequest(
         .from("hr_attendance")
         .delete()
         .eq("user_id", request.user_id)
-        .gte("created_at", `${dateStr}T00:00:00`)
-        .lte("created_at", `${dateStr}T23:59:59`);
+        .gte("created_at", `${dateStr}T00:00:00+05:30`)
+        .lte("created_at", `${dateStr}T23:59:59+05:30`);
     }
     await supabase.from("hr_attendance").insert(leaveRecords);
   }

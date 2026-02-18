@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ToastContainer } from "@/components/ui/Toast";
+import { DialogContainer } from "@/components/ui/Dialog";
 import "./globals.css";
 
 const inter = Inter({
@@ -41,6 +42,12 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased bg-background-light dark:bg-background-dark`}>
         {children}
         <ToastContainer />
+        <DialogContainer />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}`,
+          }}
+        />
       </body>
     </html>
   );

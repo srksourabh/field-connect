@@ -80,6 +80,8 @@ export async function POST(req: NextRequest) {
   });
 
   if (profileError) {
+    // Clean up orphaned auth user
+    await supabaseAdmin.auth.admin.deleteUser(userId);
     return NextResponse.json({ error: profileError.message }, { status: 500 });
   }
 

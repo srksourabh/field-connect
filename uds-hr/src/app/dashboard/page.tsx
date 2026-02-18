@@ -307,6 +307,13 @@ export default function DashboardHome() {
               {greeting},
             </h1>
             <p className="text-lg font-bold leading-none">{displayName}</p>
+            {(profile?.designation || profile?.project_id) && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {profile?.designation && <span className="font-bold">{profile.designation}</span>}
+                {profile?.designation && profile?.project_id && " \u2022 "}
+                {profile?.project_id && <span className="font-bold">{profile.project_id}</span>}
+              </p>
+            )}
           </div>
         </div>
         <NotificationDropdown />

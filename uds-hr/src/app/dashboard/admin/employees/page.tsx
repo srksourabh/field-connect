@@ -86,7 +86,7 @@ export default function AddEmployeePage() {
     <div className="min-h-screen bg-background-light dark:bg-background-dark">
       <header className="pt-12 pb-4 px-6 flex items-center justify-between bg-white/50 dark:bg-[#151f2b] backdrop-blur-md sticky top-0 z-20 border-b border-gray-200 dark:border-gray-800">
         <Link
-          href="/dashboard/profile"
+          href="/dashboard/admin"
           className="p-2 -ml-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
         >
           <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />

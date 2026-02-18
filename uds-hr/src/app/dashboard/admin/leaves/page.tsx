@@ -5,6 +5,8 @@ import { ChevronLeft, Users, Check, AlertCircle, Loader2, Pencil, Save, X, Uploa
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { showConfirm } from "@/components/ui/Dialog";
+import { showToast } from "@/components/ui/Toast";
 
 interface EmployeeBalance {
   id: string;
@@ -83,7 +85,7 @@ export default function LeaveAllotmentPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.includes("pdf")) {
-      alert("Only PDF files are accepted.");
+      showToast("Only PDF files are accepted.", "error");
       return;
     }
     setUploadingPolicy(true);
@@ -94,7 +96,7 @@ export default function LeaveAllotmentPage() {
       .upload(filePath, file, { upsert: true });
 
     if (error) {
-      alert("Upload failed: " + error.message);
+      showToast("Upload failed: " + error.message, "error");
       setUploadingPolicy(false);
       return;
     }
@@ -117,7 +119,8 @@ export default function LeaveAllotmentPage() {
   };
 
   const handleRemovePolicy = async () => {
-    if (!confirm("Remove leave policy document?")) return;
+    const confirmed = await showConfirm("Remove Policy", "Remove leave policy document?");
+    if (!confirmed) return;
     await supabase.from("hr_config").update({ value: null }).eq("key", "leave_policy_url");
     setPolicyUrl(null);
   };
@@ -126,7 +129,7 @@ export default function LeaveAllotmentPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.includes("pdf")) {
-      alert("Only PDF files are accepted.");
+      showToast("Only PDF files are accepted.", "error");
       return;
     }
     setUploadingHrPolicy(true);
@@ -137,7 +140,7 @@ export default function LeaveAllotmentPage() {
       .upload(filePath, file, { upsert: true });
 
     if (error) {
-      alert("Upload failed: " + error.message);
+      showToast("Upload failed: " + error.message, "error");
       setUploadingHrPolicy(false);
       return;
     }
@@ -159,7 +162,8 @@ export default function LeaveAllotmentPage() {
   };
 
   const handleRemoveHrPolicy = async () => {
-    if (!confirm("Remove general HR policy document?")) return;
+    const confirmed = await showConfirm("Remove Policy", "Remove general HR policy document?");
+    if (!confirmed) return;
     await supabase.from("hr_config").update({ value: null }).eq("key", "hr_policy_url");
     setHrPolicyUrl(null);
   };

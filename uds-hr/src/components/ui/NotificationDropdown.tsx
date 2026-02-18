@@ -103,8 +103,25 @@ export default function NotificationDropdown() {
     setNotifications((prev) => prev.map((item) => ({ ...item, is_read: true })));
   };
 
+  // Latest unread notification for preview banner
+  const latestUnread = notifications.find((n) => !n.is_read);
+
   return (
     <div className="relative" ref={dropdownRef}>
+      {/* Latest notification preview above the bell */}
+      {latestUnread && !open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="absolute -top-10 right-0 w-56 bg-white dark:bg-surface-dark rounded-lg shadow-md border border-gray-200 dark:border-gray-700/50 px-3 py-1.5 text-left animate-in fade-in slide-in-from-top-2 duration-300"
+        >
+          <p className="text-[11px] font-semibold text-gray-800 dark:text-gray-200 truncate">
+            {latestUnread.title}
+          </p>
+          <p className="text-[10px] text-gray-400 truncate">
+            {latestUnread.body || timeAgo(latestUnread.created_at)}
+          </p>
+        </button>
+      )}
       <button
         onClick={() => setOpen(!open)}
         className="p-2 rounded-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors relative"

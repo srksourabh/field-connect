@@ -26,7 +26,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const todayIST = `${today}T00:00:00+05:30`;
 
   // Get all employees
   const { data: employees } = await supabaseAdmin
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
     .from("hr_attendance")
     .select()
     .in("user_id", employeeIds)
-    .gte("created_at", today);
+    .gte("created_at", todayIST);
 
   // Get today's approved leaves
   const { data: leaves } = await supabaseAdmin
@@ -58,7 +59,7 @@ export async function GET(request: Request) {
     .from("hr_location_logs")
     .select()
     .in("user_id", employeeIds)
-    .gte("captured_at", today)
+    .gte("captured_at", todayIST)
     .order("captured_at", { ascending: true });
 
   const leaveUserIds = new Set((leaves || []).map((l) => l.user_id));

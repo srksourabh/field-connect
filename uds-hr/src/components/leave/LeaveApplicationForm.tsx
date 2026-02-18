@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { ChevronDown, Upload, Send, X, FileText, Calendar } from "lucide-react";
 import LeaveDurationBanner from "./LeaveDurationBanner";
 import { supabase } from "@/lib/supabase";
+import { showToast } from "@/components/ui/Toast";
 
 interface LeaveApplicationFormProps {
   onSubmit: (data: {
@@ -43,7 +44,7 @@ export default function LeaveApplicationForm({ onSubmit, submitting, privilegeEn
 
     // Validate size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert("File too large. Maximum size is 5MB.");
+      showToast("File too large. Maximum size is 5MB.", "error");
       return;
     }
 
@@ -59,7 +60,7 @@ export default function LeaveApplicationForm({ onSubmit, submitting, privilegeEn
 
     if (error) {
       console.error("Upload error:", error.message);
-      alert("Failed to upload file. Please try again.");
+      showToast("Failed to upload file. Please try again.", "error");
       setUploadedFile(null);
       setUploading(false);
       return;

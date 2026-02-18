@@ -29,8 +29,9 @@ function markSlotCaptured(slot: string) {
 }
 
 function isWithinSchedule(now: Date): string | null {
-  const hh = now.getHours();
-  const mm = now.getMinutes();
+  // Use IST time regardless of device timezone
+  const istStr = now.toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false });
+  const [hh, mm] = istStr.split(":").map(Number);
   const nowMinutes = hh * 60 + mm;
 
   for (const slot of SCHEDULE) {

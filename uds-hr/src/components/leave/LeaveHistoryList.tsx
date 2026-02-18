@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Undo2 } from "lucide-react";
 import type { HrLeaveRequest } from "@/lib/database.types";
+import { showConfirm } from "@/components/ui/Dialog";
 
 const typeLabels: Record<string, string> = {
   casual: "CL",
@@ -55,7 +56,9 @@ export default function LeaveHistoryList({ requests, onWithdraw }: LeaveHistoryL
   }
 
   const handleWithdraw = async (id: string) => {
-    if (!onWithdraw || !confirm("Withdraw this leave request?")) return;
+    if (!onWithdraw) return;
+    const confirmed = await showConfirm("Withdraw Leave", "Are you sure you want to withdraw this leave request?");
+    if (!confirmed) return;
     setWithdrawingId(id);
     await onWithdraw(id);
     setWithdrawingId(null);

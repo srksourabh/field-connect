@@ -5,6 +5,8 @@ import { ChevronLeft, Link2, Copy, Check, Loader2, Shield, Trash2 } from "lucide
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { showConfirm } from "@/components/ui/Dialog";
+import { showToast } from "@/components/ui/Toast";
 
 interface OnboardingToken {
   id: string;
@@ -48,7 +50,7 @@ export default function OnboardingPage() {
     });
 
     if (error) {
-      alert("Failed to generate link: " + error.message);
+      showToast("Failed to generate link: " + error.message, "error");
     } else {
       await fetchTokens();
     }
@@ -63,7 +65,8 @@ export default function OnboardingPage() {
   };
 
   const deleteToken = async (id: string) => {
-    if (!confirm("Delete this onboarding link?")) return;
+    const confirmed = await showConfirm("Delete Link", "Delete this onboarding link?");
+    if (!confirmed) return;
     await supabase.from("hr_onboarding_tokens").delete().eq("id", id);
     setTokens((prev) => prev.filter((t) => t.id !== id));
   };

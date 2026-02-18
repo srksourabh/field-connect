@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import { ChevronLeft, Settings, LogOut, Shield, Bell, Moon, Sun, Monitor, ChevronRight, KeyRound, Camera, X, Eye, EyeOff, Users, UserPlus, Megaphone } from "lucide-react";
+import { ChevronLeft, Settings, LogOut, Shield, Bell, Moon, Sun, Monitor, ChevronRight, KeyRound, Camera, X, Eye, EyeOff, Users, UserPlus, Megaphone, FileText } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -16,22 +16,27 @@ export default function ProfilePage() {
   const [daysPresent, setDaysPresent] = useState<number | null>(null);
   const [leavesLeft, setLeavesLeft] = useState<number | null>(null);
   const [pendingCount, setPendingCount] = useState<number | null>(null);
-  const [adminNames, setAdminNames] = useState<string[]>([]);
 
   const fetchStats = useCallback(async () => {
     if (!user) return;
     const now = new Date();
-    const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-    const monthEnd = now.toISOString().split("T")[0];
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    const monthStart = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01T00:00:00+05:30`;
+    const todayStr = now.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+    const monthEnd = `${todayStr}T23:59:59+05:30`;
 
-    // Days present this month
-    const { count: presentCount } = await supabase
+    // Days present this month — count unique dates with "present" status
+    const { data: attendanceData } = await supabase
       .from("hr_attendance")
-      .select("id", { count: "exact", head: true })
+      .select("created_at")
       .eq("user_id", user.id)
+      .in("status", ["present", "half-day", "late"])
       .gte("created_at", monthStart)
-      .lte("created_at", monthEnd + "T23:59:59");
-    setDaysPresent(presentCount ?? 0);
+      .lte("created_at", monthEnd);
+    const uniqueDays = new Set((attendanceData || []).map((r) =>
+      new Date(r.created_at).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })
+    ));
+    setDaysPresent(uniqueDays.size);
 
     // Leave balance remaining
     const { data: bal } = await supabase
@@ -59,13 +64,6 @@ export default function ProfilePage() {
       .eq("status", "pending");
     setPendingCount(pending ?? 0);
 
-    // Fetch admin names (for admin users)
-    const { data: admins } = await supabase
-      .from("hr_profiles")
-      .select("full_name")
-      .eq("role", "admin")
-      .order("full_name");
-    setAdminNames((admins || []).map((a) => a.full_name));
   }, [user]);
 
   useEffect(() => {
@@ -83,16 +81,17 @@ export default function ProfilePage() {
   const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
 
   const menuItems = [
-    { icon: Bell, label: "Notifications", href: "#" },
-    { icon: Shield, label: "Privacy & Security", href: "#" },
     { icon: KeyRound, label: "Change Password", href: "#", action: () => setShowPasswordModal(true) },
     { icon: Moon, label: "Appearance", href: "#", action: () => setShowAppearanceModal(true) },
-    { icon: Settings, label: "Settings", href: "#" },
+    { icon: Bell, label: "Leave Application", href: "/dashboard/leave" },
+    { icon: FileText, label: "Attendance History", href: "/dashboard/attendance" },
     ...(isAdmin
       ? [
-          { icon: Users, label: `Employee Management (${adminNames.length})`, href: "/dashboard/admin" },
+          { icon: Users, label: "Employee Management", href: "/dashboard/admin" },
           { icon: UserPlus, label: "Add Employee", href: "/dashboard/admin/employees" },
+          { icon: Shield, label: "Leave Allotment", href: "/dashboard/admin/leaves" },
           { icon: Megaphone, label: "Broadcast Notification", href: "/dashboard/admin/notifications" },
+          { icon: Settings, label: "Onboarding Links", href: "/dashboard/onboarding" },
         ]
       : []),
   ];
@@ -106,6 +105,13 @@ export default function ProfilePage() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
+
+    // 5 MB limit
+    if (file.size > 5 * 1024 * 1024) {
+      const { showToast } = await import("@/components/ui/Toast");
+      showToast("Image must be under 5 MB", "error");
+      return;
+    }
 
     setUploading(true);
     try {

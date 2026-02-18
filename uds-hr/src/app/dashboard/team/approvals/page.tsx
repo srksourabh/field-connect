@@ -12,6 +12,8 @@ import {
   rejectLeaveRequest,
   type LeaveRequestWithProfile,
 } from "@/lib/leave-api";
+import { showPrompt } from "@/components/ui/Dialog";
+import { showToast } from "@/components/ui/Toast";
 
 export default function ApprovalsPage() {
   const { user } = useAuth();
@@ -36,18 +38,28 @@ export default function ApprovalsPage() {
 
   const handleApprove = async (id: string) => {
     if (!user) return;
-    const comment = prompt("Comment (optional):");
+    const comment = await showPrompt("Approve Leave", "Add a comment (optional):", "Comment...");
+    if (comment === null) return; // cancelled
     const ok = await approveLeaveRequest(id, user.id, comment || undefined);
-    if (ok) fetchRequests();
-    else alert("Failed to approve. Please try again.");
+    if (ok) {
+      showToast("Leave request approved", "success");
+      fetchRequests();
+    } else {
+      showToast("Failed to approve. Please try again.", "error");
+    }
   };
 
   const handleReject = async (id: string) => {
     if (!user) return;
-    const comment = prompt("Reason for rejection (optional):");
+    const comment = await showPrompt("Reject Leave", "Reason for rejection (optional):", "Reason...");
+    if (comment === null) return; // cancelled
     const ok = await rejectLeaveRequest(id, user.id, comment || undefined);
-    if (ok) fetchRequests();
-    else alert("Failed to reject. Please try again.");
+    if (ok) {
+      showToast("Leave request rejected", "success");
+      fetchRequests();
+    } else {
+      showToast("Failed to reject. Please try again.", "error");
+    }
   };
 
   const pendingCount = pendingRequests.length;

@@ -168,9 +168,14 @@ export async function closeStaleSession(
     .toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const autoCloseTimestamp = `${punchInDate}T23:59:00+05:30`;
 
+  // Compute actual hours to set correct status
+  const durMs = new Date(autoCloseTimestamp).getTime() - new Date(session.punch_in_at).getTime();
+  const durHours = durMs / 3600000;
+  const status = durHours >= 8 ? "present" : "half-day";
+
   const { data, error } = await supabase
     .from("hr_attendance")
-    .update({ punch_out_at: autoCloseTimestamp, status: "half-day" })
+    .update({ punch_out_at: autoCloseTimestamp, status })
     .eq("id", session.id)
     .is("punch_out_at", null)
     .select()

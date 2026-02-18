@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { todayISTTimestamp } from "./utils";
 import type { HrLocationLog } from "./database.types";
 
 export async function insertLocationLog(data: {
@@ -29,7 +30,7 @@ export async function insertLocationLog(data: {
 }
 
 export async function getTodayLocationLogs(userId: string): Promise<HrLocationLog[]> {
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayISTTimestamp();
   const { data, error } = await supabase
     .from("hr_location_logs")
     .select()
@@ -51,7 +52,7 @@ export async function getLatestLocationsForUsers(
   if (userIds.length === 0) return result;
 
   // Get the latest location for each user from today
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayISTTimestamp();
   const { data, error } = await supabase
     .from("hr_location_logs")
     .select()
@@ -77,16 +78,15 @@ export async function getLocationLogsByDate(
   userId: string,
   date: string // YYYY-MM-DD
 ): Promise<HrLocationLog[]> {
-  const nextDay = new Date(date);
-  nextDay.setDate(nextDay.getDate() + 1);
-  const nextDayStr = nextDay.toISOString().split("T")[0];
+  const startIST = `${date}T00:00:00+05:30`;
+  const endIST = `${date}T23:59:59+05:30`;
 
   const { data, error } = await supabase
     .from("hr_location_logs")
     .select()
     .eq("user_id", userId)
-    .gte("captured_at", date)
-    .lt("captured_at", nextDayStr)
+    .gte("captured_at", startIST)
+    .lte("captured_at", endIST)
     .order("captured_at", { ascending: true });
 
   if (error) {

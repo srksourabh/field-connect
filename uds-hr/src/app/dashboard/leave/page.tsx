@@ -13,6 +13,7 @@ import { getUserLeaveRequests, withdrawLeaveRequest } from "@/lib/leave-api";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { addToQueue } from "@/lib/sync-queue";
 import { cacheSet, cacheGet } from "@/lib/offline-cache";
+import { showToast } from "@/components/ui/Toast";
 import type { HrLeaveBalance, HrLeaveRequest } from "@/lib/database.types";
 
 export default function LeavePage() {
@@ -123,7 +124,7 @@ export default function LeavePage() {
       const remaining = (balance[totalKey] as number) - (balance[usedKey] as number);
 
       if (days > remaining) {
-        alert(`Not enough ${data.type} leave. You have ${remaining} day(s) remaining.`);
+        showToast(`Not enough ${data.type} leave. You have ${remaining} day(s) remaining.`, "error");
         setSubmitting(false);
         return;
       }
@@ -133,7 +134,7 @@ export default function LeavePage() {
     const { error: reqError } = await supabase.from("hr_leave_requests").insert(insertPayload);
 
     if (reqError) {
-      alert("Failed to submit: " + reqError.message);
+      showToast("Failed to submit: " + reqError.message, "error");
       setSubmitting(false);
       return;
     }

@@ -57,59 +57,82 @@ export default function AttendancePage() {
     fetchMonth(year, month);
   };
 
-  // Transform records → calendar format
+  // Helper: use punch_in_at for date (falls back to created_at for on-leave/holiday records)
+  const recordDate = (r: HrAttendance) =>
+    toISTDateStr(new Date(r.punch_in_at || r.created_at));
+
+  // Transform records → calendar format (deduplicate per date, keep worst status)
   const calendarRecords = useMemo(() => {
-    return records.map((r) => {
-      const date = toISTDateStr(new Date(r.created_at));
-      return { date, status: r.status as "present" | "absent" | "late" | "half-day" | "on-leave" | "holiday" | "lwp" };
-    });
+    const dateMap = new Map<string, string>();
+    for (const r of records) {
+      const date = recordDate(r);
+      const existing = dateMap.get(date);
+      // Keep the first status encountered (records are ordered ascending)
+      if (!existing) dateMap.set(date, r.status);
+    }
+    return Array.from(dateMap.entries()).map(([date, status]) => ({
+      date,
+      status: status as "present" | "absent" | "late" | "half-day" | "on-leave" | "holiday" | "lwp",
+    }));
   }, [records]);
 
-  // Find selected day's record
+  // Find ALL records for the selected day (multiple sessions)
   const dateStr = toISTDateStr(selectedDate);
-  const selectedRecord = records.find(
-    (r) => toISTDateStr(new Date(r.created_at)) === dateStr
+  const selectedRecords = useMemo(
+    () => records.filter((r) => recordDate(r) === dateStr),
+    [records, dateStr]
   );
   const calendarEntry = calendarRecords.find((r) => r.date === dateStr);
 
-  // Compute total hours from timestamps
+  // Compute total hours from ALL sessions
   const totalHours = useMemo(() => {
-    if (!selectedRecord?.punch_in_at) return "0h 0m";
-    const pIn = new Date(selectedRecord.punch_in_at);
-    const pOut = selectedRecord.punch_out_at
-      ? new Date(selectedRecord.punch_out_at)
-      : new Date();
-    const diffMs = pOut.getTime() - pIn.getTime();
-    const h = Math.floor(diffMs / 3600000);
-    const m = Math.floor((diffMs % 3600000) / 60000);
-    return `${h}h ${m}m`;
-  }, [selectedRecord]);
-
-  // Build timeline from record
-  const timeline = useMemo(() => {
-    if (!selectedRecord) return [];
-    const events: { type: "punch_in" | "punch_out"; time: string; location?: string; synced: boolean; autoClose?: boolean }[] = [];
-    if (selectedRecord.punch_in_at) {
-      events.push({
-        type: "punch_in",
-        time: formatTime(new Date(selectedRecord.punch_in_at)),
-        synced: selectedRecord.synced,
-      });
+    let totalMs = 0;
+    for (const rec of selectedRecords) {
+      if (!rec.punch_in_at) continue;
+      const pIn = new Date(rec.punch_in_at);
+      const pOut = rec.punch_out_at ? new Date(rec.punch_out_at) : new Date();
+      totalMs += pOut.getTime() - pIn.getTime();
     }
-    if (selectedRecord.punch_out_at) {
-      // Detect auto-close: punch_out_at ends at 23:59 IST
-      const pOutDate = new Date(selectedRecord.punch_out_at);
-      const istTime = pOutDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
-      const isAutoClose = istTime === "23:59";
-      events.push({
-        type: "punch_out",
-        time: formatTime(pOutDate),
-        synced: selectedRecord.synced,
-        autoClose: isAutoClose,
-      });
+    if (totalMs <= 0) return "0h 0m";
+    const h = Math.floor(totalMs / 3600000);
+    const m = Math.floor((totalMs % 3600000) / 60000);
+    return `${h}h ${m}m`;
+  }, [selectedRecords]);
+
+  // Build timeline from ALL sessions with session duration
+  const timeline = useMemo(() => {
+    const events: { type: "punch_in" | "punch_out"; time: string; location?: string; synced: boolean; autoClose?: boolean; sessionDuration?: string }[] = [];
+    for (const rec of selectedRecords) {
+      if (rec.punch_in_at) {
+        events.push({
+          type: "punch_in",
+          time: formatTime(new Date(rec.punch_in_at)),
+          synced: rec.synced,
+        });
+      }
+      if (rec.punch_out_at) {
+        const pOutDate = new Date(rec.punch_out_at);
+        const istTime = pOutDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
+        const isAutoClose = istTime === "23:59";
+        // Calculate session duration
+        let sessionDuration: string | undefined;
+        if (rec.punch_in_at) {
+          const durMs = pOutDate.getTime() - new Date(rec.punch_in_at).getTime();
+          const sh = Math.floor(durMs / 3600000);
+          const sm = Math.floor((durMs % 3600000) / 60000);
+          sessionDuration = `${sh}h ${sm}m active`;
+        }
+        events.push({
+          type: "punch_out",
+          time: formatTime(pOutDate),
+          synced: rec.synced,
+          autoClose: isAutoClose,
+          sessionDuration,
+        });
+      }
     }
     return events;
-  }, [selectedRecord]);
+  }, [selectedRecords]);
 
   const isWeekend =
     selectedDate.getDay() === 0 || selectedDate.getDay() === 6;
@@ -167,8 +190,8 @@ export default function AttendancePage() {
             />
             <AttendanceTimeline events={timeline} />
 
-            {/* Request Rectification — only for non-weekend days with records */}
-            {!isWeekend && calendarEntry && (
+            {/* Request Rectification — only for non-weekend working days (not on-leave/holiday) */}
+            {!isWeekend && calendarEntry && !["on-leave", "holiday"].includes(calendarEntry.status) && (
               <Link
                 href="/dashboard/attendance/rectification"
                 className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 active:scale-[0.98] transition-all"
