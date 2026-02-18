@@ -68,7 +68,7 @@ export default function PersonalDetailsForm({ data, onChange }: PersonalDetailsF
               type="date"
               value={data.dob}
               onChange={(e) => onChange("dob", e.target.value)}
-              className="uds-input pl-10 text-sm [color-scheme:dark]"
+              className="uds-input pl-10 text-sm dark:[color-scheme:dark]"
             />
           </div>
           <div className="relative">

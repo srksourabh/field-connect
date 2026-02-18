@@ -96,7 +96,7 @@ export default function RectificationForm({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-white dark:bg-[#1c2a36] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm [color-scheme:dark]"
+              className="w-full bg-white dark:bg-[#1c2a36] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm dark:[color-scheme:dark]"
             />
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function RectificationForm({
                 type="time"
                 value={correctedPunchIn}
                 onChange={(e) => setCorrectedPunchIn(e.target.value)}
-                className="w-full bg-white dark:bg-[#1c2a36] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg pl-3 pr-2 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm [color-scheme:dark]"
+                className="w-full bg-white dark:bg-[#1c2a36] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg pl-3 pr-2 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm dark:[color-scheme:dark]"
               />
             </div>
           )}
@@ -148,7 +148,7 @@ export default function RectificationForm({
                 type="time"
                 value={correctedPunchOut}
                 onChange={(e) => setCorrectedPunchOut(e.target.value)}
-                className="w-full bg-white dark:bg-[#1c2a36] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg pl-3 pr-2 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm [color-scheme:dark]"
+                className="w-full bg-white dark:bg-[#1c2a36] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg pl-3 pr-2 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm dark:[color-scheme:dark]"
               />
             </div>
           )}

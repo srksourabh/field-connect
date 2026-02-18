@@ -32,7 +32,7 @@ export default function ReportCriteriaCard({
               type="date"
               value={startDate}
               onChange={(e) => onStartDateChange(e.target.value)}
-              className="uds-input text-sm pl-10 [color-scheme:dark]"
+              className="uds-input text-sm pl-10 dark:[color-scheme:dark]"
             />
           </div>
         </div>
@@ -46,7 +46,7 @@ export default function ReportCriteriaCard({
               type="date"
               value={endDate}
               onChange={(e) => onEndDateChange(e.target.value)}
-              className="uds-input text-sm pl-10 [color-scheme:dark]"
+              className="uds-input text-sm pl-10 dark:[color-scheme:dark]"
             />
           </div>
         </div>

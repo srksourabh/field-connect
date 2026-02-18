@@ -67,7 +67,7 @@ export default function JobInfoForm({ data, onChange }: JobInfoFormProps) {
             type="date"
             value={data.joiningDate}
             onChange={(e) => onChange("joiningDate", e.target.value)}
-            className="uds-input pl-10 [color-scheme:dark]"
+            className="uds-input pl-10 dark:[color-scheme:dark]"
           />
         </div>
 
