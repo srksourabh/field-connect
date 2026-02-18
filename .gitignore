@@ -8,3 +8,4 @@ nul
 conversation-*.txt
 *.tsbuildinfo
 next-env.d.ts
+_archived/
