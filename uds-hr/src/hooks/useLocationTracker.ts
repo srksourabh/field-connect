@@ -75,16 +75,21 @@ export function useLocationTracker(
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
-          markSlotCaptured(slot);
 
           if (isOnline !== false) {
-            await insertLocationLog({
-              user_id: userId,
-              attendance_id: attendanceId ?? null,
-              lat: latitude,
-              long: longitude,
-              source: "scheduled",
-            });
+            try {
+              await insertLocationLog({
+                user_id: userId,
+                attendance_id: attendanceId ?? null,
+                lat: latitude,
+                long: longitude,
+                source: "scheduled",
+              });
+              markSlotCaptured(slot); // Only mark after successful persist
+            } catch (e) {
+              console.error("Scheduled location log failed:", e);
+              // Don't mark slot — will retry next interval
+            }
           } else {
             addToQueue({
               id: crypto.randomUUID(),
@@ -98,6 +103,7 @@ export function useLocationTracker(
               },
               timestamp: now.toISOString(),
             });
+            markSlotCaptured(slot); // Queue is synchronous — safe to mark
           }
         },
         (err) => {

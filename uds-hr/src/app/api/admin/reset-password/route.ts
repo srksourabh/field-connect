@@ -19,41 +19,17 @@ export async function POST(req: NextRequest) {
 
   // Verify the caller is an admin
   const authHeader = req.headers.get("authorization");
-  const cookieHeader = req.headers.get("cookie");
-
-  const supabaseAnon = createClient(
-    supabaseUrl,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  let callerUser = null;
-  if (authHeader) {
-    const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseAnon.auth.getUser(token);
-    callerUser = data.user;
-  }
-
-  if (!callerUser && cookieHeader) {
-    const cookieMatch = cookieHeader.match(/sb-[^=]+-auth-token=([^;]+)/);
-    if (cookieMatch?.[1]) {
-      try {
-        const decoded = decodeURIComponent(cookieMatch[1]);
-        const session = JSON.parse(decoded.startsWith("base64-") ? atob(decoded.slice(7)) : atob(decoded));
-        if (session?.access_token) {
-          const { data } = await supabaseAnon.auth.getUser(session.access_token);
-          callerUser = data.user;
-        }
-      } catch {
-        // Invalid cookie format — skip
-      }
-    }
-  }
-
-  if (!callerUser) {
+  if (!authHeader?.startsWith("Bearer ")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  const token = authHeader.split(" ")[1];
+  const { data: { user: callerUser } } = await supabaseAdmin.auth.getUser(token);
+
+  if (!callerUser) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { data: callerProfile } = await supabaseAdmin
     .from("hr_profiles")

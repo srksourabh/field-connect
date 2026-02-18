@@ -48,17 +48,9 @@ export default function DashboardHome() {
   const [routeMapOpen, setRouteMapOpen] = useState(false);
   const lastInitUserId = useRef("");
   const punchingRef = useRef(false); // debounce guard
-  const punchDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Location tracker — captures GPS at scheduled times while punched in
   useLocationTracker(isPunchedIn, userId, attendanceId, isOnline);
-
-  // Cleanup debounce timer on unmount
-  useEffect(() => {
-    return () => {
-      if (punchDebounceTimer.current) clearTimeout(punchDebounceTimer.current);
-    };
-  }, []);
 
   // Live clock — updates every second
   useEffect(() => {
@@ -165,12 +157,11 @@ export default function DashboardHome() {
 
   const handleToggle = useCallback(async () => {
     if (!userId) return;
-    // Prevent rapid double-triggers
+    // Prevent rapid double-triggers — released only after async operations complete
     if (punchingRef.current) return;
     punchingRef.current = true;
-    if (punchDebounceTimer.current) clearTimeout(punchDebounceTimer.current);
-    punchDebounceTimer.current = setTimeout(() => { punchingRef.current = false; }, 3000);
 
+    try {
     if (!isPunchedIn) {
       // Punch In — save location
       if (geo.address) {
@@ -191,10 +182,9 @@ export default function DashboardHome() {
           setAttendanceId(record.id);
           if (!firstPunchIn) setFirstPunchIn(timestamp);
         } else {
-          // Server rejected punch-in — revert local state
+          // Server rejected punch-in — revert local state completely
           punchOut();
           showToast("Punch-in failed. Please try again.", "error");
-          punchingRef.current = false;
           return;
         }
         // Log punch-in location
@@ -284,6 +274,9 @@ export default function DashboardHome() {
         }
       }
       setAttendanceId(null);
+    }
+    } finally {
+      punchingRef.current = false;
     }
   }, [userId, isPunchedIn, punchIn, punchOut, geo.lat, geo.long, geo.address, isOnline, attendanceId, firstPunchIn]);
 
@@ -417,7 +410,9 @@ export default function DashboardHome() {
 }
 
 function getGreeting(): string {
-  const hour = new Date().getHours();
+  const hour = parseInt(
+    new Date().toLocaleString("en-IN", { hour: "numeric", hour12: false, timeZone: "Asia/Kolkata" })
+  );
   if (hour < 12) return "Good Morning";
   if (hour < 17) return "Good Afternoon";
   return "Good Evening";

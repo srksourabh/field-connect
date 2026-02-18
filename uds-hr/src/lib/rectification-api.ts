@@ -204,8 +204,8 @@ export async function rejectRectificationRequest(
     return false;
   }
 
-  // 2. Update status
-  const { error } = await supabase
+  // 2. Update status (only if still pending — prevents rejecting after approval)
+  const { data: updated, error } = await supabase
     .from("hr_rectification_requests")
     .update({
       status: "rejected",
@@ -213,10 +213,16 @@ export async function rejectRectificationRequest(
       reviewed_at: new Date().toISOString(),
       reviewer_comment: comment || null,
     })
-    .eq("id", requestId);
+    .eq("id", requestId)
+    .eq("status", "pending")
+    .select();
 
   if (error) {
     console.error("Reject rectification error:", error);
+    return false;
+  }
+  if (!updated || updated.length === 0) {
+    console.error("Rectification request is no longer pending");
     return false;
   }
 

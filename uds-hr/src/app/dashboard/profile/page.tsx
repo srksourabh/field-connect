@@ -28,13 +28,13 @@ export default function ProfilePage() {
     // Days present this month — count unique dates with "present" status
     const { data: attendanceData } = await supabase
       .from("hr_attendance")
-      .select("created_at")
+      .select("punch_in_at")
       .eq("user_id", user.id)
       .in("status", ["present", "half-day", "late"])
-      .gte("created_at", monthStart)
-      .lte("created_at", monthEnd);
+      .gte("punch_in_at", monthStart)
+      .lte("punch_in_at", monthEnd);
     const uniqueDays = new Set((attendanceData || []).map((r) =>
-      new Date(r.created_at).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })
+      new Date(r.punch_in_at).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })
     ));
     setDaysPresent(uniqueDays.size);
 
@@ -124,6 +124,8 @@ export default function ProfilePage() {
 
       if (uploadError) {
         console.error("Upload error:", uploadError.message);
+        const { showToast } = await import("@/components/ui/Toast");
+        showToast("Failed to upload avatar. Please try again.", "error");
         return;
       }
 

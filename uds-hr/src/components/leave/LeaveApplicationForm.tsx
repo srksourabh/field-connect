@@ -38,7 +38,7 @@ export default function LeaveApplicationForm({ onSubmit, submitting, privilegeEn
     }
   };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -48,30 +48,8 @@ export default function LeaveApplicationForm({ onSubmit, submitting, privilegeEn
       return;
     }
 
-    setUploading(true);
     setUploadedFile(file);
-
-    const ext = file.name.split(".").pop() ?? "bin";
-    const filePath = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-
-    const { error } = await supabase.storage
-      .from("leave-attachments")
-      .upload(filePath, file);
-
-    if (error) {
-      console.error("Upload error:", error.message);
-      showToast("Failed to upload file. Please try again.", "error");
-      setUploadedFile(null);
-      setUploading(false);
-      return;
-    }
-
-    const { data: urlData } = supabase.storage
-      .from("leave-attachments")
-      .getPublicUrl(filePath);
-
-    setAttachmentUrl(urlData.publicUrl);
-    setUploading(false);
+    setAttachmentUrl(null); // Will be uploaded on submit
   };
 
   const handleRemoveFile = () => {
@@ -80,7 +58,7 @@ export default function LeaveApplicationForm({ onSubmit, submitting, privilegeEn
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!startDate || !endDate) {
       showToast("Please select both start and end dates.", "error");
@@ -90,7 +68,31 @@ export default function LeaveApplicationForm({ onSubmit, submitting, privilegeEn
       showToast("End date cannot be before start date.", "error");
       return;
     }
-    onSubmit({ type, startDate, endDate, reason, attachmentUrl });
+
+    // Upload file now (deferred from file select to avoid orphans)
+    let finalAttachmentUrl = attachmentUrl;
+    if (uploadedFile && !attachmentUrl) {
+      setUploading(true);
+      const ext = uploadedFile.name.split(".").pop() ?? "bin";
+      const filePath = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage
+        .from("leave-attachments")
+        .upload(filePath, uploadedFile);
+      if (error) {
+        console.error("Upload error:", error.message);
+        showToast("Failed to upload file. Please try again.", "error");
+        setUploading(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage
+        .from("leave-attachments")
+        .getPublicUrl(filePath);
+      finalAttachmentUrl = urlData.publicUrl;
+      setAttachmentUrl(finalAttachmentUrl);
+      setUploading(false);
+    }
+
+    onSubmit({ type, startDate, endDate, reason, attachmentUrl: finalAttachmentUrl });
   };
 
   return (

@@ -199,8 +199,8 @@ export async function rejectLeaveRequest(
     return false;
   }
 
-  // 2. Update status to rejected (no balance change)
-  const { error } = await supabase
+  // 2. Update status to rejected (only if still pending — prevents rejecting after approval)
+  const { data: updated, error } = await supabase
     .from("hr_leave_requests")
     .update({
       status: "rejected",
@@ -208,10 +208,16 @@ export async function rejectLeaveRequest(
       reviewed_at: new Date().toISOString(),
       reviewer_comment: comment || null,
     })
-    .eq("id", requestId);
+    .eq("id", requestId)
+    .eq("status", "pending")
+    .select();
 
   if (error) {
     console.error("Reject leave error:", error);
+    return false;
+  }
+  if (!updated || updated.length === 0) {
+    console.error("Leave request is no longer pending");
     return false;
   }
 

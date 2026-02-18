@@ -149,22 +149,25 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "balance_id required" }, { status: 400 });
   }
 
-  // Verify the balance belongs to a user in the admin's project
+  // Verify the balance record exists and belongs to a user in the admin's project
+  const { data: balanceRow } = await supabaseAdmin
+    .from("hr_leave_balances")
+    .select("user_id")
+    .eq("id", balance_id)
+    .single();
+
+  if (!balanceRow) {
+    return NextResponse.json({ error: "Balance record not found" }, { status: 404 });
+  }
+
   if (!admin.isUniversal) {
-    const { data: balanceRow } = await supabaseAdmin
-      .from("hr_leave_balances")
-      .select("user_id")
-      .eq("id", balance_id)
+    const { data: targetProfile } = await supabaseAdmin
+      .from("hr_profiles")
+      .select("project_id")
+      .eq("id", balanceRow.user_id)
       .single();
-    if (balanceRow) {
-      const { data: targetProfile } = await supabaseAdmin
-        .from("hr_profiles")
-        .select("project_id")
-        .eq("id", balanceRow.user_id)
-        .single();
-      if (!targetProfile || targetProfile.project_id !== admin.project_id) {
-        return NextResponse.json({ error: "You can only manage employees in your project" }, { status: 403 });
-      }
+    if (!targetProfile || targetProfile.project_id !== admin.project_id) {
+      return NextResponse.json({ error: "You can only manage employees in your project" }, { status: 403 });
     }
   }
 

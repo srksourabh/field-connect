@@ -52,15 +52,16 @@ export async function GET(request: Request) {
     endDay = today;
   }
 
-  // Get employees scoped by role
+  // Get employees scoped by role (exclude deactivated)
   let employeesQuery = supabaseAdmin
     .from("hr_profiles")
-    .select("id, full_name, designation, department");
+    .select("id, full_name, designation, department")
+    .is("deactivated_at", null);
 
   if (profile.role === "manager") {
     employeesQuery = employeesQuery.eq("reporting_manager_id", user.id);
   }
-  // admin and super_admin see all employees (no filter)
+  // admin and super_admin see all active employees (no additional filter)
 
   const { data: employees } = await employeesQuery;
   if (!employees || employees.length === 0) {

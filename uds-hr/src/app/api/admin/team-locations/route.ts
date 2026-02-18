@@ -31,13 +31,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Get employees (managers see their reports, admins see all)
+  // Get employees (managers see their reports, admins scoped by project)
+  const isUniversal = profile.role === "super_admin" ||
+    (profile.designation?.toLowerCase().includes("hr") ?? false);
+
   let employeesQuery = supabaseAdmin
     .from("hr_profiles")
-    .select("id, full_name, designation, phone, email, avatar_url, role");
+    .select("id, full_name, designation, phone, email, avatar_url, role")
+    .is("deactivated_at", null);
 
   if (profile.role === "manager") {
     employeesQuery = employeesQuery.eq("reporting_manager_id", user.id);
+  } else if (!isUniversal && profile.project_id) {
+    employeesQuery = employeesQuery.eq("project_id", profile.project_id);
   }
 
   const { data: employees } = await employeesQuery;

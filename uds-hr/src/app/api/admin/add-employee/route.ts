@@ -40,6 +40,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Admin access required." }, { status: 403 });
   }
 
+  // Role validation: only super_admin can assign admin/super_admin roles
+  const validRoles = ["employee", "manager", "admin", "super_admin"];
+  const assignedRole = validRoles.includes(role) ? role : "employee";
+  if ((assignedRole === "admin" || assignedRole === "super_admin") && callerProfile.role !== "super_admin") {
+    return NextResponse.json({ error: "Only super admins can assign admin roles." }, { status: 403 });
+  }
+
   // Project scoping: regular admin can only add to their own project
   const isUniversal = callerProfile.role === "super_admin" ||
     (callerProfile.designation?.toLowerCase().includes("hr") ?? false);
@@ -79,7 +86,7 @@ export async function POST(req: NextRequest) {
     designation: designation || null,
     department: department || null,
     project_id: effectiveProject,
-    role: role || "employee",
+    role: assignedRole,
     reporting_manager_id: reportingManagerId || null,
   });
 

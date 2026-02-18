@@ -25,7 +25,10 @@ export default function TrackingPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!session?.access_token) return;
+    if (!session?.access_token) {
+      setLoading(false);
+      return;
+    }
 
     const fetchLocations = async () => {
       try {

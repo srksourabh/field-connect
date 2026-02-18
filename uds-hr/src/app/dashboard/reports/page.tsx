@@ -41,8 +41,8 @@ function formatHours(ms: number): string {
 }
 
 function formatDate(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+  const d = new Date(iso + "T00:00:00+05:30");
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", timeZone: "Asia/Kolkata" });
 }
 
 export default function ReportsPage() {
