@@ -66,21 +66,23 @@ function saveState(userId: string, state: PunchState) {
 }
 
 export function usePunchState(userId: string) {
-  // Start with default state; load user-specific state once userId is known
+  // Start with default state — do NOT load from localStorage eagerly.
+  // State is only set after server sync (or offline fallback via initFromCache).
   const [state, setState] = useState<PunchState>(defaultState);
+  const [isReady, setIsReady] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevUserRef = useRef<string>("");
 
-  // When userId changes, load that user's state (or reset to default)
+  // When userId changes, reset to default (don't load localStorage yet)
   useEffect(() => {
     if (prevUserRef.current === userId) return;
     prevUserRef.current = userId;
 
-    if (userId) {
-      setState(loadState(userId));
-    } else {
+    if (!userId) {
       setState(defaultState());
+      setIsReady(false);
     }
+    // Don't load from localStorage here — wait for server sync or explicit initFromCache
   }, [userId]);
 
   // Timer tick — counts current session elapsed
@@ -170,6 +172,15 @@ export function usePunchState(userId: string) {
       saveState(userId, next);
       return next;
     });
+    setIsReady(true);
+  }, [userId]);
+
+  // Offline fallback: load from localStorage (last known state on this device)
+  const initFromCache = useCallback(() => {
+    if (userId) {
+      setState(loadState(userId));
+    }
+    setIsReady(true);
   }, [userId]);
 
   const clearAutoClose = useCallback(() => {
@@ -189,9 +200,11 @@ export function usePunchState(userId: string) {
     totalElapsedSeconds,
     sessionCount: state.sessionCount,
     autoClosedYesterday: state.autoClosedYesterday,
+    isReady,
     punchIn,
     punchOut,
     initFromServer,
+    initFromCache,
     clearAutoClose,
   };
 }

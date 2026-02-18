@@ -30,7 +30,7 @@ export default function DashboardHome() {
   const userId = user?.id ?? "";
   const {
     isPunchedIn, punchInTime, elapsedSeconds, totalElapsedSeconds,
-    sessionCount, punchIn, punchOut, initFromServer,
+    sessionCount, isReady, punchIn, punchOut, initFromServer, initFromCache,
   } = usePunchState(userId);
   const [currentTime, setCurrentTime] = useState(new Date());
   const geo = useGeolocation();
@@ -97,6 +97,13 @@ export default function DashboardHome() {
 
     (async () => {
       let sessions = await getTodayAllSessions(userId);
+
+      // Server unreachable — fall back to localStorage (last known state on this device)
+      if (sessions === null) {
+        initFromCache();
+        return;
+      }
+
       let openSession = sessions.find((s) => !s.punch_out_at) ?? null;
 
       // Auto-close stale sessions from a previous IST day
@@ -106,6 +113,7 @@ export default function DashboardHome() {
           await closeStaleSession(openSession);
           // Re-fetch today's sessions (the stale one is now closed and from a past day)
           sessions = await getTodayAllSessions(userId);
+          if (sessions === null) { initFromCache(); return; }
           openSession = sessions.find((s) => !s.punch_out_at) ?? null;
         }
       }
@@ -143,7 +151,7 @@ export default function DashboardHome() {
         cacheSet(userId, "leave_balance_dashboard", info);
       }
     })();
-  }, [userId, initFromServer]);
+  }, [userId, initFromServer, initFromCache]);
 
   const handleToggle = useCallback(async () => {
     if (!userId) return;
@@ -324,6 +332,7 @@ export default function DashboardHome() {
         elapsedSeconds={elapsedSeconds}
         onToggle={handleToggle}
         syncing={geo.loading}
+        ready={isReady}
       />
 
       {/* Location */}

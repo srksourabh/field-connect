@@ -87,7 +87,8 @@ export async function getTodayAttendance(userId: string): Promise<HrAttendance |
   return data;
 }
 
-export async function getTodayAllSessions(userId: string): Promise<HrAttendance[]> {
+/** Returns today's sessions, or null if server is unreachable (offline/error). */
+export async function getTodayAllSessions(userId: string): Promise<HrAttendance[] | null> {
   const today = todayISTTimestamp();
   const { data, error } = await supabase
     .from("hr_attendance")
@@ -98,7 +99,7 @@ export async function getTodayAllSessions(userId: string): Promise<HrAttendance[
 
   if (error) {
     console.error("Get today sessions error:", error);
-    return [];
+    return null; // null = couldn't reach server; [] = no sessions found
   }
   return data || [];
 }
@@ -117,6 +118,7 @@ export function computeCumulativeSeconds(sessions: HrAttendance[]): number {
 /** After punch-out, update attendance status based on cumulative hours: >=8h → present, <8h → half-day */
 export async function updateAttendanceStatus(userId: string): Promise<void> {
   const sessions = await getTodayAllSessions(userId);
+  if (!sessions) return; // Server unreachable — skip
   const totalSecs = computeCumulativeSeconds(sessions);
   const status = totalSecs >= 8 * 3600 ? "present" : "half-day";
 

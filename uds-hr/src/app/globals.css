@@ -39,6 +39,32 @@ body {
   }
 }
 
+/* Make native date picker icon clearly visible on desktop */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  width: 20px;
+  height: 20px;
+  padding: 2px;
+  border-radius: 4px;
+  transition: opacity 0.15s, background-color 0.15s;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  opacity: 0.8;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 @layer utilities {
   .safe-top {
     padding-top: env(safe-area-inset-top, 20px);
