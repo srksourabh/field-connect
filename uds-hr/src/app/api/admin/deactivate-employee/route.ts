@@ -5,7 +5,14 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(req: NextRequest) {
-  const { userId, restore } = await req.json();
+  let userId: string, restore: boolean | undefined;
+  try {
+    const body = await req.json();
+    userId = body.userId;
+    restore = body.restore;
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
 
   if (!userId) {
     return NextResponse.json({ error: "userId is required" }, { status: 400 });
@@ -28,6 +35,7 @@ export async function POST(req: NextRequest) {
     .from("hr_profiles")
     .select("role, project_id, designation")
     .eq("id", caller.id)
+    .is("deactivated_at", null)
     .single();
 
   if (!callerProfile || !["admin", "super_admin"].includes(callerProfile.role)) {

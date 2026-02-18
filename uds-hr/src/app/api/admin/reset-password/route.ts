@@ -5,7 +5,13 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(req: NextRequest) {
-  const { userId } = await req.json();
+  let userId: string;
+  try {
+    const body = await req.json();
+    userId = body.userId;
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
 
   if (!userId) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -51,23 +57,32 @@ export async function POST(req: NextRequest) {
 
   const { data: callerProfile } = await supabaseAdmin
     .from("hr_profiles")
-    .select("role")
+    .select("role, project_id, designation")
     .eq("id", callerUser.id)
+    .is("deactivated_at", null)
     .single();
 
   if (!callerProfile || !["admin", "super_admin"].includes(callerProfile.role)) {
     return NextResponse.json({ error: "Forbidden: admin only" }, { status: 403 });
   }
 
+  // Project scoping: regular admins can only reset passwords in their project
+  const isUniversal = callerProfile.role === "super_admin" ||
+    (callerProfile.designation?.toLowerCase().includes("hr") ?? false);
+
   // Fetch target user's profile for password generation
   const { data: targetProfile } = await supabaseAdmin
     .from("hr_profiles")
-    .select("full_name, phone")
+    .select("full_name, phone, project_id")
     .eq("id", userId)
     .single();
 
   if (!targetProfile) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  if (!isUniversal && targetProfile.project_id !== callerProfile.project_id) {
+    return NextResponse.json({ error: "You can only manage employees in your project" }, { status: 403 });
   }
 
   // Generate default password: first 4 letters of name (lowercase) + last 4 digits of phone
@@ -95,7 +110,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Invalidate all existing sessions so the user must log in with the new password
-  await supabaseAdmin.auth.admin.signOut(userId, "global");
+  try { await supabaseAdmin.auth.admin.signOut(userId, { scope: "global" } as never); } catch { /* best-effort */ }
 
   return NextResponse.json({ success: true });
 }

@@ -22,8 +22,9 @@ export async function GET(request: Request) {
   // Check role
   const { data: profile } = await supabaseAdmin
     .from("hr_profiles")
-    .select("role, id")
+    .select("role, id, project_id, designation")
     .eq("id", user.id)
+    .is("deactivated_at", null)
     .single();
 
   if (!profile || !["admin", "super_admin", "manager"].includes(profile.role)) {
@@ -46,20 +47,21 @@ export async function GET(request: Request) {
 
   const employeeIds = employees.map((e) => e.id);
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const todayIST = `${today}T00:00:00+05:30`;
 
   // Get today's attendance for all employees
   const { data: attendance } = await supabaseAdmin
     .from("hr_attendance")
     .select()
     .in("user_id", employeeIds)
-    .gte("created_at", today);
+    .gte("created_at", todayIST);
 
   // Get latest location logs for today
   const { data: locationLogs } = await supabaseAdmin
     .from("hr_location_logs")
     .select()
     .in("user_id", employeeIds)
-    .gte("captured_at", today)
+    .gte("captured_at", todayIST)
     .order("captured_at", { ascending: false });
 
   // Build per-employee result

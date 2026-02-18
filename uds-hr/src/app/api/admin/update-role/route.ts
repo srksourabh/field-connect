@@ -6,7 +6,14 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(req: NextRequest) {
   // 1. Parse body
-  const { userId, newRole } = await req.json();
+  let userId: string, newRole: string;
+  try {
+    const body = await req.json();
+    userId = body.userId;
+    newRole = body.newRole;
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
 
   if (!userId || !newRole || !["employee", "manager", "admin", "super_admin"].includes(newRole)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -55,17 +62,36 @@ export async function POST(req: NextRequest) {
 
   const { data: callerProfile } = await supabaseAdmin
     .from("hr_profiles")
-    .select("role")
+    .select("role, project_id, designation")
     .eq("id", callerUser.id)
+    .is("deactivated_at", null)
     .single();
 
   if (!callerProfile || !["admin", "super_admin"].includes(callerProfile.role)) {
     return NextResponse.json({ error: "Forbidden: admin only" }, { status: 403 });
   }
 
-  // Only super_admin can assign super_admin role
+  // Only super_admin can assign super_admin or admin roles
   if (newRole === "super_admin" && callerProfile.role !== "super_admin") {
     return NextResponse.json({ error: "Only super admins can assign super_admin role" }, { status: 403 });
+  }
+  if (newRole === "admin" && callerProfile.role !== "super_admin") {
+    return NextResponse.json({ error: "Only super admins can assign admin role" }, { status: 403 });
+  }
+
+  // Project scoping: regular admins can only change roles within their project
+  const isUniversal = callerProfile.role === "super_admin" ||
+    (callerProfile.designation?.toLowerCase().includes("hr") ?? false);
+
+  if (!isUniversal) {
+    const { data: targetProfile } = await supabaseAdmin
+      .from("hr_profiles")
+      .select("project_id")
+      .eq("id", userId)
+      .single();
+    if (!targetProfile || targetProfile.project_id !== callerProfile.project_id) {
+      return NextResponse.json({ error: "You can only manage employees in your project" }, { status: 403 });
+    }
   }
 
   // 4. Update the target user's role

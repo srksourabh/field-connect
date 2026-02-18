@@ -288,6 +288,24 @@ function PasswordChangeModal({ onClose }: { onClose: () => void }) {
     }
 
     setLoading(true);
+
+    // Verify current password first
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser?.email) {
+      setError("Unable to verify identity.");
+      setLoading(false);
+      return;
+    }
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email: currentUser.email,
+      password: currentPassword,
+    });
+    if (verifyError) {
+      setError("Current password is incorrect.");
+      setLoading(false);
+      return;
+    }
+
     const { error: updateError } = await supabase.auth.updateUser({
       password: newPassword,
     });

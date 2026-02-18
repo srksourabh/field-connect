@@ -5,7 +5,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  let body;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const { token, personal, job } = body;
 
   if (!token || !personal?.fullName || !personal?.email || !personal?.phone) {
@@ -32,7 +37,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "This onboarding link has already been used." }, { status: 400 });
   }
 
-  if (new Date(tokenRow.expires_at) < new Date()) {
+  // Compare in IST to avoid UTC vs IST date boundary issues
+  const nowIST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  const expiryIST = new Date(new Date(tokenRow.expires_at).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  if (expiryIST < nowIST) {
     return NextResponse.json({ error: "This onboarding link has expired." }, { status: 400 });
   }
 
@@ -71,7 +79,7 @@ export async function POST(req: NextRequest) {
     designation: job?.designation || null,
     department: job?.department || null,
     date_of_joining: job?.joiningDate || null,
-    role: job?.role || "employee",
+    role: "employee", // Always employee — role changes require admin action
   });
 
   if (profileError) {

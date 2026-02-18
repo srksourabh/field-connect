@@ -18,8 +18,9 @@ export async function GET(request: Request) {
 
   const { data: profile } = await supabaseAdmin
     .from("hr_profiles")
-    .select("role")
+    .select("role, project_id, designation")
     .eq("id", user.id)
+    .is("deactivated_at", null)
     .single();
 
   if (!profile || !["admin", "super_admin"].includes(profile.role)) {
@@ -29,10 +30,19 @@ export async function GET(request: Request) {
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const todayIST = `${today}T00:00:00+05:30`;
 
-  // Get all employees
-  const { data: employees } = await supabaseAdmin
+  // Get employees (project-scoped for regular admins)
+  const isUniversal = profile.role === "super_admin" ||
+    (profile.designation?.toLowerCase().includes("hr") ?? false);
+
+  let empQuery = supabaseAdmin
     .from("hr_profiles")
     .select("id, full_name, designation, phone, email, avatar_url, department");
+
+  if (!isUniversal && profile.project_id) {
+    empQuery = empQuery.eq("project_id", profile.project_id);
+  }
+
+  const { data: employees } = await empQuery;
 
   if (!employees) return NextResponse.json({ employees: [], summary: {} });
 
@@ -132,7 +142,7 @@ export async function GET(request: Request) {
       total: employees.length,
       present: presentCount,
       onLeave: leaveUserIds.size,
-      absent: employees.length - presentCount - leaveUserIds.size,
+      absent: Math.max(0, employees.length - presentCount - leaveUserIds.size),
     },
   });
 }

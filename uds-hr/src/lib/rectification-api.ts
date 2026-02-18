@@ -106,8 +106,8 @@ export async function approveRectificationRequest(
     return false;
   }
 
-  // 2. Update request status to approved
-  const { error: updateError } = await supabase
+  // 2. Update request status to approved (only if still pending — prevents double-approval)
+  const { data: updated, error: updateError } = await supabase
     .from("hr_rectification_requests")
     .update({
       status: "approved",
@@ -115,10 +115,16 @@ export async function approveRectificationRequest(
       reviewed_at: new Date().toISOString(),
       reviewer_comment: comment || null,
     })
-    .eq("id", requestId);
+    .eq("id", requestId)
+    .eq("status", "pending")
+    .select();
 
   if (updateError) {
     console.error("Approve rectification error:", updateError);
+    return false;
+  }
+  if (!updated || updated.length === 0) {
+    console.error("Rectification request is no longer pending");
     return false;
   }
 

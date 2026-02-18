@@ -28,7 +28,7 @@ export default function LeaveApplicationForm({ onSubmit, submitting, privilegeEn
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
   const handleStartDateChange = (val: string) => {
     setStartDate(val);

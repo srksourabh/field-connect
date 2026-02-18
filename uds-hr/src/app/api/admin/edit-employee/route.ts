@@ -5,7 +5,10 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function PATCH(req: NextRequest) {
-  const body = await req.json();
+  let body;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const { userId, ...updates } = body;
 
   if (!userId) {
@@ -29,6 +32,7 @@ export async function PATCH(req: NextRequest) {
     .from("hr_profiles")
     .select("role, project_id, designation")
     .eq("id", caller.id)
+    .is("deactivated_at", null)
     .single();
 
   if (!callerProfile || !["admin", "super_admin"].includes(callerProfile.role)) {
@@ -51,9 +55,12 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  // Only super_admin can set super_admin role
+  // Only super_admin can set admin or super_admin role
   if (updates.role === "super_admin" && callerProfile.role !== "super_admin") {
     return NextResponse.json({ error: "Only super admins can assign super_admin role" }, { status: 403 });
+  }
+  if (updates.role === "admin" && callerProfile.role !== "super_admin") {
+    return NextResponse.json({ error: "Only super admins can assign admin role" }, { status: 403 });
   }
 
   // Filter allowed fields

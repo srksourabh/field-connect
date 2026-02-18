@@ -78,8 +78,8 @@ export async function approveLeaveRequest(
     return false;
   }
 
-  // 3. Update status to approved
-  const { error: updateError } = await supabase
+  // 3. Update status to approved (only if still pending — prevents double-approval)
+  const { data: updated, error: updateError } = await supabase
     .from("hr_leave_requests")
     .update({
       status: "approved",
@@ -87,10 +87,16 @@ export async function approveLeaveRequest(
       reviewed_at: new Date().toISOString(),
       reviewer_comment: comment || null,
     })
-    .eq("id", requestId);
+    .eq("id", requestId)
+    .eq("status", "pending")
+    .select();
 
   if (updateError) {
     console.error("Approve leave error:", updateError);
+    return false;
+  }
+  if (!updated || updated.length === 0) {
+    console.error("Leave request is no longer pending");
     return false;
   }
 
@@ -146,17 +152,21 @@ export async function approveLeaveRequest(
   }
 
   if (leaveRecords.length > 0) {
-    // Delete any existing attendance records for those dates to avoid duplicates
+    // Only insert on-leave records for days that don't already have attendance
     for (const rec of leaveRecords) {
       const dateStr = rec.created_at.split("T")[0];
-      await supabase
+      const { data: existing } = await supabase
         .from("hr_attendance")
-        .delete()
+        .select("id")
         .eq("user_id", request.user_id)
         .gte("created_at", `${dateStr}T00:00:00+05:30`)
-        .lte("created_at", `${dateStr}T23:59:59+05:30`);
+        .lte("created_at", `${dateStr}T23:59:59+05:30`)
+        .limit(1);
+      // Only insert if no attendance record exists for this date
+      if (!existing || existing.length === 0) {
+        await supabase.from("hr_attendance").insert(rec);
+      }
     }
-    await supabase.from("hr_attendance").insert(leaveRecords);
   }
 
   // 5. Notify employee

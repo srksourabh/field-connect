@@ -109,6 +109,22 @@ export default function LeavePage() {
       return;
     }
 
+    // Check for overlapping pending/approved leave
+    const { data: overlapping } = await supabase
+      .from("hr_leave_requests")
+      .select("id")
+      .eq("user_id", user.id)
+      .in("status", ["pending", "approved"])
+      .lte("start_date", data.endDate)
+      .gte("end_date", data.startDate)
+      .limit(1);
+
+    if (overlapping && overlapping.length > 0) {
+      showToast("You already have a leave request for these dates.", "error");
+      setSubmitting(false);
+      return;
+    }
+
     // Online path — validate balance
     if (balance) {
       const totalKeyMap: Record<string, string> = {

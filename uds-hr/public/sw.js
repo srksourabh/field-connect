@@ -1,4 +1,6 @@
-const CACHE_NAME = "uds-hr-v1";
+// Cache version — update on each deploy to bust stale caches
+const CACHE_VERSION = "20260218";
+const CACHE_NAME = `uds-hr-${CACHE_VERSION}`;
 const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   "/",

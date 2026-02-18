@@ -1,4 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -8,21 +12,43 @@ export async function middleware(request: NextRequest) {
   const authCookie = allCookies.find(
     (c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token")
   );
-
-  // Also check for the auth token parts (Supabase splits large cookies)
   const authCookie0 = allCookies.find(
     (c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token.0")
   );
 
-  const hasSession = !!(authCookie?.value || authCookie0?.value);
+  const cookieValue = authCookie?.value || authCookie0?.value;
 
-  // Redirect unauthenticated users to login
-  if (!hasSession && pathname.startsWith("/dashboard")) {
+  if (!cookieValue && pathname.startsWith("/dashboard")) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  // Validate the token with Supabase on dashboard routes
+  if (cookieValue && pathname.startsWith("/dashboard")) {
+    try {
+      const decoded = decodeURIComponent(cookieValue);
+      const session = JSON.parse(
+        decoded.startsWith("base64-") ? atob(decoded.slice(7)) : atob(decoded)
+      );
+      if (session?.access_token) {
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        const { error } = await supabase.auth.getUser(session.access_token);
+        if (error) {
+          // Invalid/expired token — clear cookie and redirect
+          const response = NextResponse.redirect(new URL("/login", request.url));
+          response.cookies.delete(authCookie?.name || "");
+          return response;
+        }
+      } else {
+        return NextResponse.redirect(new URL("/login", request.url));
+      }
+    } catch {
+      // Cookie parse failed — redirect to login
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+  }
+
   // Redirect authenticated users away from login
-  if (hasSession && pathname === "/login") {
+  if (cookieValue && pathname === "/login") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

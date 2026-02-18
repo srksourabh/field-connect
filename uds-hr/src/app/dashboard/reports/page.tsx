@@ -28,6 +28,7 @@ function formatTime(iso: string | null): string {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
+    timeZone: "Asia/Kolkata",
   });
 }
 

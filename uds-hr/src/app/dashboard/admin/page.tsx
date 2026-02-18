@@ -213,7 +213,10 @@ export default function EmployeeManagementPage() {
     setActionLoading(targetUser.id);
     const res = await fetch("/api/admin/update-role", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token}`,
+      },
       body: JSON.stringify({ userId: targetUser.id, newRole }),
     });
     if (res.ok) {

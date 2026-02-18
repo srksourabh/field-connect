@@ -122,13 +122,14 @@ export async function updateAttendanceStatus(userId: string): Promise<void> {
   const totalSecs = computeCumulativeSeconds(sessions);
   const status = totalSecs >= 8 * 3600 ? "present" : "half-day";
 
-  // Update all of today's sessions to the computed status
+  // Update today's work sessions to the computed status (skip on-leave/holiday records)
   const today = todayISTTimestamp();
   await supabase
     .from("hr_attendance")
     .update({ status })
     .eq("user_id", userId)
-    .gte("created_at", today);
+    .gte("created_at", today)
+    .not("status", "in", '("on-leave","holiday")');
 }
 
 export async function getAttendanceByMonth(

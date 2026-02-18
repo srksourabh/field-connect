@@ -6,7 +6,15 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-async function verifyAdmin(request: Request) {
+interface AdminInfo {
+  id: string;
+  role: string;
+  project_id: string | null;
+  designation: string | null;
+  isUniversal: boolean;
+}
+
+async function verifyAdmin(request: Request): Promise<AdminInfo | null> {
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) return null;
 
@@ -16,26 +24,38 @@ async function verifyAdmin(request: Request) {
 
   const { data: profile } = await supabaseAdmin
     .from("hr_profiles")
-    .select("role")
+    .select("role, project_id, designation")
     .eq("id", user.id)
+    .is("deactivated_at", null)
     .single();
 
   if (!profile || !["admin", "super_admin"].includes(profile.role)) return null;
-  return user;
+
+  const isUniversal = profile.role === "super_admin" ||
+    (profile.designation?.toLowerCase().includes("hr") ?? false);
+
+  return { id: user.id, role: profile.role, project_id: profile.project_id, designation: profile.designation, isUniversal };
 }
 
 // GET: All employees + their leave balances for current year
 export async function GET(request: Request) {
-  const user = await verifyAdmin(request);
-  if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const admin = await verifyAdmin(request);
+  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const url = new URL(request.url);
   const year = parseInt(url.searchParams.get("year") || String(new Date().getFullYear()));
 
-  const { data: employees } = await supabaseAdmin
+  let empQuery = supabaseAdmin
     .from("hr_profiles")
     .select("id, full_name, designation, department, role")
     .order("full_name");
+
+  // Project scoping for regular admins
+  if (!admin.isUniversal && admin.project_id) {
+    empQuery = empQuery.eq("project_id", admin.project_id);
+  }
+
+  const { data: employees } = await empQuery;
 
   if (!employees) return NextResponse.json({ employees: [] });
 
@@ -56,19 +76,24 @@ export async function GET(request: Request) {
 
 // POST: Bulk allot leaves for employees missing balance records
 export async function POST(request: Request) {
-  const user = await verifyAdmin(request);
-  if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const admin = await verifyAdmin(request);
+  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const body = await request.json();
+  let body;
+  try { body = await request.json(); } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const year = body.year || new Date().getFullYear();
   const sickTotal = body.sick_total ?? 5;
   const casualTotal = body.casual_total ?? 10;
   const privilegeTotal = body.privilege_total ?? 15;
 
-  // Get all employees
-  const { data: employees } = await supabaseAdmin
-    .from("hr_profiles")
-    .select("id");
+  // Get employees (scoped by project for regular admins)
+  let empQuery = supabaseAdmin.from("hr_profiles").select("id");
+  if (!admin.isUniversal && admin.project_id) {
+    empQuery = empQuery.eq("project_id", admin.project_id);
+  }
+  const { data: employees } = await empQuery;
 
   if (!employees) return NextResponse.json({ error: "No employees found" }, { status: 404 });
 
@@ -111,14 +136,36 @@ export async function POST(request: Request) {
 
 // PATCH: Update individual employee balance
 export async function PATCH(request: Request) {
-  const user = await verifyAdmin(request);
-  if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const admin = await verifyAdmin(request);
+  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const body = await request.json();
+  let body;
+  try { body = await request.json(); } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const { balance_id, ...updates } = body;
 
   if (!balance_id) {
     return NextResponse.json({ error: "balance_id required" }, { status: 400 });
+  }
+
+  // Verify the balance belongs to a user in the admin's project
+  if (!admin.isUniversal) {
+    const { data: balanceRow } = await supabaseAdmin
+      .from("hr_leave_balances")
+      .select("user_id")
+      .eq("id", balance_id)
+      .single();
+    if (balanceRow) {
+      const { data: targetProfile } = await supabaseAdmin
+        .from("hr_profiles")
+        .select("project_id")
+        .eq("id", balanceRow.user_id)
+        .single();
+      if (!targetProfile || targetProfile.project_id !== admin.project_id) {
+        return NextResponse.json({ error: "You can only manage employees in your project" }, { status: 403 });
+      }
+    }
   }
 
   const allowedFields = [

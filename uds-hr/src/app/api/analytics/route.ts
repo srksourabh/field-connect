@@ -18,8 +18,9 @@ export async function GET(request: Request) {
 
   const { data: profile } = await supabaseAdmin
     .from("hr_profiles")
-    .select("role, id")
+    .select("role, id, project_id, designation")
     .eq("id", user.id)
+    .is("deactivated_at", null)
     .single();
 
   if (!profile || (profile.role !== "admin" && profile.role !== "manager" && profile.role !== "super_admin")) {
@@ -29,23 +30,27 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const period = url.searchParams.get("period") || "this_month";
 
-  // Determine date range
-  const now = new Date();
-  let startDate: Date;
-  let endDate: Date;
+  // Determine date range using IST
+  const pad2 = (n: number) => n.toString().padStart(2, "0");
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const [todayYear, todayMonth] = today.split("-").map(Number);
+
+  let startStr: string;
+  let endStr: string;
+  let endDay: string;
 
   if (period === "last_month") {
-    startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    const lm = todayMonth === 1 ? 12 : todayMonth - 1;
+    const ly = todayMonth === 1 ? todayYear - 1 : todayYear;
+    const lastDayOfLastMonth = new Date(ly, lm, 0).getDate();
+    startStr = `${ly}-${pad2(lm)}-01T00:00:00+05:30`;
+    endStr = `${ly}-${pad2(lm)}-${pad2(lastDayOfLastMonth)}T23:59:59+05:30`;
+    endDay = `${ly}-${pad2(lm)}-${pad2(lastDayOfLastMonth)}`;
   } else {
-    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    endDate = now;
+    startStr = `${todayYear}-${pad2(todayMonth)}-01T00:00:00+05:30`;
+    endStr = `${today}T23:59:59+05:30`;
+    endDay = today;
   }
-
-  const pad2 = (n: number) => n.toString().padStart(2, "0");
-  const startStr = `${startDate.getFullYear()}-${pad2(startDate.getMonth() + 1)}-${pad2(startDate.getDate())}T00:00:00+05:30`;
-  const endStr = `${endDate.getFullYear()}-${pad2(endDate.getMonth() + 1)}-${pad2(endDate.getDate())}T23:59:59+05:30`;
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
   // Get employees scoped by role
   let employeesQuery = supabaseAdmin
@@ -133,7 +138,7 @@ export async function GET(request: Request) {
   const summary = {
     totalEmployees: employees.length,
     presentToday: presentTodayIds.size,
-    absentToday: employees.length - presentTodayIds.size - onLeaveTodayIds.size,
+    absentToday: Math.max(0, employees.length - presentTodayIds.size - onLeaveTodayIds.size),
     onLeaveToday: onLeaveTodayIds.size,
     inFieldNow: inFieldIds.size,
   };
@@ -188,13 +193,15 @@ export async function GET(request: Request) {
     ? `${avgPunchInHH.toString().padStart(2, "0")}:${avgPunchInMM.toString().padStart(2, "0")}`
     : "--";
 
-  // Count total working days in the period (weekdays)
+  // Count total working days in the period (weekdays) using IST dates
   let totalWorkDays = 0;
-  const d = new Date(startDate);
-  while (d <= endDate) {
-    const dow = d.getDay();
-    if (dow !== 0 && dow !== 6) totalWorkDays++;
-    d.setDate(d.getDate() + 1);
+  const startDateStr = startStr.split("T")[0];
+  const iterDate = new Date(startDateStr + "T12:00:00+05:30"); // noon IST to avoid DST issues
+  const endDate2 = new Date(endDay + "T12:00:00+05:30");
+  while (iterDate <= endDate2) {
+    const dayOfWeek = iterDate.toLocaleDateString("en-US", { weekday: "short", timeZone: "Asia/Kolkata" });
+    if (dayOfWeek !== "Sun" && dayOfWeek !== "Sat") totalWorkDays++;
+    iterDate.setDate(iterDate.getDate() + 1);
   }
 
   const perfectAttendanceCount = employees.filter((e) => {
@@ -238,8 +245,10 @@ export async function GET(request: Request) {
   }
 
   const trends: { date: string; count: number }[] = [];
-  const trendDate = new Date(startDate);
-  while (trendDate <= endDate) {
+  const trendStartDateStr = startStr.split("T")[0];
+  const trendDate = new Date(trendStartDateStr + "T12:00:00+05:30");
+  const trendEndDate = new Date(endDay + "T12:00:00+05:30");
+  while (trendDate <= trendEndDate) {
     const ds = trendDate.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
     const dow = trendDate.getDay();
     if (dow !== 0 && dow !== 6) {

@@ -5,7 +5,10 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  let body;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const { fullName, email, phone, designation, department, project, role, reportingManagerId } = body;
 
   if (!fullName || !email || !phone) {
@@ -19,10 +22,10 @@ export async function POST(req: NextRequest) {
 
   // Verify caller is admin
   const authHeader = req.headers.get("authorization");
-  if (!authHeader) {
+  if (!authHeader?.startsWith("Bearer ")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const token = authHeader.replace("Bearer ", "");
+  const token = authHeader.split(" ")[1];
   const { data: { user: caller } } = await supabaseAdmin.auth.getUser(token);
   if (!caller) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -31,6 +34,7 @@ export async function POST(req: NextRequest) {
     .from("hr_profiles")
     .select("role, project_id, designation")
     .eq("id", caller.id)
+    .is("deactivated_at", null)
     .single();
   if (!callerProfile || !["admin", "super_admin"].includes(callerProfile.role)) {
     return NextResponse.json({ error: "Admin access required." }, { status: 403 });

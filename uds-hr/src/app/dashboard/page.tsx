@@ -24,6 +24,7 @@ import { getUserLeaveBalance, getPendingLeaveCount } from "@/lib/leave-api";
 import type { LeaveInfo } from "@/components/punch/TodayActivityGrid";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { showToast } from "@/components/ui/Toast";
 
 export default function DashboardHome() {
   const { user, profile } = useAuth();
@@ -189,6 +190,12 @@ export default function DashboardHome() {
         if (record) {
           setAttendanceId(record.id);
           if (!firstPunchIn) setFirstPunchIn(timestamp);
+        } else {
+          // Server rejected punch-in — revert local state
+          punchOut();
+          showToast("Punch-in failed. Please try again.", "error");
+          punchingRef.current = false;
+          return;
         }
         // Log punch-in location
         if (geo.lat != null && geo.long != null) {
