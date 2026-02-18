@@ -165,10 +165,10 @@ export async function GET(request: Request) {
 
     if (rec.punch_in_at) {
       const punchIn = new Date(rec.punch_in_at);
-      // Convert to IST for late detection (UTC+5:30)
-      const istHours = (punchIn.getUTCHours() + 5 + Math.floor((punchIn.getUTCMinutes() + 30) / 60)) % 24;
-      const istMinutes = (punchIn.getUTCMinutes() + 30) % 60;
-      const mins = istHours * 60 + istMinutes;
+      // Convert to IST for late detection
+      const istTime = punchIn.toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false });
+      const [istH, istM] = istTime.split(":").map(Number);
+      const mins = istH * 60 + istM;
       punchInMinutes.push(mins);
       // Late if punch-in after 10:00 AM IST
       if (mins > 600) {
@@ -240,7 +240,7 @@ export async function GET(request: Request) {
   const trends: { date: string; count: number }[] = [];
   const trendDate = new Date(startDate);
   while (trendDate <= endDate) {
-    const ds = trendDate.toISOString().split("T")[0];
+    const ds = trendDate.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
     const dow = trendDate.getDay();
     if (dow !== 0 && dow !== 6) {
       trends.push({ date: ds, count: dayMap.get(ds)?.size || 0 });

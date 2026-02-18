@@ -31,17 +31,17 @@ export async function POST(req: NextRequest) {
   }
 
   if (!callerUser && cookieHeader) {
-    // Parse the sb-* cookie to extract the session
     const cookieMatch = cookieHeader.match(/sb-[^=]+-auth-token=([^;]+)/);
-    if (cookieMatch) {
+    if (cookieMatch?.[1]) {
       try {
-        const session = JSON.parse(atob(cookieMatch[1]));
+        const decoded = decodeURIComponent(cookieMatch[1]);
+        const session = JSON.parse(decoded.startsWith("base64-") ? atob(decoded.slice(7)) : atob(decoded));
         if (session?.access_token) {
           const { data } = await supabaseAnon.auth.getUser(session.access_token);
           callerUser = data.user;
         }
       } catch {
-        // Invalid cookie format
+        // Invalid cookie format — skip
       }
     }
   }

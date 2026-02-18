@@ -29,15 +29,16 @@ export async function POST(req: NextRequest) {
 
   if (!callerUser && cookieHeader) {
     const cookieMatch = cookieHeader.match(/sb-[^=]+-auth-token=([^;]+)/);
-    if (cookieMatch) {
+    if (cookieMatch?.[1]) {
       try {
-        const session = JSON.parse(atob(cookieMatch[1]));
+        const decoded = decodeURIComponent(cookieMatch[1]);
+        const session = JSON.parse(decoded.startsWith("base64-") ? atob(decoded.slice(7)) : atob(decoded));
         if (session?.access_token) {
           const { data } = await supabaseAnon.auth.getUser(session.access_token);
           callerUser = data.user;
         }
       } catch {
-        // Invalid cookie format
+        // Invalid cookie format — skip
       }
     }
   }
@@ -92,6 +93,9 @@ export async function POST(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // Invalidate all existing sessions so the user must log in with the new password
+  await supabaseAdmin.auth.admin.signOut(userId, "global");
 
   return NextResponse.json({ success: true });
 }

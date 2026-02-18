@@ -13,6 +13,7 @@ import {
 import { createPunchIn, updatePunchOut } from "@/lib/attendance-api";
 import { insertLocationLog } from "@/lib/location-api";
 import { supabase } from "@/lib/supabase";
+import { showToast } from "@/components/ui/Toast";
 
 const FLUSH_INTERVAL_MS = 30_000;
 
@@ -93,6 +94,7 @@ export function useSyncQueue() {
           const retries = (item.retryCount ?? 0) + 1;
           if (retries >= MAX_RETRIES) {
             moveToDeadLetter({ ...item, retryCount: retries });
+            showToast(`Failed to sync ${item.type.replace("_", " ")} after ${MAX_RETRIES} attempts.`, "error");
           } else {
             updateQueueItem(item.id, { retryCount: retries });
           }

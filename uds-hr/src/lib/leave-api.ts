@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import type { HrLeaveRequest } from "./database.types";
 import { createNotification } from "./notification-api";
+import { toISTDateStr } from "./utils";
 
 export interface LeaveRequestWithProfile extends HrLeaveRequest {
   employee_name: string;
@@ -62,7 +63,22 @@ export async function approveLeaveRequest(
     return false;
   }
 
-  // 2. Update status to approved
+  // 2. Check for overlapping approved leaves
+  const { data: overlapping } = await supabase
+    .from("hr_leave_requests")
+    .select("id")
+    .eq("user_id", request.user_id)
+    .eq("status", "approved")
+    .lte("start_date", request.end_date)
+    .gte("end_date", request.start_date)
+    .limit(1);
+
+  if (overlapping && overlapping.length > 0) {
+    console.error("Overlapping approved leave exists");
+    return false;
+  }
+
+  // 3. Update status to approved
   const { error: updateError } = await supabase
     .from("hr_leave_requests")
     .update({
@@ -90,7 +106,11 @@ export async function approveLeaveRequest(
     privilege: "privilege_leave_used",
     compoff: "compoff_used",
   };
-  const usedKey = usedKeyMap[request.type] || `${request.type}_leave_used`;
+  const usedKey = usedKeyMap[request.type];
+  if (!usedKey) {
+    console.error("Unknown leave type:", request.type);
+    return true; // Approve but skip balance deduction for unknown types
+  }
 
   // Use the leave request's start year, not current year
   const requestYear = new Date(request.start_date).getFullYear();
@@ -114,7 +134,7 @@ export async function approveLeaveRequest(
   const leaveEnd = new Date(request.end_date);
   const leaveRecords: { user_id: string; created_at: string; punch_in_at: string; status: string; synced: boolean }[] = [];
   for (let d = new Date(leaveStart); d <= leaveEnd; d.setDate(d.getDate() + 1)) {
-    const dateStr = d.toISOString().split("T")[0];
+    const dateStr = toISTDateStr(d);
     const istTimestamp = `${dateStr}T00:00:00+05:30`;
     leaveRecords.push({
       user_id: request.user_id,

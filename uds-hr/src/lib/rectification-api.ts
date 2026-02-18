@@ -124,6 +124,7 @@ export async function approveRectificationRequest(
 
   // 3. Update or insert attendance record immediately
   if (request.attendance_id) {
+    // Update the specific session
     const { error: attError } = await supabase
       .from("hr_attendance")
       .update({
@@ -136,6 +137,19 @@ export async function approveRectificationRequest(
     if (attError) {
       console.error("Update attendance error:", attError);
       return false;
+    }
+
+    // Also update other sessions on the same date to the corrected status
+    if (request.corrected_status && request.attendance_date) {
+      const dateStart = `${request.attendance_date}T00:00:00+05:30`;
+      const dateEnd = `${request.attendance_date}T23:59:59+05:30`;
+      await supabase
+        .from("hr_attendance")
+        .update({ status: request.corrected_status })
+        .eq("user_id", request.user_id)
+        .neq("id", request.attendance_id)
+        .gte("created_at", dateStart)
+        .lte("created_at", dateEnd);
     }
   } else {
     const { error: attError } = await supabase

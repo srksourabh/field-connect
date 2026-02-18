@@ -82,6 +82,14 @@ export default function LeaveApplicationForm({ onSubmit, submitting, privilegeEn
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!startDate || !endDate) {
+      showToast("Please select both start and end dates.", "error");
+      return;
+    }
+    if (endDate < startDate) {
+      showToast("End date cannot be before start date.", "error");
+      return;
+    }
     onSubmit({ type, startDate, endDate, reason, attachmentUrl });
   };
 

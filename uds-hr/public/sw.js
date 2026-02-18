@@ -1,4 +1,5 @@
 const CACHE_NAME = "uds-hr-v1";
+const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   "/",
   "/dashboard",
@@ -6,9 +7,10 @@ const STATIC_ASSETS = [
   "/favicon.svg",
   "/icon-192.png",
   "/icon-512.png",
+  OFFLINE_URL,
 ];
 
-// Install: cache app shell
+// Install: cache app shell + offline page
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
@@ -30,7 +32,7 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API/data, cache-first for static assets
+// Fetch: network-first for pages, cache-first for static assets
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
@@ -43,11 +45,28 @@ self.addEventListener("fetch", (event) => {
   // API routes: network only (don't cache dynamic data)
   if (url.pathname.startsWith("/api/")) return;
 
-  // App pages and static assets: network-first with cache fallback
+  // Navigation requests: network-first, fall back to offline page
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() =>
+          caches.match(event.request).then((cached) => cached || caches.match(OFFLINE_URL))
+        )
+    );
+    return;
+  }
+
+  // Static assets: network-first with cache fallback
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful responses
         if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));

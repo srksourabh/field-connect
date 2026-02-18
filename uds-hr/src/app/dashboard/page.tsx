@@ -47,9 +47,17 @@ export default function DashboardHome() {
   const [routeMapOpen, setRouteMapOpen] = useState(false);
   const lastInitUserId = useRef("");
   const punchingRef = useRef(false); // debounce guard
+  const punchDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Location tracker — captures GPS at scheduled times while punched in
   useLocationTracker(isPunchedIn, userId, attendanceId, isOnline);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (punchDebounceTimer.current) clearTimeout(punchDebounceTimer.current);
+    };
+  }, []);
 
   // Live clock — updates every second
   useEffect(() => {
@@ -106,16 +114,17 @@ export default function DashboardHome() {
 
       let openSession = sessions.find((s) => !s.punch_out_at) ?? null;
 
-      // Auto-close stale sessions from a previous IST day
-      if (openSession?.punch_in_at) {
-        const sessionDate = toISTDateStr(new Date(openSession.punch_in_at));
-        if (sessionDate !== todayIST()) {
-          await closeStaleSession(openSession);
-          // Re-fetch today's sessions (the stale one is now closed and from a past day)
-          sessions = await getTodayAllSessions(userId);
-          if (sessions === null) { initFromCache(); return; }
-          openSession = sessions.find((s) => !s.punch_out_at) ?? null;
-        }
+      // Auto-close ALL stale sessions from previous IST days
+      const staleSessions = sessions.filter((s) => {
+        if (!s.punch_in_at || s.punch_out_at) return false;
+        return toISTDateStr(new Date(s.punch_in_at)) !== todayIST();
+      });
+      if (staleSessions.length > 0) {
+        await Promise.all(staleSessions.map((s) => closeStaleSession(s)));
+        // Re-fetch today's sessions after closing stale ones
+        sessions = await getTodayAllSessions(userId);
+        if (sessions === null) { initFromCache(); return; }
+        openSession = sessions.find((s) => !s.punch_out_at) ?? null;
       }
 
       initFromServer(sessions, openSession ? { punch_in_at: openSession.punch_in_at! } : null);
@@ -158,7 +167,8 @@ export default function DashboardHome() {
     // Prevent rapid double-triggers
     if (punchingRef.current) return;
     punchingRef.current = true;
-    setTimeout(() => { punchingRef.current = false; }, 3000);
+    if (punchDebounceTimer.current) clearTimeout(punchDebounceTimer.current);
+    punchDebounceTimer.current = setTimeout(() => { punchingRef.current = false; }, 3000);
 
     if (!isPunchedIn) {
       // Punch In — save location
@@ -340,6 +350,8 @@ export default function DashboardHome() {
         onToggle={handleToggle}
         syncing={geo.loading}
         ready={isReady}
+        geoLoading={geo.loading}
+        geoError={geo.error}
       />
 
       {/* Location */}

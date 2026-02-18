@@ -58,53 +58,58 @@ export default function ReportsPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const fetchReport = useCallback(async () => {
-    setLoading(true);
-
-    // Fetch profiles (for name, project, department mapping)
+  // Shared data-fetching logic used by both preview and download
+  const fetchReportData = useCallback(async (): Promise<ReportRow[]> => {
     let profileQuery = supabase.from("hr_profiles").select("id, full_name, project_id, department");
     if (project) profileQuery = profileQuery.eq("project_id", project);
     if (department) profileQuery = profileQuery.eq("department", department);
     const { data: profiles } = await profileQuery;
 
-    if (!profiles || profiles.length === 0) {
-      setRows([]);
-      setTotalCount(0);
-      setLoading(false);
-      return;
-    }
+    if (!profiles || profiles.length === 0) return [];
 
     const profileMap = new Map<string, string>();
-    for (const p of profiles) {
-      profileMap.set(p.id, p.full_name);
-    }
+    for (const p of profiles) profileMap.set(p.id, p.full_name);
     const userIds = profiles.map((p) => p.id);
 
-    // Fetch attendance for the date range
-    // punch_in_at is an ISO timestamp — filter by date range
     const startIso = startDate + "T00:00:00+05:30";
     const endIso = endDate + "T23:59:59+05:30";
 
+    // Fetch punch-based attendance
     const { data: attendance } = await supabase
       .from("hr_attendance")
-      .select("user_id, punch_in_at, punch_out_at, status")
+      .select("user_id, punch_in_at, punch_out_at, status, created_at")
       .in("user_id", userIds)
       .gte("punch_in_at", startIso)
       .lte("punch_in_at", endIso)
       .order("punch_in_at", { ascending: true });
 
-    if (!attendance || attendance.length === 0) {
-      setRows([]);
-      setTotalCount(0);
-      setLoading(false);
-      return;
-    }
+    // Also fetch on-leave/holiday records (no punch_in_at, use created_at)
+    const { data: leaveAttendance } = await supabase
+      .from("hr_attendance")
+      .select("user_id, punch_in_at, punch_out_at, status, created_at")
+      .in("user_id", userIds)
+      .in("status", ["on-leave", "holiday"])
+      .gte("created_at", startIso)
+      .lte("created_at", endIso);
+
+    // Merge and deduplicate by id
+    const allRecords = [...(attendance || []), ...(leaveAttendance || [])];
+    const seen = new Set<string>();
+    const deduped = allRecords.filter((r) => {
+      const key = `${r.user_id}_${r.punch_in_at || r.created_at}_${r.status}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    if (deduped.length === 0) return [];
 
     // Group by user+date, take first punch-in and last punch-out per day
     const dayMap = new Map<string, { user_id: string; date: string; firstIn: string | null; lastOut: string | null; status: string }>();
 
-    for (const rec of attendance) {
-      const dateStr = rec.punch_in_at ? toISTDateStr(new Date(rec.punch_in_at)) : "";
+    for (const rec of deduped) {
+      const ts = rec.punch_in_at || rec.created_at;
+      const dateStr = ts ? toISTDateStr(new Date(ts)) : "";
       if (!dateStr) continue;
       const key = `${rec.user_id}_${dateStr}`;
       const existing = dayMap.get(key);
@@ -117,31 +122,23 @@ export default function ReportsPage() {
           status: rec.status || "present",
         });
       } else {
-        // Keep earliest punch-in
-        if (rec.punch_in_at && (!existing.firstIn || rec.punch_in_at < existing.firstIn)) {
-          existing.firstIn = rec.punch_in_at;
-        }
-        // Keep latest punch-out
-        if (rec.punch_out_at && (!existing.lastOut || rec.punch_out_at > existing.lastOut)) {
-          existing.lastOut = rec.punch_out_at;
-        }
-        // If any session is "late", mark the day as late
-        if (rec.status === "late") existing.status = "late";
+        if (rec.punch_in_at && (!existing.firstIn || rec.punch_in_at < existing.firstIn)) existing.firstIn = rec.punch_in_at;
+        if (rec.punch_out_at && (!existing.lastOut || rec.punch_out_at > existing.lastOut)) existing.lastOut = rec.punch_out_at;
+        // on-leave/holiday status takes precedence; otherwise late overrides present
+        if (rec.status === "on-leave" || rec.status === "holiday") existing.status = rec.status;
+        else if (rec.status === "late" && existing.status !== "on-leave" && existing.status !== "holiday") existing.status = "late";
       }
     }
 
+    const validStatuses: ReportStatus[] = ["present", "absent", "late", "half-day", "on-leave", "holiday", "lwp"];
     const result: ReportRow[] = [];
     for (const entry of Array.from(dayMap.values())) {
-      const ms =
-        entry.firstIn && entry.lastOut
-          ? new Date(entry.lastOut).getTime() - new Date(entry.firstIn).getTime()
-          : 0;
-
-      const validStatuses: ReportStatus[] = ["present", "absent", "late", "half-day", "on-leave", "holiday", "lwp"];
+      const ms = entry.firstIn && entry.lastOut
+        ? new Date(entry.lastOut).getTime() - new Date(entry.firstIn).getTime()
+        : 0;
       const status: ReportStatus = validStatuses.includes(entry.status as ReportStatus)
         ? (entry.status as ReportStatus)
         : "present";
-
       result.push({
         name: profileMap.get(entry.user_id) || "Unknown",
         date: formatDate(entry.date),
@@ -151,89 +148,29 @@ export default function ReportsPage() {
         status,
       });
     }
+    return result;
+  }, [startDate, endDate, project, department]);
 
+  const fetchReport = useCallback(async () => {
+    setLoading(true);
+    const result = await fetchReportData();
     setTotalCount(result.length);
     setRows(result);
     setShowPreview(true);
     setLoading(false);
-  }, [startDate, endDate, project, department]);
+  }, [fetchReportData]);
 
   const handleDownload = async () => {
-    // Always fetch fresh data and export from the fetched result
     setLoading(true);
     try {
-      let profileQuery = supabase.from("hr_profiles").select("id, full_name, project_id, department");
-      if (project) profileQuery = profileQuery.eq("project_id", project);
-      if (department) profileQuery = profileQuery.eq("department", department);
-      const { data: profiles } = await profileQuery;
-
-      if (!profiles || profiles.length === 0) {
-        setRows([]);
-        setTotalCount(0);
-        setLoading(false);
-        return;
-      }
-
-      const profileMap = new Map<string, string>();
-      for (const p of profiles) profileMap.set(p.id, p.full_name);
-      const userIds = profiles.map((p) => p.id);
-
-      const startIso = startDate + "T00:00:00+05:30";
-      const endIso = endDate + "T23:59:59+05:30";
-
-      const { data: attendance } = await supabase
-        .from("hr_attendance")
-        .select("user_id, punch_in_at, punch_out_at, status")
-        .in("user_id", userIds)
-        .gte("punch_in_at", startIso)
-        .lte("punch_in_at", endIso)
-        .order("punch_in_at", { ascending: true });
-
-      if (!attendance || attendance.length === 0) {
-        setRows([]);
-        setTotalCount(0);
-        setLoading(false);
-        return;
-      }
-
-      const dayMap = new Map<string, { user_id: string; date: string; firstIn: string | null; lastOut: string | null; status: string }>();
-      for (const rec of attendance) {
-        const dateStr = rec.punch_in_at ? toISTDateStr(new Date(rec.punch_in_at)) : "";
-        if (!dateStr) continue;
-        const key = `${rec.user_id}_${dateStr}`;
-        const existing = dayMap.get(key);
-        if (!existing) {
-          dayMap.set(key, { user_id: rec.user_id, date: dateStr, firstIn: rec.punch_in_at, lastOut: rec.punch_out_at, status: rec.status || "present" });
-        } else {
-          if (rec.punch_in_at && (!existing.firstIn || rec.punch_in_at < existing.firstIn)) existing.firstIn = rec.punch_in_at;
-          if (rec.punch_out_at && (!existing.lastOut || rec.punch_out_at > existing.lastOut)) existing.lastOut = rec.punch_out_at;
-          if (rec.status === "late") existing.status = "late";
-        }
-      }
-
-      const validStatuses: ReportStatus[] = ["present", "absent", "late", "half-day", "on-leave", "holiday", "lwp"];
-      const exportRows: ReportRow[] = [];
-      for (const entry of Array.from(dayMap.values())) {
-        const ms = entry.firstIn && entry.lastOut ? new Date(entry.lastOut).getTime() - new Date(entry.firstIn).getTime() : 0;
-        const status: ReportStatus = validStatuses.includes(entry.status as ReportStatus) ? (entry.status as ReportStatus) : "present";
-        exportRows.push({
-          name: profileMap.get(entry.user_id) || "Unknown",
-          date: formatDate(entry.date),
-          punchIn: formatTime(entry.firstIn),
-          punchOut: formatTime(entry.lastOut),
-          hours: formatHours(ms),
-          status,
-        });
-      }
-
-      setRows(exportRows);
-      setTotalCount(exportRows.length);
+      const result = await fetchReportData();
+      setRows(result);
+      setTotalCount(result.length);
       setShowPreview(true);
-
       exportToCsv(
         `attendance-report-${startDate}-to-${endDate}.csv`,
         ["Employee", "Date", "Punch In", "Punch Out", "Hours", "Status"],
-        exportRows.map((r) => [r.name, r.date, r.punchIn, r.punchOut, r.hours, r.status])
+        result.map((r) => [r.name, r.date, r.punchIn, r.punchOut, r.hours, r.status])
       );
     } finally {
       setLoading(false);
