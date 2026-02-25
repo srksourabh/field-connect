@@ -45,7 +45,7 @@ function filterTree(node: OrgNodeData, query: string): OrgNodeData | null {
 
 export default function TeamPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [orgData, setOrgData] = useState<OrgNodeData | null>(null);
+  const [orgRoots, setOrgRoots] = useState<OrgNodeData[]>([]);
   const [employeeDetails, setEmployeeDetails] = useState<Record<string, EmployeeDetail>>({});
   const [loading, setLoading] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -55,13 +55,30 @@ export default function TeamPage() {
   useEffect(() => {
     async function fetchOrg() {
       try {
-        const { data: profiles, error: fetchError } = await supabase
-          .from("hr_profiles")
-          .select("id, full_name, designation, reporting_manager_id, phone, city, department");
+        // Get auth token for the API call
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setError("Not authenticated");
+          setLoading(false);
+          return;
+        }
 
-        if (fetchError || !profiles) {
-          console.error("Error fetching profiles:", fetchError?.message);
+        const res = await fetch("/api/team", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+
+        if (!res.ok) {
           setError("Failed to load team data");
+          setLoading(false);
+          return;
+        }
+
+        const { profiles, scope } = await res.json() as {
+          profiles: ProfileRow[];
+          scope: "full" | "subtree";
+        };
+
+        if (!profiles || profiles.length === 0) {
           setLoading(false);
           return;
         }
@@ -127,24 +144,21 @@ export default function TeamPage() {
         }
         setEmployeeDetails(details);
 
-        // Build tree: find root (no reporting_manager_id), then attach children
+        // Build tree(s)
         const childMap: Record<string, ProfileRow[]> = {};
-        let root: ProfileRow | null = null;
+        const profileIds = new Set(profiles.map((p) => p.id));
+        const roots: ProfileRow[] = [];
 
         for (const p of profiles) {
-          if (!p.reporting_manager_id) {
-            if (!root) root = p;
+          // A node is a root if it has no manager, or its manager is outside the visible set
+          if (!p.reporting_manager_id || !profileIds.has(p.reporting_manager_id)) {
+            roots.push(p);
           } else {
             if (!childMap[p.reporting_manager_id]) {
               childMap[p.reporting_manager_id] = [];
             }
             childMap[p.reporting_manager_id].push(p);
           }
-        }
-
-        if (!root) {
-          setLoading(false);
-          return;
         }
 
         const buildNode = (profile: ProfileRow): OrgNodeData => {
@@ -157,9 +171,15 @@ export default function TeamPage() {
             status: statusMap.get(profile.id) || "offline",
             children: children.length > 0 ? children.map(buildNode) : undefined,
           };
+        };
+
+        // For full tree with a single root, wrap as before; for subtree, show all roots
+        if (scope === "full" && roots.length === 1) {
+          setOrgRoots([buildNode(roots[0])]);
+        } else {
+          setOrgRoots(roots.map(buildNode));
         }
 
-        setOrgData(buildNode(root));
         setLoading(false);
       } catch (err) {
         console.error("fetchOrg failed:", err);
@@ -172,10 +192,12 @@ export default function TeamPage() {
   }, []);
 
   // Filter org tree when search query changes
-  const filteredOrgData = useMemo(() => {
-    if (!orgData || !searchQuery.trim()) return orgData;
-    return filterTree(orgData, searchQuery.trim());
-  }, [orgData, searchQuery]);
+  const filteredRoots = useMemo(() => {
+    if (!orgRoots.length || !searchQuery.trim()) return orgRoots;
+    return orgRoots
+      .map((root) => filterTree(root, searchQuery.trim()))
+      .filter(Boolean) as OrgNodeData[];
+  }, [orgRoots, searchQuery]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -243,8 +265,8 @@ export default function TeamPage() {
         <div className="flex-1 flex items-center justify-center text-red-400 text-sm px-6 text-center">
           {error}
         </div>
-      ) : filteredOrgData ? (
-        <Organogram data={filteredOrgData} onSelectEmployee={setSelectedId} />
+      ) : filteredRoots.length > 0 ? (
+        <Organogram roots={filteredRoots} onSelectEmployee={setSelectedId} />
       ) : searchQuery ? (
         <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
           No results for &ldquo;{searchQuery}&rdquo;
