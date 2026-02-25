@@ -81,6 +81,18 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }
 
+  // If phone is being changed, sync the Supabase auth email to match new phone@uds.hr
+  if (filtered.phone) {
+    const cleanPhone = String(filtered.phone).replace(/\D/g, "").slice(-10);
+    const authEmail = `${cleanPhone}@uds.hr`;
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      email: authEmail,
+    });
+    if (authError) {
+      return NextResponse.json({ error: `Failed to update auth email: ${authError.message}` }, { status: 500 });
+    }
+  }
+
   const { error } = await supabaseAdmin
     .from("hr_profiles")
     .update(filtered)

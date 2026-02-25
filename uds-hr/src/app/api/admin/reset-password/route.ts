@@ -76,8 +76,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Reset password via Supabase Admin API
+  // Ensure auth email matches phone@uds.hr (fixes legacy accounts with wrong email)
+  const cleanPhone = (targetProfile.phone || "").replace(/\D/g, "").slice(-10);
+  const authEmail = `${cleanPhone}@uds.hr`;
+
+  // Reset password and fix auth email via Supabase Admin API
   const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+    email: authEmail,
     password: newPassword,
   });
 

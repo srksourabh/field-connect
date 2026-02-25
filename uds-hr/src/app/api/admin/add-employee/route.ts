@@ -64,9 +64,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Create auth user
+  // Create auth user (auth email must be phone@uds.hr to match login flow)
+  const cleanPhone = (phone || "").replace(/\D/g, "").slice(-10);
+  const authEmail = `${cleanPhone}@uds.hr`;
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-    email,
+    email: authEmail,
     password: defaultPassword,
     email_confirm: true,
   });
