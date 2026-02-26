@@ -28,7 +28,11 @@ function setAuthCookie(session: Session | null) {
   if (typeof document === "undefined") return;
   if (session) {
     const value = btoa(JSON.stringify(session));
-    document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${session.expires_in ?? 3600}; SameSite=Lax`;
+    // Use expires_at (UTC epoch) to compute actual remaining lifetime
+    const remainingSeconds = session.expires_at
+      ? Math.max(0, session.expires_at - Math.floor(Date.now() / 1000))
+      : (session.expires_in ?? 3600);
+    document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${remainingSeconds}; SameSite=Lax`;
   } else {
     document.cookie = `${COOKIE_NAME}=; path=/; max-age=0`;
   }
