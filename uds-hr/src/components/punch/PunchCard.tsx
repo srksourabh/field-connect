@@ -46,8 +46,8 @@ export default function PunchCard({
         )}
 
         {/* Analog Clock */}
-        <div className="mb-4">
-          <AnalogClock size={80} />
+        <div className="mb-5">
+          <AnalogClock size={100} />
         </div>
 
         {!canPunch ? (
