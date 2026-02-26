@@ -6,7 +6,7 @@ interface AnalogClockProps {
   size?: number;
 }
 
-export default function AnalogClock({ size = 100 }: AnalogClockProps) {
+export default function AnalogClock({ size = 110 }: AnalogClockProps) {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -28,14 +28,16 @@ export default function AnalogClock({ size = 100 }: AnalogClockProps) {
   const secondAngle = seconds * 6;
 
   const center = size / 2;
-  const bezelWidth = size * 0.06;
-  const faceRadius = center - bezelWidth - 2;
+  const outerR = center - 1;
+  const bezelWidth = size * 0.07;
+  const faceRadius = center - bezelWidth - 3;
+  const innerRingR = faceRadius + 1.5;
 
   // Hand lengths
-  const hourLen = faceRadius * 0.5;
-  const minuteLen = faceRadius * 0.68;
-  const secondLen = faceRadius * 0.78;
-  const secondTail = faceRadius * 0.2;
+  const hourLen = faceRadius * 0.48;
+  const minuteLen = faceRadius * 0.66;
+  const secondLen = faceRadius * 0.76;
+  const secondTail = faceRadius * 0.18;
 
   const handCoords = (angle: number, length: number) => {
     const rad = ((angle - 90) * Math.PI) / 180;
@@ -50,31 +52,28 @@ export default function AnalogClock({ size = 100 }: AnalogClockProps) {
   const secondEnd = handCoords(secondAngle, secondLen);
   const secondStart = handCoords(secondAngle + 180, secondTail);
 
-  // Hour markers
+  // Tick marks
   const markers = Array.from({ length: 60 }, (_, i) => {
     const angle = ((i * 6 - 90) * Math.PI) / 180;
     const isHour = i % 5 === 0;
-    const outerR = faceRadius - 1;
-    const innerR = isHour ? faceRadius - 8 : faceRadius - 4;
+    const oR = faceRadius - 1.5;
+    const iR = isHour ? faceRadius - 9 : faceRadius - 4.5;
     return {
-      x1: center + innerR * Math.cos(angle),
-      y1: center + innerR * Math.sin(angle),
-      x2: center + outerR * Math.cos(angle),
-      y2: center + outerR * Math.sin(angle),
+      x1: center + iR * Math.cos(angle),
+      y1: center + iR * Math.sin(angle),
+      x2: center + oR * Math.cos(angle),
+      y2: center + oR * Math.sin(angle),
       isHour,
     };
   });
 
-  // Hour numerals (12, 3, 6, 9)
-  const numerals = [
-    { num: "12", angle: 0 },
-    { num: "3", angle: 90 },
-    { num: "6", angle: 180 },
-    { num: "9", angle: 270 },
-  ].map(({ num, angle }) => {
+  // All 12 hour numerals
+  const numerals = Array.from({ length: 12 }, (_, i) => {
+    const num = i === 0 ? 12 : i;
+    const angle = i * 30;
     const rad = ((angle - 90) * Math.PI) / 180;
-    const r = faceRadius - 16;
-    return { num, x: center + r * Math.cos(rad), y: center + r * Math.sin(rad) };
+    const r = faceRadius - 18;
+    return { num: String(num), x: center + r * Math.cos(rad), y: center + r * Math.sin(rad) };
   });
 
   return (
@@ -82,171 +81,184 @@ export default function AnalogClock({ size = 100 }: AnalogClockProps) {
       width={size}
       height={size}
       viewBox={`0 0 ${size} ${size}`}
-      style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }}
+      style={{ filter: "drop-shadow(0 6px 20px rgba(0,0,0,0.18)) drop-shadow(0 2px 6px rgba(0,0,0,0.1))" }}
     >
       <defs>
-        {/* Bezel gradient — brushed steel look */}
-        <linearGradient id="bezelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#e8ecf1" />
-          <stop offset="25%" stopColor="#c8cdd5" />
-          <stop offset="50%" stopColor="#dfe3e8" />
-          <stop offset="75%" stopColor="#b8bec8" />
-          <stop offset="100%" stopColor="#d0d5dc" />
+        {/* Bezel — turquoise-tinted chrome */}
+        <linearGradient id="ck_bezel" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#b8e0e0" />
+          <stop offset="20%" stopColor="#8ec5c5" />
+          <stop offset="40%" stopColor="#c5e8e8" />
+          <stop offset="60%" stopColor="#7ab8b8" />
+          <stop offset="80%" stopColor="#a8d8d8" />
+          <stop offset="100%" stopColor="#90c8c8" />
         </linearGradient>
-        <linearGradient id="bezelGradDark" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3a4555" />
-          <stop offset="25%" stopColor="#2a3340" />
-          <stop offset="50%" stopColor="#354050" />
-          <stop offset="75%" stopColor="#252e3a" />
-          <stop offset="100%" stopColor="#303a48" />
+        <linearGradient id="ck_bezelDark" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#1a3a3a" />
+          <stop offset="20%" stopColor="#0f2828" />
+          <stop offset="40%" stopColor="#1e4040" />
+          <stop offset="60%" stopColor="#0c2222" />
+          <stop offset="80%" stopColor="#153535" />
+          <stop offset="100%" stopColor="#123030" />
         </linearGradient>
 
-        {/* Face gradient — subtle convex effect */}
-        <radialGradient id="faceGrad" cx="45%" cy="40%" r="55%">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="70%" stopColor="#f8f9fb" />
-          <stop offset="100%" stopColor="#eef0f4" />
-        </radialGradient>
-        <radialGradient id="faceGradDark" cx="45%" cy="40%" r="55%">
-          <stop offset="0%" stopColor="#243040" />
-          <stop offset="70%" stopColor="#1c2a36" />
-          <stop offset="100%" stopColor="#151f2b" />
-        </radialGradient>
-
-        {/* Glass reflection */}
-        <radialGradient id="glassShine" cx="38%" cy="30%" r="50%">
-          <stop offset="0%" stopColor="white" stopOpacity="0.25" />
+        {/* Bezel highlight — top-left shine for 3D roundness */}
+        <radialGradient id="ck_bezelShine" cx="30%" cy="25%" r="50%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.4" />
           <stop offset="100%" stopColor="white" stopOpacity="0" />
         </radialGradient>
 
-        {/* Hand shadow */}
-        <filter id="handShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0.5" dy="0.5" stdDeviation="0.6" floodColor="#000" floodOpacity="0.2" />
+        {/* Face — turquoise gradient with depth */}
+        <radialGradient id="ck_face" cx="42%" cy="38%" r="60%">
+          <stop offset="0%" stopColor="#e8fafa" />
+          <stop offset="40%" stopColor="#d4f0f0" />
+          <stop offset="75%" stopColor="#b8e4e4" />
+          <stop offset="100%" stopColor="#a0d8d8" />
+        </radialGradient>
+        <radialGradient id="ck_faceDark" cx="42%" cy="38%" r="60%">
+          <stop offset="0%" stopColor="#1a3838" />
+          <stop offset="40%" stopColor="#142e2e" />
+          <stop offset="75%" stopColor="#0f2424" />
+          <stop offset="100%" stopColor="#0a1c1c" />
+        </radialGradient>
+
+        {/* Inner dial ring glow */}
+        <radialGradient id="ck_innerGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="85%" stopColor="transparent" />
+          <stop offset="100%" stopColor="#0d9488" stopOpacity="0.12" />
+        </radialGradient>
+
+        {/* Glass dome reflection */}
+        <radialGradient id="ck_glass" cx="36%" cy="28%" r="45%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.35" />
+          <stop offset="50%" stopColor="white" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        </radialGradient>
+
+        {/* Edge shadow inside bezel for inset depth */}
+        <radialGradient id="ck_inset" cx="50%" cy="50%" r="50%">
+          <stop offset="90%" stopColor="transparent" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.15" />
+        </radialGradient>
+
+        {/* Hand shadow filter */}
+        <filter id="ck_hShadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0.6" dy="0.8" stdDeviation="0.8" floodColor="#0a3030" floodOpacity="0.3" />
         </filter>
+
+        {/* Center cap 3D gradient */}
+        <radialGradient id="ck_cap" cx="40%" cy="35%" r="60%">
+          <stop offset="0%" stopColor="#5eead4" />
+          <stop offset="50%" stopColor="#14b8a6" />
+          <stop offset="100%" stopColor="#0d6e63" />
+        </radialGradient>
       </defs>
 
-      {/* Outer bezel — brushed metal ring */}
+      {/* ── Outer bezel ring ── */}
       <circle
-        cx={center}
-        cy={center}
-        r={center - 1}
-        fill="url(#bezelGrad)"
-        stroke="#b0b8c4"
-        strokeWidth={0.5}
-        className="dark:fill-[url(#bezelGradDark)] dark:stroke-slate-600"
+        cx={center} cy={center} r={outerR}
+        fill="url(#ck_bezel)"
+        stroke="#6aadad"
+        strokeWidth={0.8}
+        className="dark:fill-[url(#ck_bezelDark)] dark:stroke-teal-800"
       />
 
-      {/* Inner bezel shadow ring */}
+      {/* Bezel 3D highlight */}
+      <circle cx={center} cy={center} r={outerR} fill="url(#ck_bezelShine)" />
+
+      {/* Inner bezel edge — creates depth between bezel and face */}
       <circle
-        cx={center}
-        cy={center}
-        r={center - bezelWidth}
+        cx={center} cy={center} r={innerRingR}
         fill="none"
-        stroke="#9ca3af"
-        strokeWidth={0.5}
-        opacity={0.4}
-        className="dark:stroke-slate-500"
+        stroke="#4d9e9e"
+        strokeWidth={1}
+        opacity={0.5}
+        className="dark:stroke-teal-700"
       />
 
-      {/* Clock face */}
+      {/* ── Clock face ── */}
       <circle
-        cx={center}
-        cy={center}
-        r={faceRadius}
-        fill="url(#faceGrad)"
-        className="dark:fill-[url(#faceGradDark)]"
+        cx={center} cy={center} r={faceRadius}
+        fill="url(#ck_face)"
+        className="dark:fill-[url(#ck_faceDark)]"
       />
 
-      {/* Minute markers */}
+      {/* Inset shadow on face edge */}
+      <circle cx={center} cy={center} r={faceRadius} fill="url(#ck_inset)" />
+
+      {/* Subtle inner glow ring */}
+      <circle cx={center} cy={center} r={faceRadius} fill="url(#ck_innerGlow)" />
+
+      {/* ── Tick marks ── */}
       {markers.map((m, i) => (
         <line
           key={i}
-          x1={m.x1}
-          y1={m.y1}
-          x2={m.x2}
-          y2={m.y2}
-          stroke={m.isHour ? "#4b5563" : "#d1d5db"}
-          strokeWidth={m.isHour ? 1.5 : 0.5}
+          x1={m.x1} y1={m.y1} x2={m.x2} y2={m.y2}
+          stroke={m.isHour ? "#0f766e" : "#94d2d2"}
+          strokeWidth={m.isHour ? 1.8 : 0.5}
           strokeLinecap="round"
-          className={m.isHour ? "dark:stroke-slate-300" : "dark:stroke-slate-600"}
+          className={m.isHour ? "dark:stroke-teal-300" : "dark:stroke-teal-700"}
         />
       ))}
 
-      {/* Hour numerals */}
+      {/* ── Hour numerals ── */}
       {numerals.map(({ num, x, y }) => (
         <text
           key={num}
-          x={x}
-          y={y}
+          x={x} y={y}
           textAnchor="middle"
           dominantBaseline="central"
-          fill="#374151"
-          fontSize={size * 0.09}
+          fill="#115e59"
+          fontSize={size * 0.082}
           fontFamily="Inter, system-ui, sans-serif"
-          fontWeight="600"
-          className="dark:fill-slate-300"
+          fontWeight="700"
+          letterSpacing="-0.5"
+          className="dark:fill-teal-200"
         >
           {num}
         </text>
       ))}
 
-      {/* Hour hand — tapered with shadow */}
+      {/* ── Hour hand ── */}
       <line
-        x1={center}
-        y1={center}
-        x2={hourEnd.x}
-        y2={hourEnd.y}
-        stroke="#1e293b"
-        strokeWidth={3}
+        x1={center} y1={center} x2={hourEnd.x} y2={hourEnd.y}
+        stroke="#134e4a"
+        strokeWidth={3.2}
         strokeLinecap="round"
-        filter="url(#handShadow)"
-        className="dark:stroke-slate-100"
+        filter="url(#ck_hShadow)"
+        className="dark:stroke-teal-100"
       />
 
-      {/* Minute hand — tapered with shadow */}
+      {/* ── Minute hand ── */}
       <line
-        x1={center}
-        y1={center}
-        x2={minuteEnd.x}
-        y2={minuteEnd.y}
-        stroke="#334155"
-        strokeWidth={2}
+        x1={center} y1={center} x2={minuteEnd.x} y2={minuteEnd.y}
+        stroke="#1a5c57"
+        strokeWidth={2.2}
         strokeLinecap="round"
-        filter="url(#handShadow)"
-        className="dark:stroke-slate-200"
+        filter="url(#ck_hShadow)"
+        className="dark:stroke-teal-200"
       />
 
-      {/* Second hand — thin with counterweight tail */}
+      {/* ── Second hand with counterweight ── */}
       <line
-        x1={secondStart.x}
-        y1={secondStart.y}
-        x2={secondEnd.x}
-        y2={secondEnd.y}
-        stroke="#137fec"
+        x1={secondStart.x} y1={secondStart.y}
+        x2={secondEnd.x} y2={secondEnd.y}
+        stroke="#f43f5e"
         strokeWidth={0.8}
         strokeLinecap="round"
-        filter="url(#handShadow)"
+        filter="url(#ck_hShadow)"
       />
+      <circle cx={secondStart.x} cy={secondStart.y} r={2.2} fill="#f43f5e" />
 
-      {/* Second hand counterweight circle */}
+      {/* ── Center cap (3D layered) ── */}
+      <circle cx={center} cy={center} r={5} fill="url(#ck_cap)" />
+      <circle cx={center} cy={center} r={3} fill="#0d9488" />
+      <circle cx={center} cy={center} r={1.2} fill="white" opacity={0.6} />
+
+      {/* ── Glass dome overlay ── */}
       <circle
-        cx={secondStart.x}
-        cy={secondStart.y}
-        r={2}
-        fill="#137fec"
-      />
-
-      {/* Center cap — layered for 3D look */}
-      <circle cx={center} cy={center} r={4} fill="#1e293b" className="dark:fill-slate-200" />
-      <circle cx={center} cy={center} r={2.5} fill="#137fec" />
-      <circle cx={center} cy={center} r={1} fill="white" opacity={0.5} />
-
-      {/* Glass reflection overlay */}
-      <circle
-        cx={center}
-        cy={center}
-        r={faceRadius}
-        fill="url(#glassShine)"
+        cx={center} cy={center} r={faceRadius}
+        fill="url(#ck_glass)"
         pointerEvents="none"
       />
     </svg>
