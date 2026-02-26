@@ -19,6 +19,7 @@ interface TodayActivityGridProps {
   leaveInfo?: LeaveInfo | null;
   sessionCount?: number;
   onKmClick?: () => void;
+  onSessionClick?: () => void;
 }
 
 export default function TodayActivityGrid({
@@ -28,6 +29,7 @@ export default function TodayActivityGrid({
   leaveInfo,
   sessionCount = 0,
   onKmClick,
+  onSessionClick,
 }: TodayActivityGridProps) {
   const router = useRouter();
   const punchInDate = punchInTime ? new Date(punchInTime) : null;
@@ -93,6 +95,7 @@ export default function TodayActivityGrid({
       label: "Sessions",
       value: String(sessionCount),
       suffix: "",
+      onClick: onSessionClick,
     },
   ];
 

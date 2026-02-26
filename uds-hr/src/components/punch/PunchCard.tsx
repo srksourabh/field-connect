@@ -2,6 +2,7 @@
 
 import PunchTimer from "./PunchTimer";
 import PunchToggle from "./PunchToggle";
+import AnalogClock from "./AnalogClock";
 
 interface PunchCardProps {
   isPunchedIn: boolean;
@@ -43,6 +44,11 @@ export default function PunchCard({
         ) : (
           <PunchTimer elapsedSeconds={elapsedSeconds} isPunchedIn={isPunchedIn} />
         )}
+
+        {/* Analog Clock */}
+        <div className="mb-4">
+          <AnalogClock size={80} />
+        </div>
 
         {!canPunch ? (
           <div className="w-full max-w-[280px] mb-4">

@@ -19,7 +19,8 @@ import { createPunchIn, updatePunchOut, getTodayAllSessions, closeStaleSession, 
 import { todayIST, toISTDateStr } from "@/lib/utils";
 import { insertLocationLog, getTodayLocationLogs, computeTotalDistanceKm } from "@/lib/location-api";
 import RouteMapModal from "@/components/punch/RouteMapModal";
-import type { HrLocationLog } from "@/lib/database.types";
+import SessionTimelineModal from "@/components/punch/SessionTimelineModal";
+import type { HrLocationLog, HrAttendance } from "@/lib/database.types";
 import { getUserLeaveBalance, getPendingLeaveCount } from "@/lib/leave-api";
 import type { LeaveInfo } from "@/components/punch/TodayActivityGrid";
 import { useAuth } from "@/lib/auth";
@@ -46,6 +47,8 @@ export default function DashboardHome() {
   const [hrPolicyUrl, setHrPolicyUrl] = useState<string | null>(null);
   const [locationLogs, setLocationLogs] = useState<HrLocationLog[]>([]);
   const [routeMapOpen, setRouteMapOpen] = useState(false);
+  const [sessionModalOpen, setSessionModalOpen] = useState(false);
+  const [todaySessions, setTodaySessions] = useState<HrAttendance[]>([]);
   const lastInitUserId = useRef("");
   const punchingRef = useRef(false); // debounce guard
 
@@ -121,6 +124,7 @@ export default function DashboardHome() {
       }
 
       initFromServer(sessions, openSession ? { punch_in_at: openSession.punch_in_at! } : null);
+      setTodaySessions(sessions);
       if (sessions.length > 0) {
         setFirstPunchIn(sessions[0].punch_in_at);
         const lastSession = sessions[sessions.length - 1];
@@ -378,6 +382,7 @@ export default function DashboardHome() {
         leaveInfo={leaveInfo}
         sessionCount={sessionCount}
         onKmClick={() => setRouteMapOpen(true)}
+        onSessionClick={() => setSessionModalOpen(true)}
       />
 
       {/* Route Map Modal */}
@@ -386,6 +391,13 @@ export default function DashboardHome() {
         onClose={() => setRouteMapOpen(false)}
         logs={locationLogs}
         distanceKm={distanceKm}
+      />
+
+      {/* Session Timeline Modal */}
+      <SessionTimelineModal
+        open={sessionModalOpen}
+        onClose={() => setSessionModalOpen(false)}
+        sessions={todaySessions}
       />
 
       {/* HR Policy */}
