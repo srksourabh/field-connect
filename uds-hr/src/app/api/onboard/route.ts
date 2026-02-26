@@ -17,6 +17,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (!job?.department || !job?.project) {
+    return NextResponse.json(
+      { error: "Department and Project are required." },
+      { status: 400 }
+    );
+  }
+
   // 1. Atomically claim the token (prevents race condition with concurrent submissions)
   const { data: tokenRow, error: claimError } = await supabaseAdmin
     .from("hr_onboarding_tokens")
@@ -78,7 +85,8 @@ export async function POST(req: NextRequest) {
     phone: personal.phone,
     address: personal.address || null,
     designation: job?.designation || null,
-    department: job?.department || null,
+    department: job.department,
+    project_id: job.project,
     date_of_joining: job?.joiningDate || null,
     role: "employee", // Always employee — role changes require admin action
   });

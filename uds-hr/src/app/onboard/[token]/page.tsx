@@ -43,6 +43,7 @@ export default function PublicOnboardingPage() {
   const [job, setJob] = useState({
     designation: "",
     department: "",
+    project: "",
     reportingManager: "",
     joiningDate: "",
     role: "employee",
@@ -105,8 +106,8 @@ export default function PublicOnboardingPage() {
     }
 
     // Final submission: validate step 3 required fields
-    if (!job.designation.trim() || !job.department) {
-      setError("Please fill in Designation and Department.");
+    if (!job.designation.trim() || !job.department || !job.project) {
+      setError("Please fill in Designation, Department, and Project.");
       return;
     }
 

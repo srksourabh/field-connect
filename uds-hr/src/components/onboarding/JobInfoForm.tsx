@@ -1,11 +1,12 @@
 "use client";
 
-import { Briefcase, Building, Users, Calendar, ChevronDown } from "lucide-react";
+import { Briefcase, Building, Users, Calendar, ChevronDown, FolderKanban } from "lucide-react";
 
 interface JobInfoFormProps {
   data: {
     designation: string;
     department: string;
+    project: string;
     reportingManager: string;
     joiningDate: string;
     role: string;
@@ -41,11 +42,24 @@ export default function JobInfoForm({ data, onChange }: JobInfoFormProps) {
             className="uds-input pl-10 pr-10 appearance-none"
           >
             <option value="">Select Department *</option>
-            <option value="engineering">Engineering</option>
-            <option value="operations">Operations</option>
-            <option value="hr">Human Resources</option>
-            <option value="finance">Finance</option>
-            <option value="sales">Sales</option>
+            <option value="FSE">FSE</option>
+            <option value="Back Office">Back Office</option>
+          </select>
+          <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+        </div>
+
+        {/* Project */}
+        <div className="relative">
+          <FolderKanban className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
+          <select
+            value={data.project}
+            onChange={(e) => onChange("project", e.target.value)}
+            required
+            className="uds-input pl-10 pr-10 appearance-none"
+          >
+            <option value="">Select Project *</option>
+            <option value="uds-pos">UDS POS</option>
+            <option value="in-house">In-House</option>
           </select>
           <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
         </div>

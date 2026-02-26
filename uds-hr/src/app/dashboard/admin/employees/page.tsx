@@ -18,7 +18,7 @@ export default function AddEmployeePage() {
   const email = phone ? `${phone.replace(/\D/g, "")}@uds.hr` : "";
   const [designation, setDesignation] = useState("Field Engineer");
   const [department, setDepartment] = useState("");
-  const [project, setProject] = useState("in-house");
+  const [project, setProject] = useState("");
   const [role, setRole] = useState("employee");
   const [reportingManagerId, setReportingManagerId] = useState("");
   const [managers, setManagers] = useState<ManagerOption[]>([]);
@@ -47,7 +47,7 @@ export default function AddEmployeePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session?.access_token || !fullName || !phone) return;
+    if (!session?.access_token || !fullName || !phone || !department || !project) return;
 
     setSubmitting(true);
     setResult(null);
@@ -69,7 +69,7 @@ export default function AddEmployeePage() {
         setPhone("");
         setDesignation("Field Engineer");
         setDepartment("");
-        setProject("in-house");
+        setProject("");
         setRole("employee");
         setReportingManagerId("");
       } else {
@@ -147,27 +147,32 @@ export default function AddEmployeePage() {
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Department</label>
-            <input
-              type="text"
+            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Department *</label>
+            <select
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              placeholder="e.g. Human Resources"
+              required
               className="w-full px-4 py-3 rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
+            >
+              <option value="">Select Department</option>
+              <option value="FSE">FSE</option>
+              <option value="Back Office">Back Office</option>
+            </select>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Project</label>
+            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Project *</label>
             <select
               value={project}
               onChange={(e) => setProject(e.target.value)}
+              required
               className="w-full px-4 py-3 rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
-              <option value="in-house">In-House</option>
+              <option value="">Select Project</option>
               <option value="uds-pos">UDS POS</option>
+              <option value="in-house">In-House</option>
             </select>
           </div>
           <div>
@@ -204,7 +209,7 @@ export default function AddEmployeePage() {
 
         <button
           type="submit"
-          disabled={submitting || !fullName || !phone}
+          disabled={submitting || !fullName || !phone || !department || !project}
           className="w-full py-3.5 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
         >
           {submitting ? (

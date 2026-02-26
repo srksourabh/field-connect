@@ -15,6 +15,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (!department || !project) {
+    return NextResponse.json(
+      { error: "Department and Project are required." },
+      { status: 400 }
+    );
+  }
+
   // Verify caller is admin
   const authHeader = req.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
@@ -81,7 +88,7 @@ export async function POST(req: NextRequest) {
     email,
     phone,
     designation: designation || null,
-    department: department || null,
+    department,
     project_id: effectiveProject,
     role: assignedRole,
     reporting_manager_id: reportingManagerId || null,
