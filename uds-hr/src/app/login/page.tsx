@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Eye, EyeOff, Phone, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 import PWAInstallPrompt from "@/components/ui/PWAInstallPrompt";
 
 const SLIDES = [
@@ -34,6 +35,17 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const cleanupDone = useRef(false);
+
+  // Clear any stale session on login page mount.
+  // If a user reaches /login, they are not authenticated — any leftover
+  // session in localStorage is stale and would cause redirect loops.
+  useEffect(() => {
+    if (cleanupDone.current) return;
+    cleanupDone.current = true;
+    try { sessionStorage.setItem("user_logout", "true"); } catch { /* ignore */ }
+    supabase.auth.signOut().catch(() => {});
+  }, []);
 
   const nextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % SLIDES.length);

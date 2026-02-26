@@ -47,9 +47,27 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Redirect authenticated users away from login
+  // Redirect authenticated users away from login — but validate first
+  // to prevent redirect loops from stale cookies
   if (cookieValue && pathname === "/login") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    try {
+      const decoded = decodeURIComponent(cookieValue);
+      const session = JSON.parse(
+        decoded.startsWith("base64-") ? atob(decoded.slice(7)) : atob(decoded)
+      );
+      if (session?.access_token) {
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        const { error } = await supabase.auth.getUser(session.access_token);
+        if (!error) {
+          return NextResponse.redirect(new URL("/dashboard", request.url));
+        }
+      }
+    } catch { /* stale cookie — fall through to login page */ }
+    // Token invalid or parse failed — clear stale cookie and show login
+    const response = NextResponse.next();
+    if (authCookie?.name) response.cookies.delete(authCookie.name);
+    if (authCookie0?.name) response.cookies.delete(authCookie0.name);
+    return response;
   }
 
   return NextResponse.next();
