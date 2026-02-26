@@ -58,6 +58,7 @@ export default function JobInfoForm({ data, onChange }: JobInfoFormProps) {
             className="uds-input pl-10 pr-10 appearance-none"
           >
             <option value="">Select Project *</option>
+            <option value="all">All Projects</option>
             <option value="uds-pos">UDS POS</option>
             <option value="in-house">In-House</option>
           </select>

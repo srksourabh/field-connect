@@ -171,6 +171,7 @@ export default function AddEmployeePage() {
               className="w-full px-4 py-3 rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option value="">Select Project</option>
+              <option value="all">All Projects</option>
               <option value="uds-pos">UDS POS</option>
               <option value="in-house">In-House</option>
             </select>
