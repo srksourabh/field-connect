@@ -20,6 +20,7 @@ export default function ApprovalsPage() {
   const [tab, setTab] = useState<"pending" | "history">("pending");
   const [requests, setRequests] = useState<LeaveRequestWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const fetchRequests = useCallback(async () => {
     if (!user) return;
@@ -40,7 +41,9 @@ export default function ApprovalsPage() {
     if (!user) return;
     const comment = await showPrompt("Approve Leave", "Add a comment (optional):", "Comment...");
     if (comment === null) return; // cancelled
+    setActionLoadingId(`approve_${id}`);
     const ok = await approveLeaveRequest(id, user.id, comment || undefined);
+    setActionLoadingId(null);
     if (ok) {
       showToast("Leave request approved", "success");
       fetchRequests();
@@ -53,7 +56,9 @@ export default function ApprovalsPage() {
     if (!user) return;
     const comment = await showPrompt("Reject Leave", "Reason for rejection (optional):", "Reason...");
     if (comment === null) return; // cancelled
+    setActionLoadingId(`reject_${id}`);
     const ok = await rejectLeaveRequest(id, user.id, comment || undefined);
+    setActionLoadingId(null);
     if (ok) {
       showToast("Leave request rejected", "success");
       fetchRequests();
@@ -141,6 +146,7 @@ export default function ApprovalsPage() {
                   }}
                   onApprove={handleApprove}
                   onReject={handleReject}
+                  actionLoadingId={actionLoadingId}
                 />
               )
             )}

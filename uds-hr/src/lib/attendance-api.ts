@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { todayISTTimestamp } from "./utils";
+import { todayISTTimestamp, autoCloseIST } from "./utils";
 import type { HrAttendance } from "./database.types";
 
 export async function createPunchIn(data: {
@@ -164,10 +164,9 @@ export async function closeStaleSession(
 ): Promise<HrAttendance | null> {
   if (!session.punch_in_at || session.punch_out_at) return null;
 
-  // Build 23:59:00 IST on the punch-in date
   const punchInDate = new Date(session.punch_in_at)
     .toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
-  const autoCloseTimestamp = `${punchInDate}T23:59:00+05:30`;
+  const autoCloseTimestamp = autoCloseIST(punchInDate);
 
   // Compute actual hours to set correct status
   const durMs = new Date(autoCloseTimestamp).getTime() - new Date(session.punch_in_at).getTime();

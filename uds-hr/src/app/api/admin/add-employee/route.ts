@@ -1,8 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(req: NextRequest) {
   let body;
@@ -17,8 +14,6 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
   // Verify caller is admin
   const authHeader = req.headers.get("authorization");

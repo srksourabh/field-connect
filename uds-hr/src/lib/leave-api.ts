@@ -26,7 +26,8 @@ export async function getTeamLeaveRequests(
     .from("hr_leave_requests")
     .select()
     .in("user_id", reportIds)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(200);
 
   if (error) {
     console.error("Fetch team leave requests error:", error);
@@ -100,7 +101,7 @@ export async function approveLeaveRequest(
     return false;
   }
 
-  // 3. Deduct leave balance
+  // 3. Deduct leave balance (read-then-increment with optimistic concurrency)
   const start = new Date(request.start_date);
   const end = new Date(request.end_date);
   const days =
@@ -129,10 +130,35 @@ export async function approveLeaveRequest(
 
   if (balance) {
     const currentUsed = (balance as Record<string, unknown>)[usedKey] as number;
-    await supabase
+    const totalKey = usedKey.replace("_used", "_total");
+    const totalAllowed = (balance as Record<string, unknown>)[totalKey] as number;
+
+    // Guard: don't deduct if it would exceed total balance
+    if (currentUsed + days > totalAllowed) {
+      // Rollback: revert approval since balance is insufficient
+      await supabase
+        .from("hr_leave_requests")
+        .update({ status: "pending", reviewed_by: null, reviewed_at: null, reviewer_comment: null })
+        .eq("id", requestId);
+      return false;
+    }
+
+    // Optimistic update: include current value check to prevent concurrent over-deduction
+    const { data: balanceUpdated, error: balErr } = await supabase
       .from("hr_leave_balances")
       .update({ [usedKey]: currentUsed + days })
-      .eq("id", balance.id);
+      .eq("id", balance.id)
+      .eq(usedKey, currentUsed)
+      .select();
+
+    if (balErr || !balanceUpdated || balanceUpdated.length === 0) {
+      // Concurrent update detected — rollback the approval
+      await supabase
+        .from("hr_leave_requests")
+        .update({ status: "pending", reviewed_by: null, reviewed_at: null, reviewer_comment: null })
+        .eq("id", requestId);
+      return false;
+    }
   }
 
   // 4. Mark attendance records as "on-leave" for each day in the leave period
@@ -339,7 +365,8 @@ export async function getUserLeaveRequests(
     .from("hr_leave_requests")
     .select()
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(100);
 
   if (error) {
     console.error("Fetch user leave requests error:", error);

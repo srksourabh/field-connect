@@ -95,7 +95,18 @@ export default function PublicOnboardingPage() {
         }
         setError(null);
       }
+      // Validate step 2: no required fields (KYC/Bank are optional during onboarding)
+      // Validate step 3 required fields
+      if (currentStep === 2) {
+        setError(null);
+      }
       setCurrentStep((s) => s + 1);
+      return;
+    }
+
+    // Final submission: validate step 3 required fields
+    if (!job.designation.trim() || !job.department) {
+      setError("Please fill in Designation and Department.");
       return;
     }
 

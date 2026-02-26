@@ -27,6 +27,7 @@ export default function PersonalDetailsForm({ data, onChange }: PersonalDetailsF
             value={data.fullName}
             onChange={(e) => onChange("fullName", e.target.value)}
             placeholder="Full Name *"
+            required
             className="uds-input pl-10"
           />
         </div>
@@ -39,6 +40,7 @@ export default function PersonalDetailsForm({ data, onChange }: PersonalDetailsF
             value={data.email}
             onChange={(e) => onChange("email", e.target.value)}
             placeholder="Email Address *"
+            required
             className="uds-input pl-10"
           />
         </div>
@@ -55,6 +57,7 @@ export default function PersonalDetailsForm({ data, onChange }: PersonalDetailsF
               value={data.phone}
               onChange={(e) => onChange("phone", e.target.value)}
               placeholder="Phone Number *"
+              required
               className="uds-input pl-10"
             />
           </div>

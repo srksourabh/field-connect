@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth";
 import { getAttendanceByMonth } from "@/lib/attendance-api";
 import { cacheSet, cacheGet } from "@/lib/offline-cache";
 import type { HrAttendance } from "@/lib/database.types";
-import { formatTime, toISTDateStr } from "@/lib/utils";
+import { formatTime, toISTDateStr, isAutoCloseTime } from "@/lib/utils";
 
 export default function AttendancePage() {
   const { user } = useAuth();
@@ -112,8 +112,7 @@ export default function AttendancePage() {
       }
       if (rec.punch_out_at) {
         const pOutDate = new Date(rec.punch_out_at);
-        const istTime = pOutDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
-        const isAutoClose = istTime === "23:59";
+        const isAutoClose = isAutoCloseTime(rec.punch_out_at);
         // Calculate session duration
         let sessionDuration: string | undefined;
         if (rec.punch_in_at) {

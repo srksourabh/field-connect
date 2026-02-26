@@ -1,8 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(req: NextRequest) {
   let body;
@@ -20,27 +17,29 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-
-  // 1. Validate token
-  const { data: tokenRow } = await supabaseAdmin
+  // 1. Atomically claim the token (prevents race condition with concurrent submissions)
+  const { data: tokenRow, error: claimError } = await supabaseAdmin
     .from("hr_onboarding_tokens")
-    .select("*")
+    .update({ used_at: new Date().toISOString() })
     .eq("token", token)
+    .is("used_at", null)
+    .select()
     .single();
 
-  if (!tokenRow) {
-    return NextResponse.json({ error: "Invalid onboarding link." }, { status: 404 });
-  }
-
-  if (tokenRow.used_at) {
-    return NextResponse.json({ error: "This onboarding link has already been used." }, { status: 400 });
+  if (claimError || !tokenRow) {
+    // Either invalid token or already used (concurrent submission lost the race)
+    return NextResponse.json({ error: "This onboarding link is invalid or has already been used." }, { status: 400 });
   }
 
   // Compare in IST to avoid UTC vs IST date boundary issues
   const nowIST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
   const expiryIST = new Date(new Date(tokenRow.expires_at).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
   if (expiryIST < nowIST) {
+    // Token expired — unclaim it so admin can see it as expired (not used)
+    await supabaseAdmin
+      .from("hr_onboarding_tokens")
+      .update({ used_at: null })
+      .eq("id", tokenRow.id);
     return NextResponse.json({ error: "This onboarding link has expired." }, { status: 400 });
   }
 
@@ -97,11 +96,7 @@ export async function POST(req: NextRequest) {
     year: currentYear,
   });
 
-  // 6. Mark token as used
-  await supabaseAdmin
-    .from("hr_onboarding_tokens")
-    .update({ used_at: new Date().toISOString() })
-    .eq("id", tokenRow.id);
+  // Token was already marked as used in the atomic claim at step 1
 
   return NextResponse.json({
     success: true,

@@ -71,6 +71,7 @@ export function usePunchState(userId: string) {
   const [state, setState] = useState<PunchState>(defaultState);
   const [isReady, setIsReady] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const saveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevUserRef = useRef<string>("");
 
   // When userId changes, reset to default (don't load localStorage yet)
@@ -85,25 +86,37 @@ export function usePunchState(userId: string) {
     // Don't load from localStorage here — wait for server sync or explicit initFromCache
   }, [userId]);
 
-  // Timer tick — counts current session elapsed
+  // Timer tick — counts current session elapsed (UI updates every 1s)
   useEffect(() => {
     if (state.isPunchedIn && state.punchInTime) {
       intervalRef.current = setInterval(() => {
         const start = new Date(state.punchInTime!).getTime();
         const now = Date.now();
         const elapsed = Math.floor((now - start) / 1000);
-        setState((prev) => {
-          const next = { ...prev, elapsedSeconds: elapsed };
-          saveState(userId, next);
-          return next;
-        });
+        setState((prev) => ({ ...prev, elapsedSeconds: elapsed }));
       }, 1000);
     }
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [state.isPunchedIn, state.punchInTime, userId]);
+  }, [state.isPunchedIn, state.punchInTime]);
+
+  // Persist to localStorage every 60 seconds (not every tick) for offline resilience
+  useEffect(() => {
+    if (state.isPunchedIn && userId) {
+      saveIntervalRef.current = setInterval(() => {
+        setState((prev) => {
+          saveState(userId, prev);
+          return prev;
+        });
+      }, 60000);
+    }
+
+    return () => {
+      if (saveIntervalRef.current) clearInterval(saveIntervalRef.current);
+    };
+  }, [state.isPunchedIn, userId]);
 
   const punchIn = useCallback(() => {
     const now = new Date().toISOString();

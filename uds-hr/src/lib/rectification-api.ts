@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import type { HrRectificationRequest } from "./database.types";
 import { createNotification } from "./notification-api";
+import { endOfDayIST } from "./utils";
 
 export interface RectificationWithProfile extends HrRectificationRequest {
   employee_name: string;
@@ -50,7 +51,8 @@ export async function getUserRectificationRequests(
     .from("hr_rectification_requests")
     .select()
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(100);
 
   if (error) {
     console.error("Fetch user rectifications error:", error);
@@ -77,7 +79,8 @@ export async function getTeamRectificationRequests(
     .from("hr_rectification_requests")
     .select()
     .in("user_id", reportIds)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(200);
 
   if (error) {
     console.error("Fetch team rectifications error:", error);
@@ -148,7 +151,7 @@ export async function approveRectificationRequest(
     // Also update other sessions on the same date to the corrected status
     if (request.corrected_status && request.attendance_date) {
       const dateStart = `${request.attendance_date}T00:00:00+05:30`;
-      const dateEnd = `${request.attendance_date}T23:59:59+05:30`;
+      const dateEnd = endOfDayIST(request.attendance_date);
       await supabase
         .from("hr_attendance")
         .update({ status: request.corrected_status })

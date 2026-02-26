@@ -64,9 +64,41 @@ export default function NotificationDropdown() {
 
   useEffect(() => {
     refresh();
-    // Poll every 30 seconds
-    const interval = setInterval(refresh, 30000);
-    return () => clearInterval(interval);
+
+    // Poll every 30 seconds, but only when tab is visible
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const startPolling = () => {
+      if (!interval) {
+        refresh();
+        interval = setInterval(refresh, 30000);
+      }
+    };
+
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        startPolling();
+      }
+    };
+
+    if (!document.hidden) {
+      interval = setInterval(refresh, 30000);
+    }
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [refresh]);
 
   // Close on outside click

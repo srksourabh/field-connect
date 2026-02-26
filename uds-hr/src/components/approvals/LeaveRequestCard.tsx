@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, X } from "lucide-react";
+import { Check, X, Loader2 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 
 interface LeaveRequestCardProps {
@@ -17,6 +17,7 @@ interface LeaveRequestCardProps {
   };
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
+  actionLoadingId?: string | null;
 }
 
 const typeStyles: Record<string, { label: string; bg: string; text: string }> = {
@@ -26,7 +27,7 @@ const typeStyles: Record<string, { label: string; bg: string; text: string }> = 
   compoff: { label: "Comp-Off", bg: "bg-teal-100 dark:bg-teal-900/30", text: "text-teal-800 dark:text-teal-400" },
 };
 
-export default function LeaveRequestCard({ request, onApprove, onReject }: LeaveRequestCardProps) {
+export default function LeaveRequestCard({ request, onApprove, onReject, actionLoadingId }: LeaveRequestCardProps) {
   const style = typeStyles[request.type];
 
   return (
@@ -102,15 +103,25 @@ export default function LeaveRequestCard({ request, onApprove, onReject }: Leave
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => onApprove?.(request.id)}
-            className="flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 active:scale-[0.98] transition-all"
+            disabled={!!actionLoadingId}
+            className="flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 active:scale-[0.98] transition-all disabled:opacity-50"
           >
-            <Check className="w-4 h-4" /> Approve
+            {actionLoadingId === `approve_${request.id}` ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Approving...</>
+            ) : (
+              <><Check className="w-4 h-4" /> Approve</>
+            )}
           </button>
           <button
             onClick={() => onReject?.(request.id)}
-            className="flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 active:scale-[0.98] transition-all"
+            disabled={!!actionLoadingId}
+            className="flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 active:scale-[0.98] transition-all disabled:opacity-50"
           >
-            <X className="w-4 h-4" /> Reject
+            {actionLoadingId === `reject_${request.id}` ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Rejecting...</>
+            ) : (
+              <><X className="w-4 h-4" /> Reject</>
+            )}
           </button>
         </div>
       )}

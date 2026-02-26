@@ -43,3 +43,24 @@ export function todayIST(): string {
 export function todayISTTimestamp(): string {
   return `${todayIST()}T00:00:00+05:30`;
 }
+
+/** Returns end-of-day IST timestamp for a given date string (YYYY-MM-DD) */
+export function endOfDayIST(dateStr: string): string {
+  return `${dateStr}T23:59:59+05:30`;
+}
+
+/** Auto-close timestamp: 23:59:00 IST for a given date (used for stale session closure) */
+export function autoCloseIST(dateStr: string): string {
+  return `${dateStr}T23:59:00+05:30`;
+}
+
+/** Check if a punch-out time matches the auto-close time (23:59 IST) */
+export function isAutoCloseTime(punchOutAt: string): boolean {
+  const t = new Date(punchOutAt).toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Kolkata",
+  });
+  return t === "23:59";
+}

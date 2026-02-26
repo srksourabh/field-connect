@@ -26,6 +26,7 @@ export default function JobInfoForm({ data, onChange }: JobInfoFormProps) {
             value={data.designation}
             onChange={(e) => onChange("designation", e.target.value)}
             placeholder="Designation *"
+            required
             className="uds-input pl-10"
           />
         </div>
@@ -36,6 +37,7 @@ export default function JobInfoForm({ data, onChange }: JobInfoFormProps) {
           <select
             value={data.department}
             onChange={(e) => onChange("department", e.target.value)}
+            required
             className="uds-input pl-10 pr-10 appearance-none"
           >
             <option value="">Select Department *</option>
