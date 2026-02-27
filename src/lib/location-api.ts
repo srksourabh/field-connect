@@ -99,23 +99,8 @@ export async function getLocationLogsByDate(
   return data || [];
 }
 
-// Haversine formula to compute distance between consecutive GPS points
-export function computeTotalDistanceKm(logs: HrLocationLog[]): number {
-  if (logs.length < 2) return 0;
-
-  let totalKm = 0;
-  for (let i = 1; i < logs.length; i++) {
-    totalKm += haversineKm(
-      logs[i - 1].lat,
-      logs[i - 1].long,
-      logs[i].lat,
-      logs[i].long
-    );
-  }
-  return Math.round(totalKm * 10) / 10; // 1 decimal place
-}
-
-function haversineKm(
+// Haversine formula — straight-line distance between two GPS points
+export function haversineKm(
   lat1: number,
   lon1: number,
   lat2: number,
@@ -134,4 +119,75 @@ function haversineKm(
 
 function toRad(deg: number): number {
   return deg * (Math.PI / 180);
+}
+
+/** Sum haversine distances along an array of [lat,lng] points */
+function sumPathDistanceKm(points: [number, number][]): number {
+  let totalKm = 0;
+  for (let i = 1; i < points.length; i++) {
+    totalKm += haversineKm(points[i - 1][0], points[i - 1][1], points[i][0], points[i][1]);
+  }
+  return totalKm;
+}
+
+/** Snap GPS points to nearest roads using Google Roads API (with interpolation) */
+export async function snapToRoads(
+  positions: [number, number][]
+): Promise<[number, number][]> {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  if (!apiKey || positions.length < 2) return positions;
+
+  try {
+    const batchSize = 100;
+    const snapped: [number, number][] = [];
+
+    for (let i = 0; i < positions.length; i += batchSize) {
+      const batch = positions.slice(i, i + batchSize);
+      const path = batch.map(([lat, lng]) => `${lat},${lng}`).join("|");
+      const url = `https://roads.googleapis.com/v1/snapToRoads?path=${path}&interpolate=true&key=${apiKey}`;
+      const res = await fetch(url);
+
+      if (!res.ok) throw new Error(`Roads API error: ${res.status}`);
+
+      const data = await res.json();
+      if (data.snappedPoints) {
+        for (const pt of data.snappedPoints) {
+          snapped.push([pt.location.latitude, pt.location.longitude]);
+        }
+      }
+    }
+
+    return snapped.length > 0 ? snapped : positions;
+  } catch (err) {
+    console.error("Snap to roads failed, using raw GPS points:", err);
+    return positions;
+  }
+}
+
+/**
+ * Compute actual road distance from location logs.
+ * Snaps GPS points to roads (interpolated), then sums distance along the road path.
+ * Falls back to raw haversine if snap fails.
+ */
+export async function computeRoadDistanceKm(logs: HrLocationLog[]): Promise<number> {
+  if (logs.length < 2) return 0;
+
+  const rawPositions: [number, number][] = logs.map((l) => [l.lat, l.long]);
+  const snapped = await snapToRoads(rawPositions);
+  const totalKm = sumPathDistanceKm(snapped);
+  return Math.round(totalKm * 10) / 10;
+}
+
+/** Haversine-only distance (no road snapping). Used for server-side bulk calculations. */
+export function computeTotalDistanceKm(logs: { lat: number; long: number }[]): number {
+  if (logs.length < 2) return 0;
+
+  let totalKm = 0;
+  for (let i = 1; i < logs.length; i++) {
+    totalKm += haversineKm(
+      logs[i - 1].lat, logs[i - 1].long,
+      logs[i].lat, logs[i].long
+    );
+  }
+  return Math.round(totalKm * 10) / 10;
 }

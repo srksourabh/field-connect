@@ -4,45 +4,11 @@ import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import type { HrLocationLog } from "@/lib/database.types";
+import { snapToRoads } from "@/lib/location-api";
 
 interface RouteMapInnerProps {
   logs: HrLocationLog[];
   distanceKm: number;
-}
-
-/** Snap GPS points to nearest roads using Google Roads API */
-async function snapToRoads(
-  positions: [number, number][]
-): Promise<[number, number][]> {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  if (!apiKey || positions.length < 2) return positions;
-
-  try {
-    // Roads API accepts max 100 points per call; batch if needed
-    const batchSize = 100;
-    const snapped: [number, number][] = [];
-
-    for (let i = 0; i < positions.length; i += batchSize) {
-      const batch = positions.slice(i, i + batchSize);
-      const path = batch.map(([lat, lng]) => `${lat},${lng}`).join("|");
-      const url = `https://roads.googleapis.com/v1/snapToRoads?path=${path}&interpolate=true&key=${apiKey}`;
-      const res = await fetch(url);
-
-      if (!res.ok) throw new Error(`Roads API error: ${res.status}`);
-
-      const data = await res.json();
-      if (data.snappedPoints) {
-        for (const pt of data.snappedPoints) {
-          snapped.push([pt.location.latitude, pt.location.longitude]);
-        }
-      }
-    }
-
-    return snapped.length > 0 ? snapped : positions;
-  } catch (err) {
-    console.error("Snap to roads failed, using raw GPS points:", err);
-    return positions;
-  }
 }
 
 export default function RouteMapInner({ logs }: RouteMapInnerProps) {

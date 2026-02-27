@@ -17,7 +17,7 @@ import { addToQueue } from "@/lib/sync-queue";
 import { cacheSet, cacheGet } from "@/lib/offline-cache";
 import { createPunchIn, updatePunchOut, getTodayAllSessions, closeStaleSession, updateAttendanceStatus } from "@/lib/attendance-api";
 import { todayIST, toISTDateStr } from "@/lib/utils";
-import { insertLocationLog, getTodayLocationLogs, computeTotalDistanceKm } from "@/lib/location-api";
+import { insertLocationLog, getTodayLocationLogs, computeRoadDistanceKm } from "@/lib/location-api";
 import RouteMapModal from "@/components/punch/RouteMapModal";
 import SessionTimelineModal from "@/components/punch/SessionTimelineModal";
 import type { HrLocationLog, HrAttendance } from "@/lib/database.types";
@@ -136,10 +136,10 @@ export default function DashboardHome() {
         }
       }
 
-      // Get distance from location logs
+      // Get distance from location logs (road-snapped for actual distance)
       const logs = await getTodayLocationLogs(userId);
       setLocationLogs(logs);
-      setDistanceKm(computeTotalDistanceKm(logs));
+      setDistanceKm(await computeRoadDistanceKm(logs));
 
       // Fetch leave balance + pending count
       const [balance, pending] = await Promise.all([
@@ -249,10 +249,10 @@ export default function DashboardHome() {
             long: geo.long,
             source: "punch_out",
           });
-          // Recompute distance
+          // Recompute distance (road-snapped)
           const logs = await getTodayLocationLogs(userId);
           setLocationLogs(logs);
-          setDistanceKm(computeTotalDistanceKm(logs));
+          setDistanceKm(await computeRoadDistanceKm(logs));
         }
       } else {
         addToQueue({
