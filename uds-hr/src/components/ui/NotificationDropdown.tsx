@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, CheckCheck, Mail, MailOpen, FileCheck, FileX, AlertCircle, Megaphone } from "lucide-react";
+import { Bell, CheckCheck, Mail, MailOpen, FileCheck, FileX, AlertCircle, Megaphone, ExternalLink } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import {
   getUserNotifications,
@@ -50,6 +50,7 @@ export default function NotificationDropdown() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<HrNotification[]>([]);
   const [unread, setUnread] = useState(0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(async () => {
@@ -106,13 +107,15 @@ export default function NotificationDropdown() {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setOpen(false);
+        setExpandedId(null);
       }
     };
     if (open) document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const handleRead = async (n: HrNotification) => {
+  const handleClick = async (n: HrNotification) => {
+    // Mark as read
     if (!n.is_read) {
       await markAsRead(n.id);
       setUnread((c) => Math.max(0, c - 1));
@@ -120,10 +123,15 @@ export default function NotificationDropdown() {
         prev.map((item) => (item.id === n.id ? { ...item, is_read: true } : item))
       );
     }
-    // Navigate to relevant page
+    // Toggle expand to show full text
+    setExpandedId((prev) => (prev === n.id ? null : n.id));
+  };
+
+  const handleNavigate = (n: HrNotification) => {
     const route = typeRoute[n.type];
     if (route) {
       setOpen(false);
+      setExpandedId(null);
       router.push(route);
     }
   };
@@ -155,7 +163,7 @@ export default function NotificationDropdown() {
         </button>
       )}
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => { setOpen(!open); setExpandedId(null); }}
         className="p-2 rounded-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors relative"
       >
         <Bell className="w-5 h-5 text-slate-600 dark:text-slate-300" />
@@ -193,38 +201,56 @@ export default function NotificationDropdown() {
               notifications.map((n) => {
                 const Icon = typeIcon[n.type] || Mail;
                 const isRead = n.is_read;
+                const isExpanded = expandedId === n.id;
+                const hasRoute = !!typeRoute[n.type];
                 return (
-                  <button
+                  <div
                     key={n.id}
-                    onClick={() => handleRead(n)}
-                    className={`w-full text-left px-4 py-3 flex gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-50 dark:border-gray-800/30 ${
+                    className={`border-b border-gray-50 dark:border-gray-800/30 ${
                       !isRead ? "bg-blue-50/50 dark:bg-blue-900/10" : ""
                     }`}
                   >
-                    <div className={`mt-0.5 p-1.5 rounded-lg ${!isRead ? "bg-primary/10" : "bg-gray-100 dark:bg-gray-800"}`}>
-                      {isRead ? (
-                        <MailOpen className="w-4 h-4 text-gray-400" />
-                      ) : (
-                        <Icon className="w-4 h-4 text-primary" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm ${!isRead ? "font-semibold" : "font-medium text-gray-600 dark:text-gray-400"}`}>
-                        {n.title}
-                      </p>
-                      {n.body && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">
-                          {n.body}
+                    <button
+                      onClick={() => handleClick(n)}
+                      className="w-full text-left px-4 py-3 flex gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    >
+                      <div className={`mt-0.5 p-1.5 rounded-lg ${!isRead ? "bg-primary/10" : "bg-gray-100 dark:bg-gray-800"}`}>
+                        {isRead ? (
+                          <MailOpen className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <Icon className="w-4 h-4 text-primary" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm ${!isRead ? "font-semibold" : "font-medium text-gray-600 dark:text-gray-400"}`}>
+                          {n.title}
                         </p>
+                        {n.body && (
+                          <p className={`text-xs text-gray-500 dark:text-gray-400 mt-0.5 ${isExpanded ? "" : "line-clamp-2"}`}>
+                            {n.body}
+                          </p>
+                        )}
+                        <p className="text-[10px] text-gray-400 mt-1">
+                          {timeAgo(n.created_at)}
+                        </p>
+                      </div>
+                      {!isRead && (
+                        <span className="mt-2 w-2 h-2 bg-primary rounded-full flex-shrink-0" />
                       )}
-                      <p className="text-[10px] text-gray-400 mt-1">
-                        {timeAgo(n.created_at)}
-                      </p>
-                    </div>
-                    {!isRead && (
-                      <span className="mt-2 w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                    </button>
+                    {/* Expanded: show navigate link */}
+                    {isExpanded && hasRoute && (
+                      <div className="px-4 pb-3 pt-0 pl-[52px]">
+                        <button
+                          onClick={() => handleNavigate(n)}
+                          className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          View details
+                        </button>
+                      </div>
                     )}
-                  </button>
+                  </div>
                 );
               })
             )}
