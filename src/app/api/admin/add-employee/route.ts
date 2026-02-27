@@ -108,7 +108,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    message: `${fullName} added successfully. Default password: ${defaultPassword}`,
-    defaultPassword,
+    message: `${fullName} added successfully.`,
   });
 }

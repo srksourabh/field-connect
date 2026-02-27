@@ -73,6 +73,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Invalidate all sessions for deactivated users so they can't continue using the app
+  if (!restore) {
+    try {
+      await supabaseAdmin.auth.admin.signOut(userId, "global");
+    } catch {
+      // Best-effort session invalidation — profile is already deactivated
+    }
+  }
+
   return NextResponse.json({
     success: true,
     message: restore ? "Employee restored" : "Employee deactivated",

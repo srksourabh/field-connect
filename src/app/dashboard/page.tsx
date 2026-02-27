@@ -56,9 +56,9 @@ export default function DashboardHome() {
   // Location tracker — captures GPS at scheduled times while punched in
   useLocationTracker(isPunchedIn, userId, attendanceId, isOnline);
 
-  // Live clock — updates every second
+  // Live clock — updates every 30 seconds (minute display only, reduces re-renders)
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    const timer = setInterval(() => setCurrentTime(new Date()), 30_000);
     return () => clearInterval(timer);
   }, []);
 

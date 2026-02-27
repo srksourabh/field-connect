@@ -69,19 +69,11 @@ export default function EmployeeDetailSheet({ employee, onClose }: EmployeeDetai
             </button>
           </div>
 
-          {/* Stats */}
-          <div className="px-6 pb-4 grid grid-cols-3 gap-3">
+          {/* Department & Info */}
+          <div className="px-6 pb-4">
             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center">
-              <p className="text-lg font-bold text-primary">22</p>
-              <p className="text-xs text-gray-500">Present</p>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center">
-              <p className="text-lg font-bold text-red-500">2</p>
-              <p className="text-xs text-gray-500">Absent</p>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center">
-              <p className="text-lg font-bold text-yellow-500">1</p>
-              <p className="text-xs text-gray-500">Late</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{employee.department}</p>
+              <p className="text-xs text-gray-500">Department</p>
             </div>
           </div>
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronLeft, Send, ShieldCheck, Loader2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import { showToast } from "@/components/ui/Toast";
 
 const CATEGORIES = [
   { value: "complaint", label: "Complaint", color: "bg-red-100 dark:bg-red-900/20 text-red-600 border-red-200 dark:border-red-800" },
@@ -26,19 +27,27 @@ export default function MessageHRPage() {
     if (!subject.trim() || !message.trim() || !session?.access_token) return;
 
     setLoading(true);
-    const res = await fetch("/api/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ category, subject: subject.trim(), message: message.trim(), is_anonymous: isAnonymous }),
-    });
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ category, subject: subject.trim(), message: message.trim(), is_anonymous: isAnonymous }),
+      });
 
-    setLoading(false);
-    if (res.ok) {
-      setSent(true);
+      if (res.ok) {
+        setSent(true);
+      } else {
+        const data = await res.json().catch(() => null);
+        showToast(data?.error || "Failed to send message. Please try again.", "error");
+      }
+    } catch (err) {
+      console.error("Message send error:", err);
+      showToast("Network error. Please check your connection and try again.", "error");
     }
+    setLoading(false);
   };
 
   if (sent) {

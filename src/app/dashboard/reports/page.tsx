@@ -90,19 +90,31 @@ export default function ReportsPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Fetch employee list for employee report
+  // Fetch employee list scoped by user's role/project
   useEffect(() => {
     async function fetchEmployees() {
-      const { data } = await supabase
+      let query = supabase
         .from("hr_profiles")
-        .select("id, full_name")
+        .select("id, full_name, project_id")
         .is("deactivated_at", null)
         .order("full_name")
         .limit(500);
+
+      // Scope to admin's project unless super_admin/HR
+      const isUniversal =
+        profile?.role === "super_admin" ||
+        (profile?.designation?.toLowerCase().includes("hr") &&
+          ["admin", "super_admin"].includes(profile?.role || ""));
+
+      if (!isUniversal && profile?.project_id) {
+        query = query.eq("project_id", profile.project_id);
+      }
+
+      const { data } = await query;
       setEmployees(data || []);
     }
-    fetchEmployees();
-  }, []);
+    if (profile) fetchEmployees();
+  }, [profile]);
 
   const filteredEmployees = employees.filter((e) =>
     e.full_name.toLowerCase().includes(employeeSearch.toLowerCase())

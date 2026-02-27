@@ -61,6 +61,12 @@ export async function GET(request: Request) {
 
   if (profile.role === "manager") {
     employeesQuery = employeesQuery.eq("reporting_manager_id", user.id);
+  } else if (profile.role === "admin") {
+    // Scope admin to their project unless they have HR designation
+    const isUniversal = profile.designation?.toLowerCase().includes("hr") ?? false;
+    if (!isUniversal && profile.project_id) {
+      employeesQuery = employeesQuery.eq("project_id", profile.project_id);
+    }
   }
 
   const { data: employees } = await employeesQuery;

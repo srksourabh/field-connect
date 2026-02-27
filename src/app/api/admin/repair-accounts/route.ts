@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: fetchError?.message || "Failed to fetch profiles" }, { status: 500 });
   }
 
-  const results: { name: string; phone: string; status: string; oldEmail?: string; newEmail?: string; defaultPassword?: string }[] = [];
+  const results: { name: string; phone: string; status: string; oldEmail?: string; newEmail?: string }[] = [];
 
   for (const profile of profiles) {
     const rawPhone = profile.phone || "";
@@ -97,7 +97,6 @@ export async function POST(req: NextRequest) {
         status: emailChanged ? "fixed — email + password reset" : "fixed — password reset",
         oldEmail: emailChanged ? authUser.email : undefined,
         newEmail: expectedEmail,
-        defaultPassword,
       });
     }
   }

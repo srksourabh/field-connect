@@ -1,6 +1,6 @@
 "use client";
 
-import { differenceInBusinessDays, parseISO } from "date-fns";
+import { differenceInCalendarDays, parseISO } from "date-fns";
 
 interface LeaveDurationBannerProps {
   startDate: string;
@@ -10,7 +10,8 @@ interface LeaveDurationBannerProps {
 export default function LeaveDurationBanner({ startDate, endDate }: LeaveDurationBannerProps) {
   let days = 0;
   if (startDate && endDate) {
-    days = differenceInBusinessDays(parseISO(endDate), parseISO(startDate)) + 1;
+    // Use calendar days to match leave balance deduction logic (leave-api.ts)
+    days = differenceInCalendarDays(parseISO(endDate), parseISO(startDate)) + 1;
     if (days < 0) days = 0;
   }
 

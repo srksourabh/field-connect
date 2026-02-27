@@ -25,26 +25,37 @@ export default function ProfilePage() {
     const todayStr = now.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
     const monthEnd = `${todayStr}T23:59:59+05:30`;
 
-    // Days present this month — count unique dates with "present" status
-    const { data: attendanceData } = await supabase
-      .from("hr_attendance")
-      .select("punch_in_at")
-      .eq("user_id", user.id)
-      .in("status", ["present", "half-day", "late"])
-      .gte("punch_in_at", monthStart)
-      .lte("punch_in_at", monthEnd);
-    const uniqueDays = new Set((attendanceData || []).map((r) =>
+    // Run all three queries in parallel
+    const [attendanceResult, balanceResult, pendingResult] = await Promise.all([
+      // Days present this month — count unique dates with "present" status
+      supabase
+        .from("hr_attendance")
+        .select("punch_in_at")
+        .eq("user_id", user.id)
+        .in("status", ["present", "half-day", "late"])
+        .gte("punch_in_at", monthStart)
+        .lte("punch_in_at", monthEnd),
+      // Leave balance remaining
+      supabase
+        .from("hr_leave_balances")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("year", now.getFullYear())
+        .single(),
+      // Pending leave requests
+      supabase
+        .from("hr_leave_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("status", "pending"),
+    ]);
+
+    const uniqueDays = new Set((attendanceResult.data || []).map((r) =>
       new Date(r.punch_in_at).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })
     ));
     setDaysPresent(uniqueDays.size);
 
-    // Leave balance remaining
-    const { data: bal } = await supabase
-      .from("hr_leave_balances")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("year", now.getFullYear())
-      .single();
+    const bal = balanceResult.data;
     if (bal) {
       const d = bal as Record<string, unknown>;
       const total =
@@ -56,13 +67,7 @@ export default function ProfilePage() {
       setLeavesLeft(0);
     }
 
-    // Pending leave requests
-    const { count: pending } = await supabase
-      .from("hr_leave_requests")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("status", "pending");
-    setPendingCount(pending ?? 0);
+    setPendingCount(pendingResult.count ?? 0);
 
   }, [user]);
 

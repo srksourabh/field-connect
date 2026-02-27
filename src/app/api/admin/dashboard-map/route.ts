@@ -36,7 +36,8 @@ export async function GET(request: Request) {
 
   let empQuery = supabaseAdmin
     .from("hr_profiles")
-    .select("id, full_name, designation, phone, email, avatar_url, department");
+    .select("id, full_name, designation, phone, email, avatar_url, department")
+    .is("deactivated_at", null);
 
   if (!isUniversal && profile.project_id) {
     empQuery = empQuery.eq("project_id", profile.project_id);

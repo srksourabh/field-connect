@@ -130,36 +130,24 @@ function sumPathDistanceKm(points: [number, number][]): number {
   return totalKm;
 }
 
-/** Snap GPS points to nearest roads using Google Roads API (with interpolation) */
+/** Snap GPS points to nearest roads via server-side proxy (protects API key) */
 export async function snapToRoads(
   positions: [number, number][]
 ): Promise<[number, number][]> {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  if (!apiKey || positions.length < 2) return positions;
+  if (positions.length < 2) return positions;
 
   try {
-    const batchSize = 100;
-    const snapped: [number, number][] = [];
+    const res = await fetch("/api/snap-to-roads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ positions }),
+    });
 
-    for (let i = 0; i < positions.length; i += batchSize) {
-      const batch = positions.slice(i, i + batchSize);
-      const path = batch.map(([lat, lng]) => `${lat},${lng}`).join("|");
-      const url = `https://roads.googleapis.com/v1/snapToRoads?path=${path}&interpolate=true&key=${apiKey}`;
-      const res = await fetch(url);
+    if (!res.ok) return positions;
 
-      if (!res.ok) throw new Error(`Roads API error: ${res.status}`);
-
-      const data = await res.json();
-      if (data.snappedPoints) {
-        for (const pt of data.snappedPoints) {
-          snapped.push([pt.location.latitude, pt.location.longitude]);
-        }
-      }
-    }
-
-    return snapped.length > 0 ? snapped : positions;
-  } catch (err) {
-    console.error("Snap to roads failed, using raw GPS points:", err);
+    const data = await res.json();
+    return data.snapped && data.snapped.length > 0 ? data.snapped : positions;
+  } catch {
     return positions;
   }
 }

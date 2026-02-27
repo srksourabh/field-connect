@@ -38,7 +38,7 @@ export default function LeavePage() {
     try {
       const { data } = await supabase
         .from("hr_leave_balances")
-        .select("*")
+        .select("id, user_id, year, sick_leave_total, sick_leave_used, casual_leave_total, casual_leave_used, compoff_total, compoff_used, privilege_leave_total, privilege_leave_used")
         .eq("user_id", user.id)
         .eq("year", new Date().getFullYear())
         .single();
@@ -179,6 +179,7 @@ export default function LeavePage() {
       <header className="pt-12 pb-4 px-6 flex items-center justify-between bg-white/50 dark:bg-[#15202b] backdrop-blur-md sticky top-0 z-20 border-b border-gray-200 dark:border-gray-800">
         <Link
           href="/dashboard"
+          aria-label="Go back"
           className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
         >
           <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
