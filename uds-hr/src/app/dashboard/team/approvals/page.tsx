@@ -5,6 +5,7 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import ApprovalSummaryCards from "@/components/approvals/ApprovalSummaryCards";
 import LeaveRequestCard from "@/components/approvals/LeaveRequestCard";
+import RectificationRequestCard from "@/components/approvals/RectificationRequestCard";
 import { useAuth } from "@/lib/auth";
 import {
   getTeamLeaveRequests,
@@ -12,21 +13,35 @@ import {
   rejectLeaveRequest,
   type LeaveRequestWithProfile,
 } from "@/lib/leave-api";
+import {
+  getTeamRectificationRequests,
+  approveRectificationRequest,
+  rejectRectificationRequest,
+  type RectificationWithProfile,
+} from "@/lib/rectification-api";
 import { showPrompt } from "@/components/ui/Dialog";
 import { showToast } from "@/components/ui/Toast";
 
+type Category = "leave" | "rectification";
+
 export default function ApprovalsPage() {
   const { user } = useAuth();
+  const [category, setCategory] = useState<Category>("leave");
   const [tab, setTab] = useState<"pending" | "history">("pending");
-  const [requests, setRequests] = useState<LeaveRequestWithProfile[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequestWithProfile[]>([]);
+  const [rectRequests, setRectRequests] = useState<RectificationWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const fetchRequests = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const data = await getTeamLeaveRequests(user.id);
-    setRequests(data);
+    const [leaves, rects] = await Promise.all([
+      getTeamLeaveRequests(user.id),
+      getTeamRectificationRequests(user.id),
+    ]);
+    setLeaveRequests(leaves);
+    setRectRequests(rects);
     setLoading(false);
   }, [user]);
 
@@ -34,13 +49,11 @@ export default function ApprovalsPage() {
     fetchRequests();
   }, [fetchRequests]);
 
-  const pendingRequests = requests.filter((r) => r.status === "pending");
-  const historyRequests = requests.filter((r) => r.status !== "pending");
-
-  const handleApprove = async (id: string) => {
+  // Leave handlers
+  const handleLeaveApprove = async (id: string) => {
     if (!user) return;
     const comment = await showPrompt("Approve Leave", "Add a comment (optional):", "Comment...");
-    if (comment === null) return; // cancelled
+    if (comment === null) return;
     setActionLoadingId(`approve_${id}`);
     const ok = await approveLeaveRequest(id, user.id, comment || undefined);
     setActionLoadingId(null);
@@ -52,10 +65,10 @@ export default function ApprovalsPage() {
     }
   };
 
-  const handleReject = async (id: string) => {
+  const handleLeaveReject = async (id: string) => {
     if (!user) return;
     const comment = await showPrompt("Reject Leave", "Reason for rejection (optional):", "Reason...");
-    if (comment === null) return; // cancelled
+    if (comment === null) return;
     setActionLoadingId(`reject_${id}`);
     const ok = await rejectLeaveRequest(id, user.id, comment || undefined);
     setActionLoadingId(null);
@@ -67,8 +80,47 @@ export default function ApprovalsPage() {
     }
   };
 
-  const pendingCount = pendingRequests.length;
-  const approvedCount = requests.filter((r) => r.status === "approved").length;
+  // Rectification handlers
+  const handleRectApprove = async (id: string) => {
+    if (!user) return;
+    const comment = await showPrompt("Approve Rectification", "Add a comment (optional):", "Comment...");
+    if (comment === null) return;
+    setActionLoadingId(`approve_${id}`);
+    const ok = await approveRectificationRequest(id, user.id, comment || undefined);
+    setActionLoadingId(null);
+    if (ok) {
+      showToast("Rectification approved", "success");
+      fetchRequests();
+    } else {
+      showToast("Failed to approve. Please try again.", "error");
+    }
+  };
+
+  const handleRectReject = async (id: string) => {
+    if (!user) return;
+    const comment = await showPrompt("Reject Rectification", "Reason for rejection (optional):", "Reason...");
+    if (comment === null) return;
+    setActionLoadingId(`reject_${id}`);
+    const ok = await rejectRectificationRequest(id, user.id, comment || undefined);
+    setActionLoadingId(null);
+    if (ok) {
+      showToast("Rectification rejected", "success");
+      fetchRequests();
+    } else {
+      showToast("Failed to reject. Please try again.", "error");
+    }
+  };
+
+  // Counts
+  const leavePending = leaveRequests.filter((r) => r.status === "pending");
+  const leaveHistory = leaveRequests.filter((r) => r.status !== "pending");
+  const rectPending = rectRequests.filter((r) => r.status === "pending");
+  const rectHistory = rectRequests.filter((r) => r.status !== "pending");
+
+  const totalPending = leavePending.length + rectPending.length;
+  const totalApproved = leaveRequests.filter((r) => r.status === "approved").length +
+    rectRequests.filter((r) => r.status === "approved").length;
+  const totalRequests = leaveRequests.length + rectRequests.length;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -81,7 +133,7 @@ export default function ApprovalsPage() {
           <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
         </Link>
         <h1 className="text-lg font-semibold text-center flex-1">
-          Leave Approvals
+          Approvals
         </h1>
         <div className="w-9" />
       </header>
@@ -89,13 +141,39 @@ export default function ApprovalsPage() {
       {/* Summary Cards */}
       <div className="pt-4">
         <ApprovalSummaryCards
-          pending={pendingCount}
-          approved={approvedCount}
-          teamCapacity={requests.length > 0 ? Math.round(((requests.length - pendingCount) / Math.max(requests.length, 1)) * 100) : 100}
+          pending={totalPending}
+          approved={totalApproved}
+          teamCapacity={totalRequests > 0 ? Math.round(((totalRequests - totalPending) / Math.max(totalRequests, 1)) * 100) : 100}
         />
       </div>
 
-      {/* Tab Selector */}
+      {/* Category Selector (Leave / Rectification) */}
+      <div className="px-6 mb-3">
+        <div className="bg-gray-200 dark:bg-gray-800 p-1 rounded-lg flex">
+          <button
+            onClick={() => setCategory("leave")}
+            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
+              category === "leave"
+                ? "bg-white dark:bg-surface-dark text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-500 dark:text-gray-400"
+            }`}
+          >
+            Leave {leavePending.length > 0 && `(${leavePending.length})`}
+          </button>
+          <button
+            onClick={() => setCategory("rectification")}
+            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
+              category === "rectification"
+                ? "bg-white dark:bg-surface-dark text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-500 dark:text-gray-400"
+            }`}
+          >
+            Rectification {rectPending.length > 0 && `(${rectPending.length})`}
+          </button>
+        </div>
+      </div>
+
+      {/* Pending / History Tab */}
       <div className="px-6 mb-4">
         <div className="bg-gray-200 dark:bg-gray-800 p-1 rounded-lg flex">
           <button
@@ -106,7 +184,7 @@ export default function ApprovalsPage() {
                 : "text-gray-500 dark:text-gray-400"
             }`}
           >
-            Pending ({pendingCount})
+            Pending ({category === "leave" ? leavePending.length : rectPending.length})
           </button>
           <button
             onClick={() => setTab("history")}
@@ -129,32 +207,63 @@ export default function ApprovalsPage() {
           </div>
         ) : (
           <>
-            {(tab === "pending" ? pendingRequests : historyRequests).map(
-              (request) => (
-                <LeaveRequestCard
-                  key={request.id}
-                  request={{
-                    id: request.id,
-                    employeeName: request.employee_name,
-                    type: request.type,
-                    startDate: request.start_date,
-                    endDate: request.end_date,
-                    reason: request.reason || "",
-                    status: request.status,
-                    days: request.days,
-                    reviewerComment: request.reviewer_comment,
-                  }}
-                  onApprove={handleApprove}
-                  onReject={handleReject}
-                  actionLoadingId={actionLoadingId}
-                />
-              )
+            {category === "leave" && (
+              <>
+                {(tab === "pending" ? leavePending : leaveHistory).map((request) => (
+                  <LeaveRequestCard
+                    key={request.id}
+                    request={{
+                      id: request.id,
+                      employeeName: request.employee_name,
+                      type: request.type,
+                      startDate: request.start_date,
+                      endDate: request.end_date,
+                      reason: request.reason || "",
+                      status: request.status,
+                      days: request.days,
+                      reviewerComment: request.reviewer_comment,
+                    }}
+                    onApprove={handleLeaveApprove}
+                    onReject={handleLeaveReject}
+                    actionLoadingId={actionLoadingId}
+                  />
+                ))}
+                {(tab === "pending" ? leavePending : leaveHistory).length === 0 && (
+                  <div className="text-center py-12 text-gray-400">
+                    <p className="text-sm">No {tab} leave requests</p>
+                  </div>
+                )}
+              </>
             )}
-            {(tab === "pending" ? pendingRequests : historyRequests).length ===
-              0 && (
-              <div className="text-center py-12 text-gray-400">
-                <p className="text-sm">No {tab} requests</p>
-              </div>
+
+            {category === "rectification" && (
+              <>
+                {(tab === "pending" ? rectPending : rectHistory).map((request) => (
+                  <RectificationRequestCard
+                    key={request.id}
+                    request={{
+                      id: request.id,
+                      employeeName: request.employee_name,
+                      attendanceDate: request.attendance_date,
+                      rectificationType: request.rectification_type,
+                      correctedPunchIn: request.corrected_punch_in,
+                      correctedPunchOut: request.corrected_punch_out,
+                      correctedStatus: request.corrected_status,
+                      reason: request.reason,
+                      status: request.status as "pending" | "approved" | "rejected",
+                      reviewerComment: request.reviewer_comment,
+                    }}
+                    onApprove={handleRectApprove}
+                    onReject={handleRectReject}
+                    actionLoadingId={actionLoadingId}
+                  />
+                ))}
+                {(tab === "pending" ? rectPending : rectHistory).length === 0 && (
+                  <div className="text-center py-12 text-gray-400">
+                    <p className="text-sm">No {tab} rectification requests</p>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
