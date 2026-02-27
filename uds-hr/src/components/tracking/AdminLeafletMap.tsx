@@ -12,6 +12,7 @@ export interface MapEmployee {
   lat: number;
   lng: number;
   status: "online" | "away" | "on_leave" | "offline";
+  punchedIn?: boolean;
   trail: { lat: number; lng: number }[];
 }
 
@@ -27,12 +28,19 @@ const statusColors: Record<string, string> = {
   offline: "#6B7280",
 };
 
-function createMarkerIcon(status: string) {
-  const color = statusColors[status] || "#6B7280";
+// Green for punched-in, gray for not punched-in
+function createMarkerIcon(status: string, punchedIn?: boolean) {
+  const color = punchedIn ? "#22C55E" : (statusColors[status] || "#6B7280");
+  const pulseRing = punchedIn
+    ? `<div style="position:absolute;top:-4px;left:-4px;width:40px;height:40px;border-radius:50%;border:2px solid #22C55E;animation:pulse 2s infinite;opacity:0.6"></div>`
+    : "";
   return L.divIcon({
     className: "custom-marker",
-    html: `<div style="width:32px;height:32px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center">
-      <div style="width:8px;height:8px;border-radius:50%;background:white"></div>
+    html: `<div style="position:relative;width:32px;height:32px">
+      ${pulseRing}
+      <div style="width:32px;height:32px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center">
+        <div style="width:8px;height:8px;border-radius:50%;background:white"></div>
+      </div>
     </div>`,
     iconSize: [32, 32],
     iconAnchor: [16, 16],
@@ -60,7 +68,7 @@ export default function AdminLeafletMap({ employees, onSelectEmployee }: AdminLe
         <Marker
           key={emp.id}
           position={[emp.lat, emp.lng]}
-          icon={createMarkerIcon(emp.status)}
+          icon={createMarkerIcon(emp.status, emp.punchedIn)}
           eventHandlers={{
             click: () => onSelectEmployee?.(emp.id),
           }}
@@ -68,6 +76,9 @@ export default function AdminLeafletMap({ employees, onSelectEmployee }: AdminLe
           <Popup>
             <div className="text-center min-w-[150px]">
               <p className="font-semibold text-sm">{emp.name}</p>
+              <p className="text-xs mt-1" style={{ color: emp.punchedIn ? "#22C55E" : "#6B7280" }}>
+                {emp.punchedIn ? "Punched In" : "Not Punched In"}
+              </p>
               {emp.phone && (
                 <p className="text-xs mt-1">
                   <a href={`tel:${emp.phone}`} className="text-blue-600 underline">{emp.phone}</a>

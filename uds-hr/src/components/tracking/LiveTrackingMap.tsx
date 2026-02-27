@@ -22,7 +22,7 @@ export default function LiveTrackingMap({ employees, onSelectEmployee }: LiveTra
     });
   }, []);
 
-  const onlineCount = employees.filter((e) => e.status === "online").length;
+  const punchedInCount = employees.filter((e) => e.punchedIn).length;
 
   return (
     <div className="relative h-full w-full">
@@ -34,7 +34,7 @@ export default function LiveTrackingMap({ employees, onSelectEmployee }: LiveTra
         </div>
         <div className="bg-white dark:bg-surface-dark rounded-full px-3 py-1.5 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center gap-2">
           <Users className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs font-medium">{onlineCount} Active</span>
+          <span className="text-xs font-medium">{punchedInCount} Punched In</span>
         </div>
       </div>
 

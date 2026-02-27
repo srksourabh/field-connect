@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(request: Request) {
   // Verify auth from header
@@ -19,39 +14,90 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check role
+  // Get caller profile
   const { data: profile } = await supabaseAdmin
     .from("hr_profiles")
-    .select("role, id, project_id, designation")
+    .select("role, id, project_id, reporting_manager_id, designation")
     .eq("id", user.id)
     .is("deactivated_at", null)
     .single();
 
-  if (!profile || !["admin", "super_admin", "manager"].includes(profile.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!profile) {
+    return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
-  // Get employees (managers see their reports, admins scoped by project)
   const isUniversal = profile.role === "super_admin" ||
     (profile.designation?.toLowerCase().includes("hr") ?? false);
 
-  let employeesQuery = supabaseAdmin
+  // Fetch all active profiles (project-scoped for non-universal users)
+  let profilesQuery = supabaseAdmin
     .from("hr_profiles")
-    .select("id, full_name, designation, phone, email, avatar_url, role")
+    .select("id, full_name, designation, phone, email, avatar_url, role, reporting_manager_id, project_id")
     .is("deactivated_at", null);
 
-  if (profile.role === "manager") {
-    employeesQuery = employeesQuery.eq("reporting_manager_id", user.id);
-  } else if (!isUniversal && profile.project_id) {
-    employeesQuery = employeesQuery.eq("project_id", profile.project_id);
+  if (!isUniversal && profile.project_id) {
+    profilesQuery = profilesQuery.eq("project_id", profile.project_id);
   }
 
-  const { data: employees } = await employeesQuery;
-  if (!employees || employees.length === 0) {
+  const { data: allProfiles } = await profilesQuery;
+  if (!allProfiles || allProfiles.length === 0) {
     return NextResponse.json({ employees: [] });
   }
 
-  const employeeIds = employees.map((e) => e.id);
+  // Apply same scoping as team view: same level (peers) + all descendants
+  // Universal users (super_admin / HR) see everyone
+  let visibleProfiles = allProfiles;
+
+  if (!isUniversal) {
+    // Build child map
+    const childMap: Record<string, string[]> = {};
+    for (const p of allProfiles) {
+      if (p.reporting_manager_id) {
+        if (!childMap[p.reporting_manager_id]) {
+          childMap[p.reporting_manager_id] = [];
+        }
+        childMap[p.reporting_manager_id].push(p.id);
+      }
+    }
+
+    // Peers: same reporting_manager_id as caller
+    const peers = allProfiles.filter((p) => p.reporting_manager_id === profile.reporting_manager_id);
+    if (peers.length === 0) {
+      const self = allProfiles.find((p) => p.id === profile.id);
+      if (self) peers.push(self);
+    }
+
+    // BFS to collect all descendants of peers
+    const visibleIds = new Set<string>();
+    const queue: string[] = [];
+
+    for (const peer of peers) {
+      visibleIds.add(peer.id);
+      queue.push(peer.id);
+    }
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const children = childMap[current] || [];
+      for (const childId of children) {
+        if (!visibleIds.has(childId)) {
+          visibleIds.add(childId);
+          queue.push(childId);
+        }
+      }
+    }
+
+    visibleProfiles = allProfiles.filter((p) => visibleIds.has(p.id));
+  }
+
+  // Exclude caller themselves from the map (you don't need to see your own location)
+  visibleProfiles = visibleProfiles.filter((p) => p.id !== profile.id);
+
+  if (visibleProfiles.length === 0) {
+    return NextResponse.json({ employees: [] });
+  }
+
+  const employeeIds = visibleProfiles.map((e) => e.id);
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const todayIST = `${today}T00:00:00+05:30`;
 
@@ -71,7 +117,7 @@ export async function GET(request: Request) {
     .order("captured_at", { ascending: false });
 
   // Build per-employee result
-  const result = employees.map((emp) => {
+  const result = visibleProfiles.map((emp) => {
     const empAttendance = (attendance || []).filter((a) => a.user_id === emp.id);
     const hasOpenSession = empAttendance.some((a) => !a.punch_out_at);
     const latestAttendance = empAttendance[empAttendance.length - 1];
@@ -116,6 +162,7 @@ export async function GET(request: Request) {
       lng: latestLog?.long ?? null,
       status,
       lastSeen,
+      punchedIn: hasOpenSession,
       trail,
     };
   });

@@ -16,6 +16,7 @@ interface ApiEmployee {
   lng: number | null;
   status: string;
   lastSeen: string;
+  punchedIn?: boolean;
   trail?: { lat: number; lng: number }[];
 }
 
@@ -47,6 +48,7 @@ export default function TrackingPage() {
             lat: e.lat!,
             lng: e.lng!,
             status: e.status as "online" | "away" | "offline",
+            punchedIn: e.punchedIn ?? false,
             trail: e.trail || [],
           }));
         setEmployees(mapped);
@@ -96,7 +98,17 @@ export default function TrackingPage() {
           <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
         </div>
         <div className="px-6 pb-4">
-          <h3 className="text-sm font-semibold mb-3">Team Members</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold">Team Members</h3>
+            <div className="flex items-center gap-3 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-green-500" /> Punched In
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-gray-400" /> Not Punched In
+              </span>
+            </div>
+          </div>
           {employees.length === 0 && !loading ? (
             <p className="text-sm text-gray-500 text-center py-4">No team members with location data</p>
           ) : (
@@ -113,11 +125,7 @@ export default function TrackingPage() {
                       </div>
                       <span
                         className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-surface-dark ${
-                          emp.status === "online"
-                            ? "bg-green-500"
-                            : emp.status === "away"
-                            ? "bg-yellow-500"
-                            : "bg-gray-500"
+                          emp.punchedIn ? "bg-green-500" : "bg-gray-400"
                         }`}
                       />
                     </div>
