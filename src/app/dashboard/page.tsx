@@ -69,7 +69,7 @@ export default function DashboardHome() {
         .from("hr_config")
         .select("value")
         .eq("key", "hr_policy_url")
-        .single();
+        .maybeSingle();
       if (data?.value) setHrPolicyUrl(data.value);
     })();
   }, []);

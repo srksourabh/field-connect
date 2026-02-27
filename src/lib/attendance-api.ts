@@ -17,7 +17,7 @@ export async function createPunchIn(data: {
     .gte("created_at", today)
     .is("punch_out_at", null)
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (existing) {
     console.warn("Open session already exists, skipping duplicate punch-in");

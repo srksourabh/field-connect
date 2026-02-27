@@ -15,7 +15,7 @@ import {
   QrCode,
   ClipboardList,
   CheckSquare,
-  FileEdit,
+
   LogOut,
   BarChart3,
   Map,
@@ -49,8 +49,7 @@ const navItems: NavItem[] = [
 ];
 
 const managerItems: NavItem[] = [
-  { href: "/dashboard/team/approvals", icon: CheckSquare, label: "Leave Approvals", roles: ["manager", "admin"] },
-  { href: "/dashboard/team/rectifications", icon: FileEdit, label: "Rectification Approvals", roles: ["manager", "admin"] },
+  { href: "/dashboard/team/approvals", icon: CheckSquare, label: "Approvals", roles: ["manager", "admin"] },
   { href: "/dashboard/analytics", icon: BarChart3, label: "Analytics", roles: ["manager", "admin"] },
 ];
 
