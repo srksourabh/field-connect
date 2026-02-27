@@ -18,7 +18,7 @@ interface LeavePolicy {
 }
 
 export default function LeavePoliciesPage() {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const [policies, setPolicies] = useState<LeavePolicy[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -52,6 +52,17 @@ export default function LeavePoliciesPage() {
   useEffect(() => {
     fetchPolicies();
   }, [fetchPolicies]);
+
+  // Role guard: only admin/super_admin can access leave policies
+  const hasAccess = profile?.role === "admin" || profile?.role === "super_admin";
+  if (profile && !hasAccess) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
+        <p className="text-lg font-semibold mb-2">Access Denied</p>
+        <p className="text-sm text-gray-500">You don&apos;t have permission to access this page.</p>
+      </div>
+    );
+  }
 
   const resetForm = () => {
     setFormName("");

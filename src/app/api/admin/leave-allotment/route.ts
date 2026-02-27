@@ -170,22 +170,45 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }
 
-  let updated = 0;
-  let failed = 0;
-
-  for (const balanceId of balance_ids) {
-    const { error } = await supabaseAdmin
-      .from("hr_leave_balances")
-      .update(filtered)
-      .eq("id", balanceId);
-    if (error) {
-      failed++;
-    } else {
-      updated++;
+  // Reject negative values
+  for (const [key, value] of Object.entries(filtered)) {
+    if (value < 0) {
+      return NextResponse.json({ error: `${key} cannot be negative` }, { status: 400 });
     }
   }
 
-  return NextResponse.json({ updated, failed });
+  // For non-universal admins, verify all balance_ids belong to employees in their project
+  if (!admin.isUniversal) {
+    const { data: balanceRows } = await supabaseAdmin
+      .from("hr_leave_balances")
+      .select("id, user_id")
+      .in("id", balance_ids);
+
+    if (balanceRows) {
+      const userIds = balanceRows.map((b) => b.user_id);
+      const { data: profiles } = await supabaseAdmin
+        .from("hr_profiles")
+        .select("id, project_id")
+        .in("id", userIds);
+
+      const unauthorized = (profiles || []).filter((p) => p.project_id !== admin.project_id);
+      if (unauthorized.length > 0) {
+        return NextResponse.json({ error: "You can only manage leave balances for employees in your project" }, { status: 403 });
+      }
+    }
+  }
+
+  // Batch update using .in() instead of N+1 individual queries
+  const { error, count } = await supabaseAdmin
+    .from("hr_leave_balances")
+    .update(filtered)
+    .in("id", balance_ids);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ updated: count ?? balance_ids.length, failed: 0 });
 }
 
 // PATCH: Update individual employee balance
@@ -238,6 +261,9 @@ export async function PATCH(request: Request) {
   const filtered: Record<string, number> = {};
   for (const key of allowedFields) {
     if (key in updates && typeof updates[key] === "number") {
+      if (updates[key] < 0) {
+        return NextResponse.json({ error: `${key} cannot be negative` }, { status: 400 });
+      }
       filtered[key] = updates[key];
     }
   }

@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  maximumScale: 5,
   viewportFit: "cover",
   themeColor: "#137fec",
 };
@@ -43,11 +43,7 @@ export default function RootLayout({
         {children}
         <ToastContainer />
         <DialogContainer />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}`,
-          }}
-        />
+        <script src="/register-sw.js" defer />
       </body>
     </html>
   );

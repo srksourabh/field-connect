@@ -32,7 +32,8 @@ function setAuthCookie(session: Session | null) {
     const remainingSeconds = session.expires_at
       ? Math.max(0, session.expires_at - Math.floor(Date.now() / 1000))
       : (session.expires_in ?? 3600);
-    document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${remainingSeconds}; SameSite=Lax`;
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${remainingSeconds}; SameSite=Lax${secure}`;
   } else {
     document.cookie = `${COOKIE_NAME}=; path=/; max-age=0`;
   }
@@ -73,6 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(s?.user ?? null);
       setAuthCookie(s);
       if (s?.user) fetchProfile(s.user.id);
+      setLoading(false);
+    }).catch(() => {
+      // If getSession rejects (e.g. network error), ensure loading finishes
       setLoading(false);
     });
 

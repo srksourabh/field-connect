@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import StepProgress from "@/components/onboarding/StepProgress";
 import PersonalDetailsForm from "@/components/onboarding/PersonalDetailsForm";
@@ -52,25 +53,30 @@ export default function PublicOnboardingPage() {
   // Validate token on mount
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("hr_onboarding_tokens")
-        .select("expires_at, used_at")
-        .eq("token", token)
-        .single();
+      try {
+        const { data } = await supabase
+          .from("hr_onboarding_tokens")
+          .select("expires_at, used_at")
+          .eq("token", token)
+          .single();
 
-      if (!data) {
+        if (!data) {
+          setTokenStatus("invalid");
+          return;
+        }
+        if (data.used_at) {
+          setTokenStatus("used");
+          return;
+        }
+        if (new Date(data.expires_at) < new Date()) {
+          setTokenStatus("expired");
+          return;
+        }
+        setTokenStatus("valid");
+      } catch (err) {
+        console.error("Token validation error:", err);
         setTokenStatus("invalid");
-        return;
       }
-      if (data.used_at) {
-        setTokenStatus("used");
-        return;
-      }
-      if (new Date(data.expires_at) < new Date()) {
-        setTokenStatus("expired");
-        return;
-      }
-      setTokenStatus("valid");
     })();
   }, [token]);
 
@@ -115,18 +121,23 @@ export default function PublicOnboardingPage() {
     setSubmitting(true);
     setError(null);
 
-    const res = await fetch("/api/onboard", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, personal, kyc, job }),
-    });
+    try {
+      const res = await fetch("/api/onboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, personal, kyc, job }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (res.ok) {
-      setSubmitted(true);
-    } else {
-      setError(data.error || "Something went wrong. Please try again.");
+      if (res.ok) {
+        setSubmitted(true);
+      } else {
+        setError(data.error || "Something went wrong. Please try again.");
+      }
+    } catch (err) {
+      console.error("Onboarding submission error:", err);
+      setError("Network error. Please check your connection and try again.");
     }
     setSubmitting(false);
   };
@@ -173,11 +184,11 @@ export default function PublicOnboardingPage() {
           Your account has been created successfully.
         </p>
         <p className="text-sm text-gray-500 text-center mb-6">
-          Your default password is: <strong>first 4 letters of your name (lowercase) + last 4 digits of your phone</strong>.
+          Your login credentials have been shared with your admin. Please contact them if you need help signing in.
         </p>
-        <a href="/login" className="uds-btn-primary px-8">
+        <Link href="/login" className="uds-btn-primary px-8">
           Go to Login
-        </a>
+        </Link>
       </div>
     );
   }

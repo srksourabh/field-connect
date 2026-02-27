@@ -93,7 +93,8 @@ export default function LoginPage() {
             alt={SLIDE_CAPTIONS[i]}
             fill
             className="object-cover"
-            loading="eager"
+            priority={i === 0}
+            loading={i === 0 ? "eager" : "lazy"}
             sizes="100vw"
           />
         </div>
@@ -135,12 +136,13 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-3.5">
               {/* Phone */}
               <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">
+                <label htmlFor="phone" className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">
                   Mobile Number
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
+                    id="phone"
                     type="tel"
                     inputMode="numeric"
                     placeholder="Enter 10-digit mobile number"
@@ -155,12 +157,13 @@ export default function LoginPage() {
 
               {/* Password */}
               <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">
+                <label htmlFor="password" className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">
                   Password
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
+                    id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter password"
                     value={password}
@@ -171,6 +174,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
                   >
                     {showPassword ? (
@@ -205,10 +209,9 @@ export default function LoginPage() {
                 Forgot Password?
               </button>
 
-              {/* Hint */}
+              {/* Help text */}
               <p className="text-[11px] text-center text-gray-400 dark:text-gray-500">
-                Default password: first 4 letters of name (lowercase) + last 4
-                digits of mobile
+                Contact your admin if you need help with your credentials
               </p>
             </form>
           </div>
@@ -265,26 +268,31 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
     }
 
     setLoading(true);
-    const res = await fetch("/api/forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: cleanPhone, step: "lookup" }),
-    });
-    const data = await res.json();
-    setLoading(false);
+    try {
+      const res = await fetch("/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleanPhone, step: "lookup" }),
+      });
+      const data = await res.json();
 
-    if (!res.ok) {
-      if (res.status === 400 && data.error?.includes("No email")) {
-        setErrorMsg(data.error);
-        setStep("error");
-      } else {
-        setErrorMsg(data.error || "Something went wrong");
+      if (!res.ok) {
+        if (res.status === 400 && data.error?.includes("No email")) {
+          setErrorMsg(data.error);
+          setStep("error");
+        } else {
+          setErrorMsg(data.error || "Something went wrong");
+        }
+        return;
       }
-      return;
-    }
 
-    setMaskedEmail(data.masked_email);
-    setStep("email");
+      setMaskedEmail(data.masked_email);
+      setStep("email");
+    } catch {
+      setErrorMsg("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerify = async (e: React.FormEvent) => {
@@ -297,24 +305,29 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
 
     setLoading(true);
     const cleanPhone = phone.replace(/\D/g, "");
-    const res = await fetch("/api/forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: cleanPhone, email: email.trim(), step: "verify" }),
-    });
-    const data = await res.json();
-    setLoading(false);
+    try {
+      const res = await fetch("/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleanPhone, email: email.trim(), step: "verify" }),
+      });
+      const data = await res.json();
 
-    if (!res.ok) {
-      setErrorMsg(data.error || "Something went wrong");
-      return;
+      if (!res.ok) {
+        setErrorMsg(data.error || "Something went wrong");
+        return;
+      }
+
+      setStep("success");
+    } catch {
+      setErrorMsg("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setStep("success");
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
       <div className="w-full max-w-sm bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
@@ -396,7 +409,7 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
             </div>
             <p className="text-sm font-medium text-green-600">Password reset successfully!</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Your password has been reset to the default: first 4 letters of your name (lowercase) + last 4 digits of your mobile number.
+              Your password has been reset. Please use the credentials provided during onboarding or contact your admin.
             </p>
             <button
               onClick={onClose}

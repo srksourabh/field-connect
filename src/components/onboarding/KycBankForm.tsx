@@ -44,10 +44,10 @@ export default function KycBankForm({ data, onChange }: KycBankFormProps) {
           />
         </div>
 
-        {/* Document Upload */}
-        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 flex flex-col items-center text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors group">
-          <Upload className="w-5 h-5 text-gray-400 group-hover:text-primary mb-2" />
-          <p className="text-xs text-gray-500">Upload Aadhaar / PAN scan</p>
+        {/* Document Upload (not yet available) */}
+        <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col items-center text-center opacity-60">
+          <Upload className="w-5 h-5 text-gray-400 mb-2" />
+          <p className="text-xs text-gray-400">Document upload coming soon</p>
         </div>
 
         <hr className="border-gray-100 dark:border-gray-800" />

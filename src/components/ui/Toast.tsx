@@ -53,7 +53,7 @@ export function ToastContainer() {
   };
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] space-y-2 max-w-md w-full px-4">
+    <div aria-live="polite" role="status" className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] space-y-2 max-w-md w-full px-4">
       {toasts.map((toast) => {
         const Icon = icons[toast.type];
         return (

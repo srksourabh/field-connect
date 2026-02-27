@@ -25,7 +25,7 @@ const CATEGORY_STYLES: Record<string, { label: string; color: string }> = {
 };
 
 export default function HrInboxPage() {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const [messages, setMessages] = useState<HrMessage[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -49,6 +49,17 @@ export default function HrInboxPage() {
   useEffect(() => {
     fetchMessages();
   }, [fetchMessages]);
+
+  // Role guard: only admin/super_admin can access HR inbox
+  const hasAccess = profile?.role === "admin" || profile?.role === "super_admin";
+  if (profile && !hasAccess) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
+        <p className="text-lg font-semibold mb-2">Access Denied</p>
+        <p className="text-sm text-gray-500">You don&apos;t have permission to access this page.</p>
+      </div>
+    );
+  }
 
   const markAsRead = async (id: string) => {
     if (!session?.access_token) return;

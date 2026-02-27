@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
   // Ensure bucket exists
   const { data: buckets } = await supabaseAdmin.storage.listBuckets();
   if (!buckets?.find((b) => b.name === BUCKET)) {
-    await supabaseAdmin.storage.createBucket(BUCKET, { public: true });
+    await supabaseAdmin.storage.createBucket(BUCKET, { public: false });
   }
 
   // Upload file (overwrite previous)

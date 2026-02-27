@@ -50,6 +50,24 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
+  // Prevent self-edit of privilege-escalation fields
+  if (userId === caller.id) {
+    const blockedSelfEditFields = ["role", "designation", "project_id"];
+    for (const field of blockedSelfEditFields) {
+      if (field in updates) {
+        return NextResponse.json({ error: "You cannot change your own role, designation, or project assignment" }, { status: 403 });
+      }
+    }
+  }
+
+  // Validate role field against allowed values
+  if (updates.role) {
+    const validRoles = ["employee", "manager", "admin", "super_admin"];
+    if (!validRoles.includes(updates.role)) {
+      return NextResponse.json({ error: "Invalid role value" }, { status: 400 });
+    }
+  }
+
   // Only super_admin can set admin or super_admin role
   if (updates.role === "super_admin" && callerProfile.role !== "super_admin") {
     return NextResponse.json({ error: "Only super admins can assign super_admin role" }, { status: 403 });

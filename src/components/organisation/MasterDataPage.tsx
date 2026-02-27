@@ -24,7 +24,7 @@ interface MasterDataPageProps {
 }
 
 export default function MasterDataPage({ type, title, icon: Icon, showExternalUrl = false }: MasterDataPageProps) {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const [items, setItems] = useState<MasterDataItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInactive, setShowInactive] = useState(false);
@@ -56,6 +56,17 @@ export default function MasterDataPage({ type, title, icon: Icon, showExternalUr
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
+
+  // Role guard: only admin/super_admin can access organisation pages
+  const hasAccess = profile?.role === "admin" || profile?.role === "super_admin";
+  if (profile && !hasAccess) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
+        <p className="text-lg font-semibold mb-2">Access Denied</p>
+        <p className="text-sm text-gray-500">You don&apos;t have permission to access this page.</p>
+      </div>
+    );
+  }
 
   const handleAdd = async () => {
     if (!addingName.trim()) return;

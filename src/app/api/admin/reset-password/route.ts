@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   // Fetch target user's profile for password generation
   const { data: targetProfile } = await supabaseAdmin
     .from("hr_profiles")
-    .select("full_name, phone, project_id")
+    .select("full_name, phone, project_id, role")
     .eq("id", userId)
     .single();
 
@@ -54,6 +54,11 @@ export async function POST(req: NextRequest) {
 
   if (!isUniversal && targetProfile.project_id !== callerProfile.project_id) {
     return NextResponse.json({ error: "You can only manage employees in your project" }, { status: 403 });
+  }
+
+  // Prevent non-super_admin from resetting super_admin passwords
+  if (targetProfile.role === "super_admin" && callerProfile.role !== "super_admin") {
+    return NextResponse.json({ error: "Only super admins can reset other super admin passwords" }, { status: 403 });
   }
 
   // Generate default password: first 4 letters of name (lowercase) + last 4 digits of phone
