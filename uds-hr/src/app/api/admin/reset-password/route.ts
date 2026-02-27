@@ -76,9 +76,12 @@ export async function POST(req: NextRequest) {
   const authEmail = `${cleanPhone}@uds.hr`;
 
   // Reset password and fix auth email via Supabase Admin API
+  // email_confirm: true ensures the email is immediately confirmed (no confirmation link)
+  // Without this, password update may be deferred until email is confirmed
   const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
     email: authEmail,
     password: newPassword,
+    email_confirm: true,
   });
 
   if (error) {
@@ -86,7 +89,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Invalidate all existing sessions so the user must log in with the new password
-  try { await supabaseAdmin.auth.admin.signOut(userId, { scope: "global" } as never); } catch { /* best-effort */ }
+  try { await supabaseAdmin.auth.admin.signOut(userId, "global"); } catch { /* best-effort */ }
 
   return NextResponse.json({ success: true });
 }
