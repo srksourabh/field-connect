@@ -52,7 +52,7 @@ export default function EmployeeManagementPage() {
     setLoading(true);
     let query = supabase
       .from("hr_profiles")
-      .select("id, full_name, phone, email, designation, department, project_id, role, reporting_manager_id, employee_code, date_of_joining, avatar_url, deactivated_at, leave_policy_id, address, city, state, pincode")
+      .select("id, full_name, phone, email, designation, department, project_id, role, reporting_manager_id, employee_code, date_of_joining, avatar_url, deactivated_at, leave_policy_id, address, city, state, pincode, created_at, updated_at")
       .order("full_name", { ascending: true });
 
     // Regular admins only see their project

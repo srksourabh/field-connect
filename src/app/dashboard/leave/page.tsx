@@ -38,7 +38,7 @@ export default function LeavePage() {
     try {
       const { data } = await supabase
         .from("hr_leave_balances")
-        .select("id, user_id, year, sick_leave_total, sick_leave_used, casual_leave_total, casual_leave_used, compoff_total, compoff_used, privilege_leave_total, privilege_leave_used")
+        .select("id, user_id, year, sick_leave_total, sick_leave_used, casual_leave_total, casual_leave_used, compoff_total, compoff_used, privilege_leave_total, privilege_leave_used, created_at, updated_at")
         .eq("user_id", user.id)
         .eq("year", new Date().getFullYear())
         .single();
