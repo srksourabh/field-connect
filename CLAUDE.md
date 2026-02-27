@@ -8,7 +8,7 @@ UDS-HR is a mobile-first PWA for field workforce HR management (punch in/out, at
 
 ## Commands
 
-All commands run from `uds-hr/uds-hr/`:
+All commands run from the project root:
 
 ```bash
 npm run dev      # Start dev server (localhost:3000)
@@ -21,7 +21,7 @@ No test runner is configured. Playwright is installed as a devDependency but has
 
 ## Architecture
 
-### Directory Layout (inside `uds-hr/uds-hr/src/`)
+### Directory Layout (`src/`)
 
 - `app/` — Next.js 14 App Router pages. All dashboard pages are `"use client"`.
 - `app/api/` — Server-side route handlers (admin operations, analytics, onboarding). Use Bearer token auth from Supabase.
@@ -41,7 +41,7 @@ No test runner is configured. Playwright is installed as a devDependency but has
 
 **Leaflet Maps**: Uses `react-leaflet@4` for React 18 compat. Must be dynamically imported (SSR-unsafe).
 
-### Database Schema (11 migrations in `uds-hr/uds-hr/supabase/migrations/`)
+### Database Schema (migrations in `supabase/migrations/`)
 
 9 tables: `hr_profiles`, `hr_attendance`, `hr_leave_balances`, `hr_leave_requests`, `hr_location_logs`, `hr_rectification_requests`, `hr_onboarding_tokens`, `hr_notifications`, `hr_config`.
 
