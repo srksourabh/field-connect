@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -23,14 +18,13 @@ export async function GET(request: Request) {
     .is("deactivated_at", null)
     .single();
 
-  if (!profile || (profile.role !== "admin" && profile.role !== "manager" && profile.role !== "super_admin")) {
+  if (!profile || !["manager", "admin", "super_admin"].includes(profile.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const url = new URL(request.url);
   const period = url.searchParams.get("period") || "this_month";
 
-  // Determine date range using IST
   const pad2 = (n: number) => n.toString().padStart(2, "0");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const [todayYear, todayMonth] = today.split("-").map(Number);
@@ -46,37 +40,38 @@ export async function GET(request: Request) {
     startStr = `${ly}-${pad2(lm)}-01T00:00:00+05:30`;
     endStr = `${ly}-${pad2(lm)}-${pad2(lastDayOfLastMonth)}T23:59:59+05:30`;
     endDay = `${ly}-${pad2(lm)}-${pad2(lastDayOfLastMonth)}`;
+  } else if (period === "last_3_months") {
+    const d = new Date(todayYear, todayMonth - 4, 1);
+    const sy = d.getFullYear();
+    const sm = d.getMonth() + 1;
+    startStr = `${sy}-${pad2(sm)}-01T00:00:00+05:30`;
+    endStr = `${today}T23:59:59+05:30`;
+    endDay = today;
   } else {
     startStr = `${todayYear}-${pad2(todayMonth)}-01T00:00:00+05:30`;
     endStr = `${today}T23:59:59+05:30`;
     endDay = today;
   }
 
-  // Get employees scoped by role (exclude deactivated)
+  // Get employees scoped by role
   let employeesQuery = supabaseAdmin
     .from("hr_profiles")
-    .select("id, full_name, designation, department")
+    .select("id, full_name, designation, department, project_id")
     .is("deactivated_at", null);
 
   if (profile.role === "manager") {
     employeesQuery = employeesQuery.eq("reporting_manager_id", user.id);
   }
-  // admin and super_admin see all active employees (no additional filter)
 
   const { data: employees } = await employeesQuery;
   if (!employees || employees.length === 0) {
-    return NextResponse.json({
-      summary: { totalEmployees: 0, presentToday: 0, absentToday: 0, onLeaveToday: 0, inFieldNow: 0 },
-      attendance: { avgHoursWorked: 0, avgPunchInTime: "--", lateCount: 0, perfectAttendanceCount: 0 },
-      employeeStats: [],
-      trends: [],
-      insights: [],
-    });
+    return NextResponse.json(emptyResponse());
   }
 
   const employeeIds = employees.map((e) => e.id);
+  const empMap = new Map(employees.map((e) => [e.id, e]));
 
-  // Get all attendance for the period (use punch_in_at for consistency with reports)
+  // Fetch all attendance for the period
   const { data: attendance } = await supabaseAdmin
     .from("hr_attendance")
     .select()
@@ -84,7 +79,7 @@ export async function GET(request: Request) {
     .gte("punch_in_at", startStr)
     .lte("punch_in_at", endStr);
 
-  // Also get leave-day attendance records (no punch_in_at, filtered by created_at)
+  // Also get leave-day attendance records
   const { data: leaveAttendance } = await supabaseAdmin
     .from("hr_attendance")
     .select()
@@ -93,7 +88,7 @@ export async function GET(request: Request) {
     .gte("created_at", startStr)
     .lte("created_at", endStr);
 
-  // Get today's attendance
+  // Today's data
   const todayStartIST = today + "T00:00:00+05:30";
   const { data: todayAttendance } = await supabaseAdmin
     .from("hr_attendance")
@@ -101,7 +96,6 @@ export async function GET(request: Request) {
     .in("user_id", employeeIds)
     .or(`punch_in_at.gte.${todayStartIST},and(punch_in_at.is.null,created_at.gte.${todayStartIST})`);
 
-  // Get today's leave requests
   const { data: todayLeaves } = await supabaseAdmin
     .from("hr_leave_requests")
     .select()
@@ -110,7 +104,6 @@ export async function GET(request: Request) {
     .lte("start_date", today)
     .gte("end_date", today);
 
-  // Get location logs for today (to determine who's in field)
   const { data: todayLocations } = await supabaseAdmin
     .from("hr_location_logs")
     .select("user_id")
@@ -128,11 +121,10 @@ export async function GET(request: Request) {
     }
   }
 
-  // Summary
+  // ===== SUMMARY =====
   const presentTodayIds = new Set((todayAttendance || []).map((a) => a.user_id));
   const onLeaveTodayIds = new Set((todayLeaves || []).map((l) => l.user_id));
   const inFieldIds = new Set((todayLocations || []).filter((l) => {
-    // Only count if they have an open session
     return (todayAttendance || []).some((a) => a.user_id === l.user_id && !a.punch_out_at);
   }).map((l) => l.user_id));
 
@@ -144,7 +136,7 @@ export async function GET(request: Request) {
     inFieldNow: inFieldIds.size,
   };
 
-  // Attendance stats
+  // ===== CORE STATS =====
   let totalHours = 0;
   let recordsWithHours = 0;
   let lateCount = 0;
@@ -153,34 +145,77 @@ export async function GET(request: Request) {
   const lateDaysByEmployee = new Map<string, number>();
   const hoursByEmployee = new Map<string, number>();
 
+  // Aggregate accumulators
+  const punchInHourBuckets: number[] = new Array(24).fill(0);
+  const dayOfWeekHours: number[] = new Array(7).fill(0);
+  const dayOfWeekCount: number[] = new Array(7).fill(0);
+  const dayOfWeekPresent = new Map<number, Set<string>>(); // dow → unique day strings
+  const projectStats = new Map<string, { hours: number; count: number; late: number }>();
+  const departmentStats = new Map<string, { hours: number; count: number; late: number }>();
+  const weeklyBuckets = new Map<string, { present: Set<string>; hours: number }>();
+
   for (const rec of allRecords) {
-    // Use punch_in_at for day determination (IST), fall back to created_at for leave records
     const ts = rec.punch_in_at || rec.created_at;
     const day = new Date(ts).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
-    // Track working days
     if (!workingDaysByEmployee.has(rec.user_id)) workingDaysByEmployee.set(rec.user_id, new Set());
     workingDaysByEmployee.get(rec.user_id)!.add(day);
+
+    const emp = empMap.get(rec.user_id);
+    const project = emp?.project_id || "Unassigned";
+    const department = emp?.department || "Unassigned";
+
+    if (!projectStats.has(project)) projectStats.set(project, { hours: 0, count: 0, late: 0 });
+    if (!departmentStats.has(department)) departmentStats.set(department, { hours: 0, count: 0, late: 0 });
+
+    // Week bucket (ISO week start = Monday)
+    const dateObj = new Date(ts);
+    const weekStart = getWeekStart(dateObj);
+    if (!weeklyBuckets.has(weekStart)) weeklyBuckets.set(weekStart, { present: new Set(), hours: 0 });
 
     if (rec.punch_in_at && rec.punch_out_at) {
       const dur = (new Date(rec.punch_out_at).getTime() - new Date(rec.punch_in_at).getTime()) / 3600000;
       totalHours += dur;
       recordsWithHours++;
       hoursByEmployee.set(rec.user_id, (hoursByEmployee.get(rec.user_id) || 0) + dur);
+
+      // Day of week
+      const dow = new Date(rec.punch_in_at).toLocaleDateString("en-US", { weekday: "short", timeZone: "Asia/Kolkata" });
+      const dowIndex = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(dow);
+      dayOfWeekHours[dowIndex] += dur;
+      dayOfWeekCount[dowIndex]++;
+      if (!dayOfWeekPresent.has(dowIndex)) dayOfWeekPresent.set(dowIndex, new Set());
+      dayOfWeekPresent.get(dowIndex)!.add(day);
+
+      // Project/dept hours
+      projectStats.get(project)!.hours += dur;
+      departmentStats.get(department)!.hours += dur;
+
+      // Weekly
+      weeklyBuckets.get(weekStart)!.hours += dur;
     }
 
     if (rec.punch_in_at) {
       const punchIn = new Date(rec.punch_in_at);
-      // Convert to IST for late detection
       const istTime = punchIn.toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false });
       const [istH, istM] = istTime.split(":").map(Number);
       const mins = istH * 60 + istM;
       punchInMinutes.push(mins);
-      // Late if punch-in after 10:00 AM IST
+
+      // Punch-in hour distribution
+      punchInHourBuckets[istH]++;
+
+      // Late if after 10:00 AM IST
       if (mins > 600) {
         lateCount++;
         lateDaysByEmployee.set(rec.user_id, (lateDaysByEmployee.get(rec.user_id) || 0) + 1);
+        projectStats.get(project)!.late++;
+        departmentStats.get(department)!.late++;
       }
+
+      projectStats.get(project)!.count++;
+      departmentStats.get(department)!.count++;
+      weeklyBuckets.get(weekStart)!.present.add(rec.user_id);
     }
   }
 
@@ -194,10 +229,10 @@ export async function GET(request: Request) {
     ? `${avgPunchInHH.toString().padStart(2, "0")}:${avgPunchInMM.toString().padStart(2, "0")}`
     : "--";
 
-  // Count total working days in the period (weekdays) using IST dates
+  // Working days
   let totalWorkDays = 0;
   const startDateStr = startStr.split("T")[0];
-  const iterDate = new Date(startDateStr + "T12:00:00+05:30"); // noon IST to avoid DST issues
+  const iterDate = new Date(startDateStr + "T12:00:00+05:30");
   const endDate2 = new Date(endDay + "T12:00:00+05:30");
   while (iterDate <= endDate2) {
     const dayOfWeek = iterDate.toLocaleDateString("en-US", { weekday: "short", timeZone: "Asia/Kolkata" });
@@ -210,21 +245,15 @@ export async function GET(request: Request) {
     return days && days.size >= totalWorkDays && (lateDaysByEmployee.get(e.id) || 0) === 0;
   }).length;
 
-  const attendanceStats = {
-    avgHoursWorked: avgHours,
-    avgPunchInTime,
-    lateCount,
-    perfectAttendanceCount,
-  };
+  const attendanceStats = { avgHoursWorked: avgHours, avgPunchInTime, lateCount, perfectAttendanceCount };
 
-  // Per-employee stats
+  // ===== EMPLOYEE STATS =====
   const employeeStats = employees.map((emp) => {
     const days = workingDaysByEmployee.get(emp.id);
     const presentDays = days ? days.size : 0;
     const lateDays = lateDaysByEmployee.get(emp.id) || 0;
     const hours = hoursByEmployee.get(emp.id) || 0;
     const avgEmpHours = presentDays > 0 ? Math.round((hours / presentDays) * 10) / 10 : 0;
-
     return {
       id: emp.id,
       name: emp.full_name,
@@ -236,7 +265,7 @@ export async function GET(request: Request) {
     };
   });
 
-  // Daily trends (present count per day)
+  // ===== DAILY TRENDS =====
   const dayMap = new Map<string, Set<string>>();
   for (const rec of allRecords) {
     const ts = rec.punch_in_at || rec.created_at;
@@ -246,8 +275,7 @@ export async function GET(request: Request) {
   }
 
   const trends: { date: string; count: number }[] = [];
-  const trendStartDateStr = startStr.split("T")[0];
-  const trendDate = new Date(trendStartDateStr + "T12:00:00+05:30");
+  const trendDate = new Date(startDateStr + "T12:00:00+05:30");
   const trendEndDate = new Date(endDay + "T12:00:00+05:30");
   while (trendDate <= trendEndDate) {
     const ds = trendDate.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -258,29 +286,84 @@ export async function GET(request: Request) {
     trendDate.setDate(trendDate.getDate() + 1);
   }
 
-  // Insights (rule-based)
+  // ===== INSIGHTS =====
   const insights: { type: "warning" | "positive" | "info"; text: string }[] = [];
 
-  for (const emp of employeeStats) {
-    if (emp.lateDays > 3) {
-      insights.push({ type: "warning", text: `${emp.name} has been late ${emp.lateDays} times` });
-    }
-    if (emp.avgHours > 0 && emp.avgHours < 6) {
-      insights.push({ type: "warning", text: `${emp.name} averages only ${emp.avgHours}h/day` });
-    }
+  // Aggregate insights (not individual)
+  const totalLatePercent = punchInMinutes.length > 0 ? Math.round((lateCount / punchInMinutes.length) * 100) : 0;
+  if (totalLatePercent > 30) {
+    insights.push({ type: "warning", text: `${totalLatePercent}% of all punch-ins are after 10:00 AM — consider reviewing shift timings` });
   }
-
+  if (avgHours > 0 && avgHours < 4) {
+    insights.push({ type: "warning", text: `Average working hours is only ${avgHours}h — below the 4h threshold for full-day attendance` });
+  }
   if (perfectAttendanceCount > 0) {
-    insights.push({ type: "positive", text: `${perfectAttendanceCount} employee(s) with perfect attendance` });
+    insights.push({ type: "positive", text: `${perfectAttendanceCount} employee(s) with perfect attendance this period` });
   }
-
-  if (avgHours >= 8) {
-    insights.push({ type: "positive", text: `Team averages ${avgHours}h/day — above target` });
+  if (avgHours >= 6) {
+    insights.push({ type: "positive", text: `Team averages ${avgHours}h/day — good performance` });
   }
-
   if (summary.inFieldNow > 0) {
     insights.push({ type: "info", text: `${summary.inFieldNow} team member(s) currently in the field` });
   }
+
+  // Identify worst-performing project/dept by late %
+  Array.from(projectStats.entries()).forEach(([name, stats]) => {
+    if (stats.count >= 10 && stats.late / stats.count > 0.4) {
+      insights.push({ type: "warning", text: `Project "${name}" has ${Math.round((stats.late / stats.count) * 100)}% late punch-ins` });
+    }
+  });
+
+  // Top performers (individual — kept light)
+  const topPerformers = employeeStats
+    .filter((e) => e.presentDays >= totalWorkDays && e.lateDays === 0 && e.avgHours >= 6)
+    .slice(0, 3);
+  if (topPerformers.length > 0) {
+    insights.push({ type: "positive", text: `Top performers: ${topPerformers.map((e) => e.name).join(", ")}` });
+  }
+
+  // ===== PUNCH-IN TIME DISTRIBUTION =====
+  const punchInDistribution = punchInHourBuckets
+    .map((count, hour) => ({ hour, count }))
+    .filter((b) => b.hour >= 6 && b.hour <= 22); // Only show 6 AM to 10 PM
+
+  // ===== DAY OF WEEK PATTERN =====
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayOfWeekPattern = dayNames.map((name, i) => ({
+    day: name,
+    avgPresent: dayOfWeekPresent.get(i)?.size
+      ? Math.round((dayOfWeekCount[i] / dayOfWeekPresent.get(i)!.size) * 10) / 10
+      : 0,
+    avgHours: dayOfWeekCount[i] > 0 ? Math.round((dayOfWeekHours[i] / dayOfWeekCount[i]) * 10) / 10 : 0,
+    totalRecords: dayOfWeekCount[i],
+  }));
+
+  // ===== PROJECT BREAKDOWN =====
+  const projectBreakdown = Array.from(projectStats.entries()).map(([name, stats]) => ({
+    name,
+    records: stats.count,
+    avgHours: stats.count > 0 ? Math.round((stats.hours / stats.count) * 10) / 10 : 0,
+    latePercent: stats.count > 0 ? Math.round((stats.late / stats.count) * 100) : 0,
+    employees: employees.filter((e) => (e.project_id || "Unassigned") === name).length,
+  })).sort((a, b) => b.employees - a.employees);
+
+  // ===== DEPARTMENT BREAKDOWN =====
+  const departmentBreakdown = Array.from(departmentStats.entries()).map(([name, stats]) => ({
+    name,
+    records: stats.count,
+    avgHours: stats.count > 0 ? Math.round((stats.hours / stats.count) * 10) / 10 : 0,
+    latePercent: stats.count > 0 ? Math.round((stats.late / stats.count) * 100) : 0,
+    employees: employees.filter((e) => (e.department || "Unassigned") === name).length,
+  })).sort((a, b) => b.employees - a.employees);
+
+  // ===== WEEKLY COMPARISON =====
+  const weeklyComparison = Array.from(weeklyBuckets.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([week, data]) => ({
+      week,
+      presentCount: data.present.size,
+      avgHours: data.present.size > 0 ? Math.round((data.hours / data.present.size) * 10) / 10 : 0,
+    }));
 
   return NextResponse.json({
     summary,
@@ -288,5 +371,33 @@ export async function GET(request: Request) {
     employeeStats,
     trends,
     insights,
+    punchInDistribution,
+    dayOfWeekPattern,
+    projectBreakdown,
+    departmentBreakdown,
+    weeklyComparison,
   });
+}
+
+function emptyResponse() {
+  return {
+    summary: { totalEmployees: 0, presentToday: 0, absentToday: 0, onLeaveToday: 0, inFieldNow: 0 },
+    attendance: { avgHoursWorked: 0, avgPunchInTime: "--", lateCount: 0, perfectAttendanceCount: 0 },
+    employeeStats: [],
+    trends: [],
+    insights: [],
+    punchInDistribution: [],
+    dayOfWeekPattern: [],
+    projectBreakdown: [],
+    departmentBreakdown: [],
+    weeklyComparison: [],
+  };
+}
+
+function getWeekStart(date: Date): string {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  return d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 }

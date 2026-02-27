@@ -19,6 +19,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { showConfirm } from "@/components/ui/Dialog";
 import { showToast } from "@/components/ui/Toast";
+import { useMasterData } from "@/hooks/useMasterData";
 import type { HrProfile } from "@/lib/database.types";
 
 interface ManagerOption {
@@ -37,6 +38,10 @@ export default function EmployeeManagementPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [managers, setManagers] = useState<ManagerOption[]>([]);
+
+  const projects = useMasterData("project");
+  const departments = useMasterData("department");
+  const designations = useMasterData("designation");
 
   const isUniversal =
     profile?.role === "super_admin" ||
@@ -309,8 +314,9 @@ export default function EmployeeManagementPage() {
               className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-sm"
             >
               <option value="all">All Projects</option>
-              <option value="in-house">In-House</option>
-              <option value="uds-pos">UDS POS</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.name}>{p.name}</option>
+              ))}
             </select>
           )}
           {/* Status filter */}
@@ -384,26 +390,35 @@ export default function EmployeeManagementPage() {
                           placeholder="Phone"
                           className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm"
                         />
-                        <input
+                        <select
                           value={editValues.designation}
                           onChange={(e) => setEditValues((v) => ({ ...v, designation: e.target.value }))}
-                          placeholder="Designation"
                           className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm"
-                        />
-                        <input
+                        >
+                          <option value="">No Designation</option>
+                          {designations.map((d) => (
+                            <option key={d.id} value={d.name}>{d.name}</option>
+                          ))}
+                        </select>
+                        <select
                           value={editValues.department}
                           onChange={(e) => setEditValues((v) => ({ ...v, department: e.target.value }))}
-                          placeholder="Department"
                           className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm"
-                        />
+                        >
+                          <option value="">No Department</option>
+                          {departments.map((d) => (
+                            <option key={d.id} value={d.name}>{d.name}</option>
+                          ))}
+                        </select>
                         <select
                           value={editValues.project_id}
                           onChange={(e) => setEditValues((v) => ({ ...v, project_id: e.target.value }))}
                           className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm"
                         >
                           <option value="">No Project</option>
-                          <option value="in-house">In-House</option>
-                          <option value="uds-pos">UDS POS</option>
+                          {projects.map((p) => (
+                            <option key={p.id} value={p.name}>{p.name}</option>
+                          ))}
                         </select>
                         <select
                           value={editValues.role}

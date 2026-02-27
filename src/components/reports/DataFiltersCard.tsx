@@ -1,6 +1,7 @@
 "use client";
 
 import { Filter, ChevronDown } from "lucide-react";
+import { useMasterData } from "@/hooks/useMasterData";
 
 interface DataFiltersCardProps {
   project: string;
@@ -15,6 +16,9 @@ export default function DataFiltersCard({
   onProjectChange,
   onDepartmentChange,
 }: DataFiltersCardProps) {
+  const projects = useMasterData("project");
+  const departments = useMasterData("department");
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700/50">
       <div className="flex items-center gap-2 mb-4">
@@ -34,8 +38,9 @@ export default function DataFiltersCard({
               className="uds-input pr-10 appearance-none text-sm"
             >
               <option value="">All Projects</option>
-              <option value="uds-pos">UDS POS</option>
-              <option value="in-house">In-House</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.name}>{p.name}</option>
+              ))}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
@@ -52,10 +57,9 @@ export default function DataFiltersCard({
               className="uds-input pr-10 appearance-none text-sm"
             >
               <option value="">All Departments</option>
-              <option value="engineering">Engineering</option>
-              <option value="operations">Operations</option>
-              <option value="hr">Human Resources</option>
-              <option value="finance">Finance</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.name}>{d.name}</option>
+              ))}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>

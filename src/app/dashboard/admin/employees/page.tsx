@@ -5,6 +5,7 @@ import { ChevronLeft, UserPlus, Loader2, Check } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { useMasterData } from "@/hooks/useMasterData";
 
 interface ManagerOption {
   id: string;
@@ -16,12 +17,15 @@ export default function AddEmployeePage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const email = phone ? `${phone.replace(/\D/g, "")}@uds.hr` : "";
-  const [designation, setDesignation] = useState("Field Engineer");
+  const [designation, setDesignation] = useState("");
   const [department, setDepartment] = useState("");
   const [project, setProject] = useState("");
   const [role, setRole] = useState("employee");
   const [reportingManagerId, setReportingManagerId] = useState("");
   const [managers, setManagers] = useState<ManagerOption[]>([]);
+  const projectOptions = useMasterData("project");
+  const departmentOptions = useMasterData("department");
+  const designationOptions = useMasterData("designation");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -67,7 +71,7 @@ export default function AddEmployeePage() {
         setResult({ type: "success", text: data.message });
         setFullName("");
         setPhone("");
-        setDesignation("Field Engineer");
+        setDesignation("");
         setDepartment("");
         setProject("");
         setRole("employee");
@@ -138,13 +142,16 @@ export default function AddEmployeePage() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1.5 block">Designation</label>
-            <input
-              type="text"
+            <select
               value={designation}
               onChange={(e) => setDesignation(e.target.value)}
-              placeholder="e.g. HR"
               className="w-full px-4 py-3 rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
+            >
+              <option value="">Select Designation</option>
+              {designationOptions.map((d) => (
+                <option key={d.id} value={d.name}>{d.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1.5 block">Department *</label>
@@ -155,8 +162,9 @@ export default function AddEmployeePage() {
               className="w-full px-4 py-3 rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option value="">Select Department</option>
-              <option value="FSE">FSE</option>
-              <option value="Back Office">Back Office</option>
+              {departmentOptions.map((d) => (
+                <option key={d.id} value={d.name}>{d.name}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -171,9 +179,9 @@ export default function AddEmployeePage() {
               className="w-full px-4 py-3 rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option value="">Select Project</option>
-              <option value="all">All Projects</option>
-              <option value="uds-pos">UDS POS</option>
-              <option value="in-house">In-House</option>
+              {projectOptions.map((p) => (
+                <option key={p.id} value={p.name}>{p.name}</option>
+              ))}
             </select>
           </div>
           <div>

@@ -66,6 +66,7 @@ export default function DesktopNav() {
           <span className="text-white font-bold text-sm">U</span>
         </div>
         <span className="text-lg font-bold">UDS HR</span>
+        <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">Beta</span>
       </Link>
 
       {/* Nav links */}

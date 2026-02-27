@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import { ChevronLeft, Settings, LogOut, Shield, Bell, Moon, Sun, Monitor, ChevronRight, KeyRound, Camera, X, Eye, EyeOff, Users, UserPlus, Megaphone, FileText } from "lucide-react";
+import { ChevronLeft, LogOut, Bell, Moon, Sun, Monitor, ChevronRight, KeyRound, Camera, X, Eye, EyeOff, Building2, FileText, FolderKanban, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -78,21 +78,20 @@ export default function ProfilePage() {
     .slice(0, 2)
     .toUpperCase();
 
-  const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
+  const isUniversal =
+    profile?.role === "super_admin" ||
+    (profile?.designation?.toLowerCase().includes("hr") &&
+      ["admin", "super_admin"].includes(profile?.role || ""));
 
   const menuItems = [
     { icon: KeyRound, label: "Change Password", href: "#", action: () => setShowPasswordModal(true) },
     { icon: Moon, label: "Appearance", href: "#", action: () => setShowAppearanceModal(true) },
     { icon: Bell, label: "Leave Application", href: "/dashboard/leave" },
     { icon: FileText, label: "Attendance History", href: "/dashboard/attendance" },
-    ...(isAdmin
-      ? [
-          { icon: Users, label: "Employee Management", href: "/dashboard/admin" },
-          { icon: UserPlus, label: "Add Employee", href: "/dashboard/admin/employees" },
-          { icon: Shield, label: "Leave Allotment", href: "/dashboard/admin/leaves" },
-          { icon: Megaphone, label: "Broadcast Notification", href: "/dashboard/admin/notifications" },
-          { icon: Settings, label: "Onboarding Links", href: "/dashboard/onboarding" },
-        ]
+    { icon: FolderKanban, label: "My Projects", href: "/dashboard/my-projects" },
+    { icon: MessageSquare, label: "Message HR", href: "/dashboard/message-hr" },
+    ...(isUniversal
+      ? [{ icon: Building2, label: "Manage Organisation", href: "/dashboard/organisation" }]
       : []),
   ];
 

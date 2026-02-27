@@ -8,6 +8,10 @@ import SummaryCards from "@/components/analytics/SummaryCards";
 import InsightsList from "@/components/analytics/InsightsList";
 import EmployeeStatsTable from "@/components/analytics/EmployeeStatsTable";
 import AttendanceTrendChart from "@/components/analytics/AttendanceTrendChart";
+import PunchInDistribution from "@/components/analytics/PunchInDistribution";
+import DayOfWeekChart from "@/components/analytics/DayOfWeekChart";
+import BreakdownCards from "@/components/analytics/BreakdownCards";
+import WeeklyComparison from "@/components/analytics/WeeklyComparison";
 
 interface AnalyticsData {
   summary: {
@@ -34,13 +38,20 @@ interface AnalyticsData {
   }[];
   trends: { date: string; count: number }[];
   insights: { type: "warning" | "positive" | "info"; text: string }[];
+  punchInDistribution: { hour: number; count: number }[];
+  dayOfWeekPattern: { day: string; avgPresent: number; avgHours: number; totalRecords: number }[];
+  projectBreakdown: { name: string; employees: number; avgHours: number; latePercent: number }[];
+  departmentBreakdown: { name: string; employees: number; avgHours: number; latePercent: number }[];
+  weeklyComparison: { week: string; presentCount: number; avgHours: number }[];
 }
+
+type Period = "this_month" | "last_month" | "last_3_months";
 
 export default function AnalyticsPage() {
   const { profile, session } = useAuth();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<"this_month" | "last_month">("this_month");
+  const [period, setPeriod] = useState<Period>("this_month");
 
   const fetchData = useCallback(async () => {
     if (!session?.access_token) return;
@@ -61,7 +72,6 @@ export default function AnalyticsPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Role guard
   if (profile && profile.role === "employee") {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -72,7 +82,6 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark">
-      {/* Header */}
       <header className="pt-12 pb-4 px-6 flex items-center justify-between bg-white/50 dark:bg-[#151f2b] backdrop-blur-md sticky top-0 z-20 border-b border-gray-200 dark:border-gray-800">
         <Link
           href="/dashboard"
@@ -86,27 +95,24 @@ export default function AnalyticsPage() {
 
       <div className="px-5 py-4 space-y-4 max-w-4xl mx-auto">
         {/* Period Selector */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => setPeriod("this_month")}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              period === "this_month"
-                ? "bg-primary text-white"
-                : "bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
-            }`}
-          >
-            This Month
-          </button>
-          <button
-            onClick={() => setPeriod("last_month")}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              period === "last_month"
-                ? "bg-primary text-white"
-                : "bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
-            }`}
-          >
-            Last Month
-          </button>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          {([
+            { key: "this_month", label: "This Month" },
+            { key: "last_month", label: "Last Month" },
+            { key: "last_3_months", label: "Last 3 Months" },
+          ] as const).map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setPeriod(p.key)}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+                period === p.key
+                  ? "bg-primary text-white"
+                  : "bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
         </div>
 
         {loading ? (
@@ -123,41 +129,29 @@ export default function AnalyticsPage() {
 
             {/* Attendance Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <StatCard
-                icon={Clock}
-                label="Avg Hours"
-                value={`${data.attendance.avgHoursWorked}h`}
-                color="text-blue-600"
-                bg="bg-blue-100 dark:bg-blue-900/20"
-              />
-              <StatCard
-                icon={TrendingUp}
-                label="Avg Punch-In"
-                value={data.attendance.avgPunchInTime}
-                color="text-indigo-600"
-                bg="bg-indigo-100 dark:bg-indigo-900/20"
-              />
-              <StatCard
-                icon={AlertTriangle}
-                label="Late Count"
-                value={String(data.attendance.lateCount)}
-                color="text-amber-600"
-                bg="bg-amber-100 dark:bg-amber-900/20"
-              />
-              <StatCard
-                icon={Award}
-                label="Perfect"
-                value={String(data.attendance.perfectAttendanceCount)}
-                color="text-green-600"
-                bg="bg-green-100 dark:bg-green-900/20"
-              />
+              <StatCard icon={Clock} label="Avg Hours" value={`${data.attendance.avgHoursWorked}h`} color="text-blue-600" bg="bg-blue-100 dark:bg-blue-900/20" />
+              <StatCard icon={TrendingUp} label="Avg Punch-In" value={data.attendance.avgPunchInTime} color="text-indigo-600" bg="bg-indigo-100 dark:bg-indigo-900/20" />
+              <StatCard icon={AlertTriangle} label="Late Count" value={String(data.attendance.lateCount)} color="text-amber-600" bg="bg-amber-100 dark:bg-amber-900/20" />
+              <StatCard icon={Award} label="Perfect" value={String(data.attendance.perfectAttendanceCount)} color="text-green-600" bg="bg-green-100 dark:bg-green-900/20" />
+            </div>
+
+            {/* Punch-In Distribution + Day of Week */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <PunchInDistribution data={data.punchInDistribution} />
+              <DayOfWeekChart data={data.dayOfWeekPattern} />
+            </div>
+
+            {/* Weekly Comparison */}
+            <WeeklyComparison data={data.weeklyComparison} />
+
+            {/* Project + Department Breakdown */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <BreakdownCards title="By Project" type="project" data={data.projectBreakdown} />
+              <BreakdownCards title="By Department" type="department" data={data.departmentBreakdown} />
             </div>
 
             {/* Trend Chart */}
-            <AttendanceTrendChart
-              data={data.trends}
-              maxEmployees={data.summary.totalEmployees}
-            />
+            <AttendanceTrendChart data={data.trends} maxEmployees={data.summary.totalEmployees} />
 
             {/* Employee Table */}
             <EmployeeStatsTable stats={data.employeeStats} />

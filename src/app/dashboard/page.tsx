@@ -7,6 +7,7 @@ import LocationWidget from "@/components/punch/LocationWidget";
 import SyncStatusBanner from "@/components/punch/SyncStatusBanner";
 import TodayActivityGrid from "@/components/punch/TodayActivityGrid";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
+import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
 import { usePunchState } from "@/hooks/usePunchState";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
@@ -330,7 +331,10 @@ export default function DashboardHome() {
             )}
           </div>
         </div>
-        <NotificationDropdown />
+        <div className="flex items-center gap-1">
+          <ThemeSwitcher />
+          <NotificationDropdown />
+        </div>
       </header>
 
       {/* Live Clock — IST */}

@@ -62,7 +62,7 @@ export async function PATCH(req: NextRequest) {
   const allowedFields = [
     "full_name", "phone", "designation", "department", "project_id", "role",
     "email", "reporting_manager_id", "date_of_joining", "employee_code",
-    "address", "city", "state", "pincode",
+    "address", "city", "state", "pincode", "leave_policy_id",
   ];
 
   const filtered: Record<string, unknown> = {};
@@ -95,6 +95,52 @@ export async function PATCH(req: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // If leave_policy_id is set, update leave balances for current year
+  if (filtered.leave_policy_id) {
+    const { data: policy } = await supabaseAdmin
+      .from("hr_leave_policies")
+      .select("sick_leave_count, casual_leave_count, privilege_leave_count")
+      .eq("id", filtered.leave_policy_id)
+      .single();
+
+    if (policy) {
+      const year = new Date().getFullYear();
+      const balanceUpdate = {
+        sick_leave_total: policy.sick_leave_count,
+        casual_leave_total: policy.casual_leave_count,
+        privilege_leave_total: policy.privilege_leave_count,
+      };
+
+      // Upsert: update if exists, insert if not
+      const { data: existing } = await supabaseAdmin
+        .from("hr_leave_balances")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("year", year)
+        .single();
+
+      if (existing) {
+        await supabaseAdmin
+          .from("hr_leave_balances")
+          .update(balanceUpdate)
+          .eq("id", existing.id);
+      } else {
+        await supabaseAdmin
+          .from("hr_leave_balances")
+          .insert({
+            user_id: userId,
+            year,
+            ...balanceUpdate,
+            sick_leave_used: 0,
+            casual_leave_used: 0,
+            privilege_leave_used: 0,
+            compoff_total: 0,
+            compoff_used: 0,
+          });
+      }
+    }
   }
 
   return NextResponse.json({ success: true });

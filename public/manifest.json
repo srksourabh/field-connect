@@ -1,6 +1,6 @@
 {
-  "name": "UDS HR - Unified HR Platform",
-  "short_name": "UDS HR",
+  "name": "UDS HR (Beta) - Unified HR Platform",
+  "short_name": "UDS HR (Beta)",
   "description": "Unified HR platform by Ultimate Digital Solutions — Field Connect, POSBuddy & more",
   "start_url": "/dashboard",
   "display": "standalone",
