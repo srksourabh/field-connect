@@ -134,6 +134,60 @@ export async function POST(request: Request) {
   return NextResponse.json({ message: `Created ${missing.length} balance records`, created: missing.length });
 }
 
+// PUT: Bulk update leave balances for multiple employees
+export async function PUT(request: Request) {
+  const admin = await verifyAdmin(request);
+  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  let body;
+  try { body = await request.json(); } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  const { balance_ids, updates } = body;
+  if (!Array.isArray(balance_ids) || balance_ids.length === 0 || !updates) {
+    return NextResponse.json({ error: "balance_ids (array) and updates required" }, { status: 400 });
+  }
+
+  // Super_admin/HR can edit all leave types; regular admins can only edit Comp Off
+  const compoffFields = ["compoff_total", "compoff_used"];
+  const allFields = [
+    "sick_leave_total", "sick_leave_used",
+    "casual_leave_total", "casual_leave_used",
+    "compoff_total", "compoff_used",
+    "privilege_leave_total", "privilege_leave_used",
+  ];
+  const allowedFields = admin.isUniversal ? allFields : compoffFields;
+
+  const filtered: Record<string, number> = {};
+  for (const key of allowedFields) {
+    if (key in updates && typeof updates[key] === "number") {
+      filtered[key] = updates[key];
+    }
+  }
+
+  if (Object.keys(filtered).length === 0) {
+    return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+  }
+
+  let updated = 0;
+  let failed = 0;
+
+  for (const balanceId of balance_ids) {
+    const { error } = await supabaseAdmin
+      .from("hr_leave_balances")
+      .update(filtered)
+      .eq("id", balanceId);
+    if (error) {
+      failed++;
+    } else {
+      updated++;
+    }
+  }
+
+  return NextResponse.json({ updated, failed });
+}
+
 // PATCH: Update individual employee balance
 export async function PATCH(request: Request) {
   const admin = await verifyAdmin(request);
@@ -171,12 +225,15 @@ export async function PATCH(request: Request) {
     }
   }
 
-  const allowedFields = [
+  // Super_admin/HR can edit all leave types; regular admins can only edit Comp Off
+  const compoffFields = ["compoff_total", "compoff_used"];
+  const allFields = [
     "sick_leave_total", "sick_leave_used",
     "casual_leave_total", "casual_leave_used",
     "compoff_total", "compoff_used",
     "privilege_leave_total", "privilege_leave_used",
   ];
+  const allowedFields = admin.isUniversal ? allFields : compoffFields;
 
   const filtered: Record<string, number> = {};
   for (const key of allowedFields) {

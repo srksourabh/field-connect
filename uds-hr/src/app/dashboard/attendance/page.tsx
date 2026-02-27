@@ -8,14 +8,16 @@ import DaySummary from "@/components/attendance/DaySummary";
 import AttendanceTimeline from "@/components/attendance/AttendanceTimeline";
 import { useAuth } from "@/lib/auth";
 import { getAttendanceByMonth } from "@/lib/attendance-api";
+import { getUserLeaveRequests } from "@/lib/leave-api";
 import { cacheSet, cacheGet } from "@/lib/offline-cache";
-import type { HrAttendance } from "@/lib/database.types";
+import type { HrAttendance, HrLeaveRequest } from "@/lib/database.types";
 import { formatTime, toISTDateStr, isAutoCloseTime } from "@/lib/utils";
 
 export default function AttendancePage() {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [records, setRecords] = useState<HrAttendance[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<HrLeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [cachedAt, setCachedAt] = useState<number | null>(null);
 
@@ -47,11 +49,16 @@ export default function AttendancePage() {
     [user]
   );
 
-  // Fetch current month on mount
+  // Fetch current month on mount + leave requests (once)
   useEffect(() => {
     const now = new Date();
     fetchMonth(now.getFullYear(), now.getMonth());
   }, [fetchMonth]);
+
+  useEffect(() => {
+    if (!user) return;
+    getUserLeaveRequests(user.id).then(setLeaveRequests);
+  }, [user]);
 
   const handleMonthChange = (year: number, month: number) => {
     fetchMonth(year, month);
@@ -133,6 +140,18 @@ export default function AttendancePage() {
     return events;
   }, [selectedRecords]);
 
+  // Find approved leave type for the selected date
+  const leaveTypeForDate = useMemo(() => {
+    if (!calendarEntry || calendarEntry.status !== "on-leave") return null;
+    const approved = leaveRequests.filter((r) => r.status === "approved");
+    for (const req of approved) {
+      if (dateStr >= req.start_date && dateStr <= req.end_date) {
+        return req.type;
+      }
+    }
+    return null;
+  }, [calendarEntry, leaveRequests, dateStr]);
+
   const isWeekend =
     selectedDate.getDay() === 0 || selectedDate.getDay() === 6;
 
@@ -186,6 +205,7 @@ export default function AttendancePage() {
                   : calendarEntry?.status ?? null
               }
               totalHours={totalHours}
+              leaveType={leaveTypeForDate}
             />
             <AttendanceTimeline events={timeline} />
 

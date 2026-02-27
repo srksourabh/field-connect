@@ -7,6 +7,7 @@ interface DaySummaryProps {
   date: Date;
   status: "present" | "absent" | "late" | "half-day" | "on-leave" | "holiday" | "lwp" | null;
   totalHours: string;
+  leaveType?: string | null;
 }
 
 const statusVariant: Record<string, "success" | "error" | "warning" | "info"> = {
@@ -19,7 +20,14 @@ const statusVariant: Record<string, "success" | "error" | "warning" | "info"> = 
   lwp: "error",
 };
 
-export default function DaySummary({ date, status, totalHours }: DaySummaryProps) {
+const leaveTypeLabels: Record<string, string> = {
+  sick: "Sick Leave",
+  casual: "Casual Leave",
+  privilege: "Privilege Leave",
+  compoff: "Comp Off",
+};
+
+export default function DaySummary({ date, status, totalHours, leaveType }: DaySummaryProps) {
   return (
     <div className="flex items-end justify-between mb-6">
       <div>
@@ -35,6 +43,11 @@ export default function DaySummary({ date, status, totalHours }: DaySummaryProps
           <StatusBadge variant={statusVariant[status] || "neutral"} className="mb-1">
             {status === "on-leave" ? "On Leave" : status === "lwp" ? "LWP" : status.charAt(0).toUpperCase() + status.slice(1)}
           </StatusBadge>
+        )}
+        {status === "on-leave" && leaveType && (
+          <p className="text-xs text-primary font-medium">
+            {leaveTypeLabels[leaveType] || leaveType}
+          </p>
         )}
         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
           {totalHours} Worked

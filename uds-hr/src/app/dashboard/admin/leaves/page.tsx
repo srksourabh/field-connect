@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { ChevronLeft, Users, Check, AlertCircle, Loader2, Pencil, Save, X, Upload, FileText, Trash2 } from "lucide-react";
+import { ChevronLeft, Users, Check, AlertCircle, Loader2, Pencil, Save, X, Upload, FileText, Trash2, CheckSquare, Square } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -42,7 +42,18 @@ export default function LeaveAllotmentPage() {
   const [uploadingHrPolicy, setUploadingHrPolicy] = useState(false);
   const hrPolicyInputRef = useRef<HTMLInputElement>(null);
 
+  // Bulk edit state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkValues, setBulkValues] = useState<Record<string, number>>({ compoff_total: 0 });
+  const [bulkSaving, setBulkSaving] = useState(false);
+
   const year = new Date().getFullYear();
+
+  const isUniversal =
+    profile?.role === "super_admin" ||
+    (profile?.designation?.toLowerCase().includes("hr") &&
+      ["admin", "super_admin"].includes(profile?.role || ""));
 
   const fetchData = useCallback(async () => {
     if (!session?.access_token) return;
@@ -107,7 +118,6 @@ export default function LeaveAllotmentPage() {
 
     const url = urlData.publicUrl;
 
-    // Upsert into hr_config
     await supabase.from("hr_config").upsert(
       { key: "leave_policy_url", value: url, updated_at: new Date().toISOString() },
       { onConflict: "key" }
@@ -235,7 +245,63 @@ export default function LeaveAllotmentPage() {
     }
   };
 
+  // Bulk edit handlers
+  const toggleSelect = (empId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(empId)) {
+        next.delete(empId);
+      } else {
+        next.add(empId);
+      }
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    const withBalance = employees.filter((e) => e.balance);
+    if (selectedIds.size === withBalance.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(withBalance.map((e) => e.id)));
+    }
+  };
+
+  const handleBulkSave = async () => {
+    if (!session?.access_token || selectedIds.size === 0) return;
+    setBulkSaving(true);
+
+    const balanceIds = employees
+      .filter((e) => selectedIds.has(e.id) && e.balance)
+      .map((e) => e.balance!.id);
+
+    try {
+      const res = await fetch("/api/admin/leave-allotment", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ balance_ids: balanceIds, updates: bulkValues }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Updated ${data.updated} employees`, "success");
+        setBulkMode(false);
+        setSelectedIds(new Set());
+        fetchData();
+      } else {
+        showToast(data.error || "Bulk update failed", "error");
+      }
+    } catch {
+      showToast("Bulk update failed", "error");
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
   const missingCount = employees.filter((e) => !e.balance).length;
+  const withBalance = employees.filter((e) => e.balance);
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark">
@@ -269,6 +335,11 @@ export default function LeaveAllotmentPage() {
               <span className="text-gray-600 dark:text-gray-400">Privilege: <strong>15</strong></span>
             </div>
           </div>
+          {!isUniversal && (
+            <p className="text-xs text-gray-400 mt-2">
+              You can only edit Comp Off balances. Contact super admin or HR to modify CL/SL/PL.
+            </p>
+          )}
         </div>
 
         {/* Policy Document Upload */}
@@ -371,21 +442,111 @@ export default function LeaveAllotmentPage() {
           )}
         </div>
 
-        {/* Allot Button */}
-        <div className="flex items-center justify-between">
+        {/* Action Bar */}
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="text-sm text-gray-600 dark:text-gray-400">
             <Users className="w-4 h-4 inline mr-1" />
             {employees.length} employees, {missingCount} missing balances
           </div>
-          <button
-            onClick={handleBulkAllot}
-            disabled={allotting || missingCount === 0}
-            className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {allotting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-            Allot Leaves for {year}
-          </button>
+          <div className="flex gap-2">
+            {withBalance.length > 0 && (
+              <button
+                onClick={() => { setBulkMode(!bulkMode); setSelectedIds(new Set()); }}
+                className={`px-3 py-2 text-sm font-medium rounded-lg flex items-center gap-1.5 transition-colors ${
+                  bulkMode
+                    ? "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                }`}
+              >
+                <CheckSquare className="w-4 h-4" />
+                {bulkMode ? "Cancel Bulk" : "Bulk Edit"}
+              </button>
+            )}
+            <button
+              onClick={handleBulkAllot}
+              disabled={allotting || missingCount === 0}
+              className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {allotting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              Allot Leaves for {year}
+            </button>
+          </div>
         </div>
+
+        {/* Bulk Edit Panel */}
+        {bulkMode && (
+          <div className="bg-white dark:bg-surface-dark rounded-xl border-2 border-primary/30 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">
+                Bulk Update — {selectedIds.size} selected
+              </h3>
+              <button
+                onClick={selectAll}
+                className="text-xs text-primary hover:text-primary/80"
+              >
+                {selectedIds.size === withBalance.length ? "Deselect All" : "Select All"}
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {isUniversal && (
+                <>
+                  <div>
+                    <label className="text-xs text-gray-500 block mb-1">Sick Leave Total</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={bulkValues.sick_leave_total ?? ""}
+                      onChange={(e) => setBulkValues((p) => ({ ...p, sick_leave_total: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm"
+                      placeholder="—"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 block mb-1">Casual Leave Total</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={bulkValues.casual_leave_total ?? ""}
+                      onChange={(e) => setBulkValues((p) => ({ ...p, casual_leave_total: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm"
+                      placeholder="—"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 block mb-1">Privilege Leave Total</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={bulkValues.privilege_leave_total ?? ""}
+                      onChange={(e) => setBulkValues((p) => ({ ...p, privilege_leave_total: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm"
+                      placeholder="—"
+                    />
+                  </div>
+                </>
+              )}
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Comp Off Total</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={bulkValues.compoff_total ?? ""}
+                  onChange={(e) => setBulkValues((p) => ({ ...p, compoff_total: parseInt(e.target.value) || 0 }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm"
+                  placeholder="—"
+                />
+              </div>
+            </div>
+            <button
+              onClick={handleBulkSave}
+              disabled={bulkSaving || selectedIds.size === 0}
+              className="w-full py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {bulkSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Update {selectedIds.size} Employees
+            </button>
+          </div>
+        )}
 
         {/* Message */}
         {message && (
@@ -411,12 +572,25 @@ export default function LeaveAllotmentPage() {
               return (
                 <div
                   key={emp.id}
-                  className="bg-white dark:bg-surface-dark rounded-xl border border-gray-100 dark:border-gray-700/50 p-4"
+                  className={`bg-white dark:bg-surface-dark rounded-xl border border-gray-100 dark:border-gray-700/50 p-4 ${
+                    bulkMode && selectedIds.has(emp.id) ? "ring-2 ring-primary/40" : ""
+                  }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <p className="text-sm font-semibold">{emp.full_name}</p>
-                      <p className="text-xs text-gray-500">{emp.designation || emp.role}</p>
+                    <div className="flex items-center gap-2">
+                      {bulkMode && b && (
+                        <button onClick={() => toggleSelect(emp.id)} className="shrink-0">
+                          {selectedIds.has(emp.id) ? (
+                            <CheckSquare className="w-5 h-5 text-primary" />
+                          ) : (
+                            <Square className="w-5 h-5 text-gray-400" />
+                          )}
+                        </button>
+                      )}
+                      <div>
+                        <p className="text-sm font-semibold">{emp.full_name}</p>
+                        <p className="text-xs text-gray-500">{emp.designation || emp.role}</p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {b ? (
@@ -428,7 +602,7 @@ export default function LeaveAllotmentPage() {
                           Missing
                         </span>
                       )}
-                      {b && !isEditing && (
+                      {b && !isEditing && !bulkMode && (
                         <button onClick={() => startEdit(emp)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                           <Pencil className="w-3.5 h-3.5 text-gray-500" />
                         </button>
@@ -453,7 +627,7 @@ export default function LeaveAllotmentPage() {
                         color="orange"
                         used={isEditing ? editValues.sick_leave_used : b.sick_leave_used}
                         total={isEditing ? editValues.sick_leave_total : b.sick_leave_total}
-                        editing={isEditing}
+                        editing={isEditing && !!isUniversal}
                         onChangeUsed={(v) => setEditValues((p) => ({ ...p, sick_leave_used: v }))}
                         onChangeTotal={(v) => setEditValues((p) => ({ ...p, sick_leave_total: v }))}
                       />
@@ -462,7 +636,7 @@ export default function LeaveAllotmentPage() {
                         color="blue"
                         used={isEditing ? editValues.casual_leave_used : b.casual_leave_used}
                         total={isEditing ? editValues.casual_leave_total : b.casual_leave_total}
-                        editing={isEditing}
+                        editing={isEditing && !!isUniversal}
                         onChangeUsed={(v) => setEditValues((p) => ({ ...p, casual_leave_used: v }))}
                         onChangeTotal={(v) => setEditValues((p) => ({ ...p, casual_leave_total: v }))}
                       />
@@ -471,7 +645,7 @@ export default function LeaveAllotmentPage() {
                         color="purple"
                         used={isEditing ? editValues.privilege_leave_used : b.privilege_leave_used}
                         total={isEditing ? editValues.privilege_leave_total : b.privilege_leave_total}
-                        editing={isEditing}
+                        editing={isEditing && !!isUniversal}
                         onChangeUsed={(v) => setEditValues((p) => ({ ...p, privilege_leave_used: v }))}
                         onChangeTotal={(v) => setEditValues((p) => ({ ...p, privilege_leave_total: v }))}
                       />
