@@ -126,7 +126,7 @@ export async function approveLeaveRequest(
     .select()
     .eq("user_id", request.user_id)
     .eq("year", requestYear)
-    .single();
+    .maybeSingle();
 
   if (balance) {
     const currentUsed = (balance as Record<string, unknown>)[usedKey] as number;
@@ -280,7 +280,7 @@ export async function getUserLeaveBalance(
     .select()
     .eq("user_id", userId)
     .eq("year", year)
-    .single();
+    .maybeSingle();
 
   if (error || !data) return null;
 
@@ -342,7 +342,7 @@ export async function withdrawLeaveRequest(
     .from("hr_profiles")
     .select("full_name, reporting_manager_id")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
   if (profile?.reporting_manager_id) {
     await createNotification({

@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface AdminInfo {
   id: string;
@@ -32,7 +27,8 @@ async function verifyAdmin(request: Request): Promise<AdminInfo | null> {
   if (!profile || !["admin", "super_admin"].includes(profile.role)) return null;
 
   const isUniversal = profile.role === "super_admin" ||
-    (profile.designation?.toLowerCase().includes("hr") ?? false);
+    (profile.designation?.toLowerCase().includes("hr") &&
+      ["admin", "super_admin"].includes(profile.role));
 
   return { id: user.id, role: profile.role, project_id: profile.project_id, designation: profile.designation, isUniversal };
 }

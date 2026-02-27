@@ -1,8 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -10,7 +7,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
   const token = authHeader.split(" ")[1];
   const { data: { user } } = await supabaseAdmin.auth.getUser(token);
   if (!user) {
@@ -31,8 +27,8 @@ export async function GET(req: NextRequest) {
 
   const isUniversal =
     callerProfile.role === "super_admin" ||
-    callerProfile.role === "admin" ||
-    (callerProfile.designation?.toLowerCase().includes("hr") ?? false);
+    (callerProfile.designation?.toLowerCase().includes("hr") &&
+      ["admin", "super_admin"].includes(callerProfile.role));
 
   // Fetch profiles — admins/super_admin/HR see all, others see own project only
   let query = supabaseAdmin

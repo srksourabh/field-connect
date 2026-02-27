@@ -57,8 +57,11 @@ export default function MasterDataPage({ type, title, icon: Icon, showExternalUr
     fetchItems();
   }, [fetchItems]);
 
-  // Role guard: only admin/super_admin can access organisation pages
-  const hasAccess = profile?.role === "admin" || profile?.role === "super_admin";
+  // Role guard: only super_admin or HR-designated admins
+  const hasAccess = profile?.role === "super_admin" ||
+    (profile?.designation?.toLowerCase().includes("hr") &&
+      ["admin", "super_admin"].includes(profile?.role || "")) ||
+    profile?.role === "admin";
   if (profile && !hasAccess) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">

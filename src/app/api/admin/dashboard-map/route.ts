@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -32,7 +27,8 @@ export async function GET(request: Request) {
 
   // Get employees (project-scoped for regular admins)
   const isUniversal = profile.role === "super_admin" ||
-    (profile.designation?.toLowerCase().includes("hr") ?? false);
+    (profile.designation?.toLowerCase().includes("hr") &&
+      ["admin", "super_admin"].includes(profile.role));
 
   let empQuery = supabaseAdmin
     .from("hr_profiles")

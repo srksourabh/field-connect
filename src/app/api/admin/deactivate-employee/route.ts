@@ -1,8 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(req: NextRequest) {
   let userId: string, restore: boolean | undefined;
@@ -17,8 +14,6 @@ export async function POST(req: NextRequest) {
   if (!userId) {
     return NextResponse.json({ error: "userId is required" }, { status: 400 });
   }
-
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
   // Verify caller
   const authHeader = req.headers.get("authorization");
@@ -48,7 +43,8 @@ export async function POST(req: NextRequest) {
   }
 
   const isUniversal = callerProfile.role === "super_admin" ||
-    (callerProfile.designation?.toLowerCase().includes("hr") ?? false);
+    (callerProfile.designation?.toLowerCase().includes("hr") &&
+      ["admin", "super_admin"].includes(callerProfile.role));
 
   // If regular admin, verify target is in their project
   if (!isUniversal) {

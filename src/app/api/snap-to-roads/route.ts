@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -9,6 +10,16 @@ const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
  * Accepts a JSON body with `positions` array of [lat, lng] tuples.
  */
 export async function POST(req: NextRequest) {
+  // Auth check
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { data: { user } } = await supabaseAdmin.auth.getUser(authHeader.split(" ")[1]);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   if (!GOOGLE_MAPS_API_KEY) {
     return NextResponse.json({ snapped: [] }, { status: 200 });
   }

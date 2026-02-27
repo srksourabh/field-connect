@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     .select("id, email, full_name, phone")
     .eq("phone", cleanPhone)
     .is("deactivated_at", null)
-    .single();
+    .maybeSingle();
 
   if (!profile) {
     return NextResponse.json({ error: "No account found with this mobile number" }, { status: 404 });

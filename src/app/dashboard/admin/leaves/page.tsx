@@ -80,14 +80,14 @@ export default function LeaveAllotmentPage() {
         .from("hr_config")
         .select("value")
         .eq("key", "leave_policy_url")
-        .single();
+        .maybeSingle();
       if (leavePolicy?.value) setPolicyUrl(leavePolicy.value);
 
       const { data: hrPolicy } = await supabase
         .from("hr_config")
         .select("value")
         .eq("key", "hr_policy_url")
-        .single();
+        .maybeSingle();
       if (hrPolicy?.value) setHrPolicyUrl(hrPolicy.value);
     })();
   }, []);

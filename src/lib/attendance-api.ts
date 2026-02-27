@@ -81,7 +81,7 @@ export async function getTodayAttendance(userId: string): Promise<HrAttendance |
     .gte("created_at", today)
     .order("created_at", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (error) return null;
   return data;

@@ -58,7 +58,7 @@ export default function PublicOnboardingPage() {
           .from("hr_onboarding_tokens")
           .select("expires_at, used_at")
           .eq("token", token)
-          .single();
+          .maybeSingle();
 
         if (!data) {
           setTokenStatus("invalid");

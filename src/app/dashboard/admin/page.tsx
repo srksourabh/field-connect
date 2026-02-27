@@ -53,7 +53,8 @@ export default function EmployeeManagementPage() {
     let query = supabase
       .from("hr_profiles")
       .select("id, full_name, phone, email, designation, department, project_id, role, reporting_manager_id, employee_code, date_of_joining, avatar_url, deactivated_at, leave_policy_id, address, city, state, pincode, created_at, updated_at")
-      .order("full_name", { ascending: true });
+      .order("full_name", { ascending: true })
+      .limit(500);
 
     // Regular admins only see their project
     if (profile && !isUniversal && profile.project_id) {
@@ -251,7 +252,7 @@ export default function EmployeeManagementPage() {
 
   const roleOptions = profile?.role === "super_admin"
     ? ["employee", "manager", "admin", "super_admin"]
-    : ["employee", "manager", "admin"];
+    : ["employee", "manager"];
 
   return (
     <div className="flex flex-col min-h-screen">

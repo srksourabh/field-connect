@@ -132,14 +132,17 @@ function sumPathDistanceKm(points: [number, number][]): number {
 
 /** Snap GPS points to nearest roads via server-side proxy (protects API key) */
 export async function snapToRoads(
-  positions: [number, number][]
+  positions: [number, number][],
+  accessToken?: string
 ): Promise<[number, number][]> {
   if (positions.length < 2) return positions;
 
   try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
     const res = await fetch("/api/snap-to-roads", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ positions }),
     });
 

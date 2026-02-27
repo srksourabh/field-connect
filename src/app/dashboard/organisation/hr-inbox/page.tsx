@@ -50,8 +50,10 @@ export default function HrInboxPage() {
     fetchMessages();
   }, [fetchMessages]);
 
-  // Role guard: only admin/super_admin can access HR inbox
-  const hasAccess = profile?.role === "admin" || profile?.role === "super_admin";
+  // Role guard: only super_admin or HR-designated admins can access HR inbox
+  const hasAccess = profile?.role === "super_admin" ||
+    (profile?.designation?.toLowerCase().includes("hr") &&
+      ["admin", "super_admin"].includes(profile?.role || ""));
   if (profile && !hasAccess) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">

@@ -27,7 +27,8 @@ export default function OnboardingPage() {
     const { data } = await supabase
       .from("hr_onboarding_tokens")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(100);
     setTokens((data as OnboardingToken[]) || []);
     setLoading(false);
   }, []);

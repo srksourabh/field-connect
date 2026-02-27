@@ -1,8 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(req: NextRequest) {
   // 1. Parse body
@@ -25,7 +22,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
   const token = authHeader.split(" ")[1];
   const { data: { user: callerUser } } = await supabaseAdmin.auth.getUser(token);
 
@@ -55,7 +51,8 @@ export async function POST(req: NextRequest) {
 
   // Project scoping: regular admins can only change roles within their project
   const isUniversal = callerProfile.role === "super_admin" ||
-    (callerProfile.designation?.toLowerCase().includes("hr") ?? false);
+    (callerProfile.designation?.toLowerCase().includes("hr") &&
+      ["admin", "super_admin"].includes(callerProfile.role));
 
   if (!isUniversal) {
     const { data: targetProfile } = await supabaseAdmin

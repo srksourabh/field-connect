@@ -50,12 +50,27 @@ export default function AdminMapPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 120_000);
-    return () => clearInterval(interval);
+    let interval = setInterval(fetchData, 120_000);
+    const handleVisibility = () => {
+      if (document.hidden) {
+        clearInterval(interval);
+      } else {
+        fetchData();
+        interval = setInterval(fetchData, 120_000);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [fetchData]);
 
-  // Admin guard
-  if (profile && !["admin", "super_admin"].includes(profile.role)) {
+  // Admin guard (includes HR-designated admins)
+  const isUniversal = profile?.role === "super_admin" ||
+    (profile?.designation?.toLowerCase().includes("hr") &&
+      ["admin", "super_admin"].includes(profile?.role || ""));
+  if (profile && !["admin", "super_admin"].includes(profile.role) && !isUniversal) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p className="text-gray-500">Admin access required</p>

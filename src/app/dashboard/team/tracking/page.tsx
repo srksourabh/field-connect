@@ -21,7 +21,7 @@ interface ApiEmployee {
 }
 
 export default function TrackingPage() {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const [employees, setEmployees] = useState<TrackedEmployee[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,10 +60,31 @@ export default function TrackingPage() {
     };
 
     fetchLocations();
-    // Refresh every 2 minutes
-    const interval = setInterval(fetchLocations, 120_000);
-    return () => clearInterval(interval);
+    // Refresh every 2 minutes, pause when tab is hidden
+    let interval = setInterval(fetchLocations, 120_000);
+    const handleVisibility = () => {
+      if (document.hidden) {
+        clearInterval(interval);
+      } else {
+        fetchLocations();
+        interval = setInterval(fetchLocations, 120_000);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [session?.access_token]);
+
+  // Role guard: only managers and above can access tracking
+  if (profile && !["manager", "admin", "super_admin"].includes(profile.role)) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-gray-500">Access denied</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen">

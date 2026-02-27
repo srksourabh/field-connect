@@ -93,6 +93,15 @@ export default function LeaveApplicationForm({ onSubmit, submitting, privilegeEn
     }
 
     onSubmit({ type, startDate, endDate, reason, attachmentUrl: finalAttachmentUrl });
+
+    // Reset form after submission
+    setType("casual");
+    setStartDate("");
+    setEndDate("");
+    setReason("");
+    setUploadedFile(null);
+    setAttachmentUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (

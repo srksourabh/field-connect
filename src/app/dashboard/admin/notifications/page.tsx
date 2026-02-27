@@ -5,6 +5,7 @@ import { ChevronLeft, Shield, Loader2, Megaphone, Send, Check } from "lucide-rea
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { useMasterData } from "@/hooks/useMasterData";
 
 export default function BroadcastNotificationPage() {
   const { profile, session } = useAuth();
@@ -15,6 +16,8 @@ export default function BroadcastNotificationPage() {
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const projects = useMasterData("project");
 
   const isUniversal =
     profile?.role === "super_admin" ||
@@ -125,8 +128,7 @@ export default function BroadcastNotificationPage() {
 
   const projectOptions = [
     { value: "all", label: "All Projects" },
-    { value: "in-house", label: "In-House" },
-    { value: "uds-pos", label: "UDS POS" },
+    ...projects.map((p) => ({ value: p.name, label: p.name })),
   ];
 
   return (

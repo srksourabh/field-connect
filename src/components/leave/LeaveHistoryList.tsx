@@ -30,6 +30,7 @@ function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
+    timeZone: "Asia/Kolkata",
   });
 }
 

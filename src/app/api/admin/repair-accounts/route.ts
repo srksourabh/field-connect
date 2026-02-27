@@ -1,8 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 /**
  * POST /api/admin/repair-accounts
@@ -17,7 +14,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
  * Requires super_admin Bearer token.
  */
 export async function POST(req: NextRequest) {
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
   // Verify caller is super_admin
   const authHeader = req.headers.get("authorization");

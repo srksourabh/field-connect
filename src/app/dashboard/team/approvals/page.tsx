@@ -9,14 +9,10 @@ import RectificationRequestCard from "@/components/approvals/RectificationReques
 import { useAuth } from "@/lib/auth";
 import {
   getTeamLeaveRequests,
-  approveLeaveRequest,
-  rejectLeaveRequest,
   type LeaveRequestWithProfile,
 } from "@/lib/leave-api";
 import {
   getTeamRectificationRequests,
-  approveRectificationRequest,
-  rejectRectificationRequest,
   type RectificationWithProfile,
 } from "@/lib/rectification-api";
 import { showPrompt } from "@/components/ui/Dialog";
@@ -25,7 +21,7 @@ import { showToast } from "@/components/ui/Toast";
 type Category = "leave" | "rectification";
 
 export default function ApprovalsPage() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [category, setCategory] = useState<Category>("leave");
   const [tab, setTab] = useState<"pending" | "history">("pending");
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequestWithProfile[]>([]);
@@ -49,19 +45,40 @@ export default function ApprovalsPage() {
     fetchRequests();
   }, [fetchRequests]);
 
+  // Server-side action helper
+  const doAction = async (endpoint: string, requestId: string, action: string, comment?: string): Promise<boolean> => {
+    if (!session?.access_token) return false;
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ requestId, action, comment: comment || undefined }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || "Action failed", "error");
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   // Leave handlers
   const handleLeaveApprove = async (id: string) => {
     if (!user) return;
     const comment = await showPrompt("Approve Leave", "Add a comment (optional):", "Comment...");
     if (comment === null) return;
     setActionLoadingId(`approve_${id}`);
-    const ok = await approveLeaveRequest(id, user.id, comment || undefined);
+    const ok = await doAction("/api/admin/leave-action", id, "approve", comment || undefined);
     setActionLoadingId(null);
     if (ok) {
       showToast("Leave request approved", "success");
       fetchRequests();
-    } else {
-      showToast("Failed to approve. Please try again.", "error");
     }
   };
 
@@ -70,13 +87,11 @@ export default function ApprovalsPage() {
     const comment = await showPrompt("Reject Leave", "Reason for rejection (optional):", "Reason...");
     if (comment === null) return;
     setActionLoadingId(`reject_${id}`);
-    const ok = await rejectLeaveRequest(id, user.id, comment || undefined);
+    const ok = await doAction("/api/admin/leave-action", id, "reject", comment || undefined);
     setActionLoadingId(null);
     if (ok) {
       showToast("Leave request rejected", "success");
       fetchRequests();
-    } else {
-      showToast("Failed to reject. Please try again.", "error");
     }
   };
 
@@ -86,13 +101,11 @@ export default function ApprovalsPage() {
     const comment = await showPrompt("Approve Rectification", "Add a comment (optional):", "Comment...");
     if (comment === null) return;
     setActionLoadingId(`approve_${id}`);
-    const ok = await approveRectificationRequest(id, user.id, comment || undefined);
+    const ok = await doAction("/api/admin/rectification-action", id, "approve", comment || undefined);
     setActionLoadingId(null);
     if (ok) {
       showToast("Rectification approved", "success");
       fetchRequests();
-    } else {
-      showToast("Failed to approve. Please try again.", "error");
     }
   };
 
@@ -101,13 +114,11 @@ export default function ApprovalsPage() {
     const comment = await showPrompt("Reject Rectification", "Reason for rejection (optional):", "Reason...");
     if (comment === null) return;
     setActionLoadingId(`reject_${id}`);
-    const ok = await rejectRectificationRequest(id, user.id, comment || undefined);
+    const ok = await doAction("/api/admin/rectification-action", id, "reject", comment || undefined);
     setActionLoadingId(null);
     if (ok) {
       showToast("Rectification rejected", "success");
       fetchRequests();
-    } else {
-      showToast("Failed to reject. Please try again.", "error");
     }
   };
 
