@@ -126,7 +126,14 @@ async function run() {
     const step2Visible = await page.locator('text="KYC & Bank Details"').isVisible().catch(() => false);
     console.log(`  PASS: Step 2 (KYC) ${step2Visible ? "visible" : "(heading not found, but proceeding)"}`);
 
-    // Skip Step 2
+    // Fill Step 2: KYC & Bank
+    await page.fill('input[placeholder="Aadhaar Number *"]', "123456789012");
+    await page.fill('input[placeholder="PAN Number *"]', "ABCDE1234F");
+    await page.fill('input[placeholder="Bank Name *"]', "Test Bank");
+    await page.fill('input[placeholder="Account Number *"]', "9876543210");
+    await page.fill('input[placeholder="IFSC Code *"]', "TEST0001234");
+    console.log("  Filled KYC: Aadhaar, PAN, Bank, Account, IFSC");
+
     await page.click('button:has-text("Save & Next")');
     await page.waitForTimeout(800);
 
@@ -191,6 +198,26 @@ async function run() {
       if (!check.error && check.users?.length > 0) {
         createdUserId = check.users[0].id;
         console.log(`  Created user ID: ${createdUserId}`);
+
+        // Verify KYC data was stored in DB
+        console.log("\n=== KYC Storage Verification ===");
+        const profiles = await sbRest(`hr_profiles?id=eq.${createdUserId}&select=kyc_data,full_name,phone,email,address,department,project_id,designation`);
+        if (profiles && profiles.length > 0) {
+          const p = profiles[0];
+          console.log(`  Profile: ${p.full_name}, ${p.phone}, dept=${p.department}, project=${p.project_id}`);
+          if (p.kyc_data) {
+            console.log(`  KYC stored: PASS`);
+            console.log(`    aadhaar: ${p.kyc_data.aadhaar === "123456789012" ? "PASS" : "FAIL"} (${p.kyc_data.aadhaar})`);
+            console.log(`    pan: ${p.kyc_data.pan === "ABCDE1234F" ? "PASS" : "FAIL"} (${p.kyc_data.pan})`);
+            console.log(`    bank_name: ${p.kyc_data.bank_name === "Test Bank" ? "PASS" : "FAIL"} (${p.kyc_data.bank_name})`);
+            console.log(`    account_no: ${p.kyc_data.account_no === "9876543210" ? "PASS" : "FAIL"} (${p.kyc_data.account_no})`);
+            console.log(`    ifsc: ${p.kyc_data.ifsc === "TEST0001234" ? "PASS" : "FAIL"} (${p.kyc_data.ifsc})`);
+          } else {
+            console.log(`  KYC stored: FAIL — kyc_data is null`);
+          }
+        } else {
+          console.log(`  FAIL: Profile not found in DB`);
+        }
       }
 
       // Step 4: Test login
