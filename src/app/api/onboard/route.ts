@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
-  const { token, personal, kyc, job } = body;
+  const { token, personal, job } = body;
 
   if (!token || !personal?.fullName || !personal?.phone) {
     return NextResponse.json(
@@ -77,15 +77,7 @@ export async function POST(req: NextRequest) {
 
   const userId = authData.user.id;
 
-  // 4. Create hr_profiles entry (store KYC data as JSON metadata)
-  const kycMetadata = kyc ? {
-    aadhaar: kyc.aadhaar || null,
-    pan: kyc.pan || null,
-    bank_name: kyc.bankName || null,
-    account_no: kyc.accountNo || null,
-    ifsc: kyc.ifsc || null,
-  } : null;
-
+  // 4. Create hr_profiles entry
   const { error: profileError } = await supabaseAdmin.from("hr_profiles").insert({
     id: userId,
     full_name: personal.fullName,
@@ -97,7 +89,6 @@ export async function POST(req: NextRequest) {
     project_id: job.project,
     date_of_joining: job?.joiningDate || null,
     role: "employee", // Always employee — role changes require admin action
-    ...(kycMetadata ? { kyc_data: kycMetadata } : {}),
   });
 
   if (profileError) {
