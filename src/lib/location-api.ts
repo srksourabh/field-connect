@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { todayISTTimestamp, endOfDayIST } from "./utils";
+import { todayISTTimestamp, endOfDayIST, logError } from "./utils";
 import type { HrLocationLog } from "./database.types";
 
 export async function insertLocationLog(data: {
@@ -23,7 +23,7 @@ export async function insertLocationLog(data: {
     .single();
 
   if (error) {
-    console.error("Insert location log error:", error);
+    logError("Insert location log error:", error);
     return null;
   }
   return record;
@@ -40,7 +40,7 @@ export async function getTodayLocationLogs(userId: string): Promise<HrLocationLo
     .limit(100);
 
   if (error) {
-    console.error("Get today location logs error:", error);
+    logError("Get today location logs error:", error);
     return [];
   }
   return data || [];
@@ -63,7 +63,7 @@ export async function getLatestLocationsForUsers(
     .limit(500);
 
   if (error) {
-    console.error("Get latest locations error:", error);
+    logError("Get latest locations error:", error);
     return result;
   }
 
@@ -93,7 +93,7 @@ export async function getLocationLogsByDate(
     .limit(200);
 
   if (error) {
-    console.error("Get location logs by date error:", error);
+    logError("Get location logs by date error:", error);
     return [];
   }
   return data || [];

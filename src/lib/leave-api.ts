@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { logError } from "./utils";
 import type { HrLeaveRequest } from "./database.types";
 import { createNotification } from "./notification-api";
 import { toISTDateStr } from "./utils";
@@ -30,7 +31,7 @@ export async function getTeamLeaveRequests(
     .limit(200);
 
   if (error) {
-    console.error("Fetch team leave requests error:", error);
+    logError("Fetch team leave requests error:", error);
     return [];
   }
 
@@ -60,7 +61,7 @@ export async function approveLeaveRequest(
     .single();
 
   if (fetchError || !request) {
-    console.error("Fetch leave request error:", fetchError);
+    logError("Fetch leave request error:", fetchError);
     return false;
   }
 
@@ -75,7 +76,7 @@ export async function approveLeaveRequest(
     .limit(1);
 
   if (overlapping && overlapping.length > 0) {
-    console.error("Overlapping approved leave exists");
+    logError("Overlapping approved leave exists");
     return false;
   }
 
@@ -93,11 +94,11 @@ export async function approveLeaveRequest(
     .select();
 
   if (updateError) {
-    console.error("Approve leave error:", updateError);
+    logError("Approve leave error:", updateError);
     return false;
   }
   if (!updated || updated.length === 0) {
-    console.error("Leave request is no longer pending");
+    logError("Leave request is no longer pending");
     return false;
   }
 
@@ -115,7 +116,7 @@ export async function approveLeaveRequest(
   };
   const usedKey = usedKeyMap[request.type];
   if (!usedKey) {
-    console.error("Unknown leave type:", request.type);
+    logError("Unknown leave type:", request.type);
     return true; // Approve but skip balance deduction for unknown types
   }
 
@@ -221,7 +222,7 @@ export async function rejectLeaveRequest(
     .single();
 
   if (fetchError || !request) {
-    console.error("Fetch leave request error:", fetchError);
+    logError("Fetch leave request error:", fetchError);
     return false;
   }
 
@@ -239,11 +240,11 @@ export async function rejectLeaveRequest(
     .select();
 
   if (error) {
-    console.error("Reject leave error:", error);
+    logError("Reject leave error:", error);
     return false;
   }
   if (!updated || updated.length === 0) {
-    console.error("Leave request is no longer pending");
+    logError("Leave request is no longer pending");
     return false;
   }
 
@@ -322,7 +323,7 @@ export async function withdrawLeaveRequest(
     .single();
 
   if (fetchError || !request) {
-    console.error("Fetch leave request for withdraw error:", fetchError);
+    logError("Fetch leave request for withdraw error:", fetchError);
     return false;
   }
 
@@ -333,7 +334,7 @@ export async function withdrawLeaveRequest(
     .eq("id", requestId);
 
   if (error) {
-    console.error("Withdraw leave error:", error);
+    logError("Withdraw leave error:", error);
     return false;
   }
 
@@ -369,7 +370,7 @@ export async function getUserLeaveRequests(
     .limit(100);
 
   if (error) {
-    console.error("Fetch user leave requests error:", error);
+    logError("Fetch user leave requests error:", error);
     return [];
   }
   return data || [];

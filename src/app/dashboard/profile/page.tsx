@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { ChevronLeft, LogOut, Bell, Moon, Sun, Monitor, ChevronRight, KeyRound, Camera, X, Eye, EyeOff, Building2, FileText, FolderKanban, MessageSquare } from "lucide-react";
+import { logError } from "@/lib/utils";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -127,7 +128,7 @@ export default function ProfilePage() {
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) {
-        console.error("Upload error:", uploadError.message);
+        logError("Upload error:", uploadError.message);
         const { showToast } = await import("@/components/ui/Toast");
         showToast("Failed to upload avatar. Please try again.", "error");
         return;

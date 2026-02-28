@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { todayISTTimestamp, autoCloseIST } from "./utils";
+import { todayISTTimestamp, autoCloseIST, logError } from "./utils";
 import type { HrAttendance } from "./database.types";
 
 export async function createPunchIn(data: {
@@ -38,7 +38,7 @@ export async function createPunchIn(data: {
     .single();
 
   if (error) {
-    console.error("Punch in error:", error);
+    logError("Punch in error:", error);
     return null;
   }
   return record;
@@ -66,7 +66,7 @@ export async function updatePunchOut(data: {
     .single();
 
   if (error) {
-    console.error("Punch out error:", error);
+    logError("Punch out error:", error);
     return null;
   }
   return record;
@@ -98,7 +98,7 @@ export async function getTodayAllSessions(userId: string): Promise<HrAttendance[
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("Get today sessions error:", error);
+    logError("Get today sessions error:", error);
     return null; // null = couldn't reach server; [] = no sessions found
   }
   return data || [];
@@ -154,7 +154,7 @@ export async function getAttendanceByMonth(
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("Attendance fetch error:", error);
+    logError("Attendance fetch error:", error);
     return [];
   }
   return data || [];
@@ -184,7 +184,7 @@ export async function closeStaleSession(
     .single();
 
   if (error) {
-    console.error("Auto close stale session error:", error);
+    logError("Auto close stale session error:", error);
     return null;
   }
   return data;

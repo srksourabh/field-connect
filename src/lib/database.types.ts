@@ -216,3 +216,41 @@ export interface HrNotification {
   is_read: boolean;
   created_at: string;
 }
+
+export interface HrConfig {
+  id: string;
+  key: string;
+  value: string | null;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface HrMasterData {
+  id: string;
+  type: "project" | "department" | "designation";
+  name: string;
+  external_url: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface HrLeavePolicy {
+  id: string;
+  name: string;
+  sick_leave_count: number;
+  casual_leave_count: number;
+  privilege_leave_count: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface HrMessage {
+  id: string;
+  sender_id: string;
+  category: "complaint" | "suggestion" | "feedback" | "other";
+  subject: string;
+  message: string;
+  is_anonymous: boolean;
+  is_read: boolean;
+  created_at: string;
+}

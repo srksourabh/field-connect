@@ -64,3 +64,19 @@ export function isAutoCloseTime(punchOutAt: string): boolean {
   });
   return t === "23:59";
 }
+
+/** Calculate inclusive leave days between two YYYY-MM-DD date strings (timezone-safe) */
+export function calcLeaveDays(startDate: string, endDate: string): number {
+  const [sy, sm, sd] = startDate.split("-").map(Number);
+  const [ey, em, ed] = endDate.split("-").map(Number);
+  const start = Date.UTC(sy, sm - 1, sd);
+  const end = Date.UTC(ey, em - 1, ed);
+  return Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+}
+
+/** Log errors only in development — suppressed in production to avoid leaking internals */
+export function logError(message: string, ...args: unknown[]): void {
+  if (process.env.NODE_ENV !== "production") {
+    console.error(message, ...args);
+  }
+}

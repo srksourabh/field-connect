@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { insertLocationLog } from "@/lib/location-api";
 import { addToQueue } from "@/lib/sync-queue";
-import { todayIST } from "@/lib/utils";
+import { todayIST, logError } from "@/lib/utils";
 
 // Scheduled capture times (HH:MM in 24h)
 const SCHEDULE = ["09:30", "10:00", "13:00", "16:00", "19:00"];
@@ -87,7 +87,7 @@ export function useLocationTracker(
               });
               markSlotCaptured(slot); // Only mark after successful persist
             } catch (e) {
-              console.error("Scheduled location log failed:", e);
+              logError("Scheduled location log failed:", e);
               // Don't mark slot — will retry next interval
             }
           } else {
@@ -107,7 +107,7 @@ export function useLocationTracker(
           }
         },
         (err) => {
-          console.error("Scheduled location capture failed:", err.message);
+          logError("Scheduled location capture failed:", err.message);
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );

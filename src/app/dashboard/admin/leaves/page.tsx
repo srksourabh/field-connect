@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { ChevronLeft, Users, Check, AlertCircle, Loader2, Pencil, Save, X, Upload, FileText, Trash2, CheckSquare, Square } from "lucide-react";
+import { logError } from "@/lib/utils";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -65,7 +66,7 @@ export default function LeaveAllotmentPage() {
       const data = await res.json();
       setEmployees(data.employees || []);
     } catch (err) {
-      console.error("Fetch leave allotment error:", err);
+      logError("Fetch leave allotment error:", err);
     } finally {
       setLoading(false);
     }

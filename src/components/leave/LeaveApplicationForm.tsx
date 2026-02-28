@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { ChevronDown, Upload, Send, X, FileText, Calendar } from "lucide-react";
 import LeaveDurationBanner from "./LeaveDurationBanner";
+import { logError } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { showToast } from "@/components/ui/Toast";
 
@@ -79,7 +80,7 @@ export default function LeaveApplicationForm({ onSubmit, submitting, privilegeEn
         .from("leave-attachments")
         .upload(filePath, uploadedFile);
       if (error) {
-        console.error("Upload error:", error.message);
+        logError("Upload error:", error.message);
         showToast("Failed to upload file. Please try again.", "error");
         setUploading(false);
         return;

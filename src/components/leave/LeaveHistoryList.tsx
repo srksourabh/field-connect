@@ -35,9 +35,9 @@ function formatDate(dateStr: string) {
 }
 
 function calcDays(start: string, end: string) {
-  const s = new Date(start);
-  const e = new Date(end);
-  return Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const [sy, sm, sd] = start.split("-").map(Number);
+  const [ey, em, ed] = end.split("-").map(Number);
+  return Math.round((Date.UTC(ey, em - 1, ed) - Date.UTC(sy, sm - 1, sd)) / (1000 * 60 * 60 * 24)) + 1;
 }
 
 interface LeaveHistoryListProps {

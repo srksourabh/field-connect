@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { ChevronLeft, Users, UserCheck, TreePalm, UserX, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import { logError } from "@/lib/utils";
 import AdminLiveMap from "@/components/tracking/AdminLiveMap";
 import EmployeeInfoCard from "@/components/tracking/EmployeeInfoCard";
 import type { MapEmployee } from "@/components/tracking/AdminLeafletMap";
@@ -42,7 +43,7 @@ export default function AdminMapPage() {
       setEmployees(data.employees || []);
       setSummary(data.summary || { total: 0, present: 0, onLeave: 0, absent: 0 });
     } catch (err) {
-      console.error("Dashboard map fetch error:", err);
+      logError("Dashboard map fetch error:", err);
     } finally {
       setLoading(false);
     }

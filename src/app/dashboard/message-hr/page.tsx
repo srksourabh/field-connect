@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronLeft, Send, ShieldCheck, Loader2, CheckCircle2 } from "lucide-react";
+import { logError } from "@/lib/utils";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { showToast } from "@/components/ui/Toast";
@@ -44,7 +45,7 @@ export default function MessageHRPage() {
         showToast(data?.error || "Failed to send message. Please try again.", "error");
       }
     } catch (err) {
-      console.error("Message send error:", err);
+      logError("Message send error:", err);
       showToast("Network error. Please check your connection and try again.", "error");
     }
     setLoading(false);

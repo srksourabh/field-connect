@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useState, useRef } from "react";
 import { useOnlineStatus } from "./useOnlineStatus";
+import { logError } from "@/lib/utils";
 import {
   getQueue,
   removeFromQueue,
@@ -90,7 +91,7 @@ export function useSyncQueue() {
             removeFromQueue(item.id);
           }
         } catch (err) {
-          console.error("Sync failed for item:", item.id, err);
+          logError("Sync failed for item:", item.id, err);
           const retries = (item.retryCount ?? 0) + 1;
           if (retries >= MAX_RETRIES) {
             moveToDeadLetter({ ...item, retryCount: retries });

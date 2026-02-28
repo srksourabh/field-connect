@@ -14,6 +14,7 @@ import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { addToQueue } from "@/lib/sync-queue";
 import { cacheSet, cacheGet } from "@/lib/offline-cache";
 import { showToast } from "@/components/ui/Toast";
+import { calcLeaveDays } from "@/lib/utils";
 import type { HrLeaveBalance, HrLeaveRequest } from "@/lib/database.types";
 
 export default function LeavePage() {
@@ -90,10 +91,8 @@ export default function LeavePage() {
       status: "pending" as const,
     };
 
-    // Calculate days
-    const start = new Date(data.startDate);
-    const end = new Date(data.endDate);
-    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    // Calculate days (UTC-safe to avoid timezone issues)
+    const days = calcLeaveDays(data.startDate, data.endDate);
 
     if (!isOnline) {
       // Queue for sync when back online — skip balance check (validated server-side on approval)

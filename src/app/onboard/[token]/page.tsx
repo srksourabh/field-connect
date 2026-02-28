@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import { logError } from "@/lib/utils";
 import Link from "next/link";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import StepProgress from "@/components/onboarding/StepProgress";
@@ -74,7 +75,7 @@ export default function PublicOnboardingPage() {
         }
         setTokenStatus("valid");
       } catch (err) {
-        console.error("Token validation error:", err);
+        logError("Token validation error:", err);
         setTokenStatus("invalid");
       }
     })();
@@ -136,7 +137,7 @@ export default function PublicOnboardingPage() {
         setError(data.error || "Something went wrong. Please try again.");
       }
     } catch (err) {
-      console.error("Onboarding submission error:", err);
+      logError("Onboarding submission error:", err);
       setError("Network error. Please check your connection and try again.");
     }
     setSubmitting(false);

@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { logError } from "./utils";
 
 export interface HrNotification {
   id: string;
@@ -34,7 +35,7 @@ export async function createNotification(data: {
     .single();
 
   if (error) {
-    console.error("Create notification error:", error);
+    logError("Create notification error:", error);
     return null;
   }
   return record;
@@ -52,7 +53,7 @@ export async function getUserNotifications(
     .limit(limit);
 
   if (error) {
-    console.error("Fetch notifications error:", error);
+    logError("Fetch notifications error:", error);
     return [];
   }
   return data || [];
@@ -66,7 +67,7 @@ export async function getUnreadCount(userId: string): Promise<number> {
     .eq("is_read", false);
 
   if (error) {
-    console.error("Unread count error:", error);
+    logError("Unread count error:", error);
     return 0;
   }
   return count ?? 0;
@@ -79,7 +80,7 @@ export async function markAsRead(notificationId: string): Promise<boolean> {
     .eq("id", notificationId);
 
   if (error) {
-    console.error("Mark as read error:", error);
+    logError("Mark as read error:", error);
     return false;
   }
   return true;
@@ -93,7 +94,7 @@ export async function markAllAsRead(userId: string): Promise<boolean> {
     .eq("is_read", false);
 
   if (error) {
-    console.error("Mark all as read error:", error);
+    logError("Mark all as read error:", error);
     return false;
   }
   return true;

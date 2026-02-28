@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { toISTDateStr } from "@/lib/utils";
+import { toISTDateStr, calcLeaveDays } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
   // Auth
@@ -126,10 +126,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to approve or request is no longer pending" }, { status: 400 });
   }
 
-  // Deduct leave balance
-  const start = new Date(request.start_date);
-  const end = new Date(request.end_date);
-  const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  // Deduct leave balance (UTC-safe day calculation)
+  const days = calcLeaveDays(request.start_date, request.end_date);
 
   const usedKeyMap: Record<string, string> = {
     sick: "sick_leave_used",

@@ -6,6 +6,7 @@ import Link from "next/link";
 import LiveTrackingMap from "@/components/tracking/LiveTrackingMap";
 import type { TrackedEmployee } from "@/components/tracking/LiveTrackingMap";
 import { useAuth } from "@/lib/auth";
+import { logError } from "@/lib/utils";
 
 interface ApiEmployee {
   id: string;
@@ -53,7 +54,7 @@ export default function TrackingPage() {
           }));
         setEmployees(mapped);
       } catch (err) {
-        console.error("Failed to fetch team locations:", err);
+        logError("Failed to fetch team locations:", err);
       } finally {
         setLoading(false);
       }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { ChevronLeft, Loader2, Clock, TrendingUp, AlertTriangle, Award } from "lucide-react";
+import { logError } from "@/lib/utils";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import SummaryCards from "@/components/analytics/SummaryCards";
@@ -64,7 +65,7 @@ export default function AnalyticsPage() {
       const json = await res.json();
       setData(json);
     } catch (err) {
-      console.error("Analytics fetch error:", err);
+      logError("Analytics fetch error:", err);
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,7 @@
 import { supabase } from "./supabase";
 import type { HrRectificationRequest } from "./database.types";
 import { createNotification } from "./notification-api";
-import { endOfDayIST } from "./utils";
+import { endOfDayIST, logError } from "./utils";
 
 export interface RectificationWithProfile extends HrRectificationRequest {
   employee_name: string;
@@ -38,7 +38,7 @@ export async function createRectificationRequest(data: {
     .single();
 
   if (error) {
-    console.error("Create rectification error:", error);
+    logError("Create rectification error:", error);
     return null;
   }
   return record;
@@ -55,7 +55,7 @@ export async function getUserRectificationRequests(
     .limit(100);
 
   if (error) {
-    console.error("Fetch user rectifications error:", error);
+    logError("Fetch user rectifications error:", error);
     return [];
   }
   return data || [];
@@ -83,7 +83,7 @@ export async function getTeamRectificationRequests(
     .limit(200);
 
   if (error) {
-    console.error("Fetch team rectifications error:", error);
+    logError("Fetch team rectifications error:", error);
     return [];
   }
   return (data || []).map((r) => ({
@@ -105,7 +105,7 @@ export async function approveRectificationRequest(
     .single();
 
   if (fetchError || !request) {
-    console.error("Fetch rectification error:", fetchError);
+    logError("Fetch rectification error:", fetchError);
     return false;
   }
 
@@ -123,11 +123,11 @@ export async function approveRectificationRequest(
     .select();
 
   if (updateError) {
-    console.error("Approve rectification error:", updateError);
+    logError("Approve rectification error:", updateError);
     return false;
   }
   if (!updated || updated.length === 0) {
-    console.error("Rectification request is no longer pending");
+    logError("Rectification request is no longer pending");
     return false;
   }
 
@@ -144,7 +144,7 @@ export async function approveRectificationRequest(
       .eq("id", request.attendance_id);
 
     if (attError) {
-      console.error("Update attendance error:", attError);
+      logError("Update attendance error:", attError);
       return false;
     }
 
@@ -172,7 +172,7 @@ export async function approveRectificationRequest(
       });
 
     if (attError) {
-      console.error("Insert attendance error:", attError);
+      logError("Insert attendance error:", attError);
       return false;
     }
   }
@@ -203,7 +203,7 @@ export async function rejectRectificationRequest(
     .single();
 
   if (fetchError || !request) {
-    console.error("Fetch rectification error:", fetchError);
+    logError("Fetch rectification error:", fetchError);
     return false;
   }
 
@@ -221,11 +221,11 @@ export async function rejectRectificationRequest(
     .select();
 
   if (error) {
-    console.error("Reject rectification error:", error);
+    logError("Reject rectification error:", error);
     return false;
   }
   if (!updated || updated.length === 0) {
-    console.error("Rectification request is no longer pending");
+    logError("Rectification request is no longer pending");
     return false;
   }
 

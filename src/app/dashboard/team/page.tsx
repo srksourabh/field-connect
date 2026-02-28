@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { ChevronLeft, Search, X } from "lucide-react";
+import { logError } from "@/lib/utils";
 import Link from "next/link";
 import Organogram from "@/components/team/Organogram";
 import EmployeeDetailSheet from "@/components/team/EmployeeDetailSheet";
@@ -182,7 +183,7 @@ export default function TeamPage() {
 
         setLoading(false);
       } catch (err) {
-        console.error("fetchOrg failed:", err);
+        logError("fetchOrg failed:", err);
         setError("Failed to load team data");
         setLoading(false);
       }
