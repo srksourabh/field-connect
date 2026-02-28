@@ -10,9 +10,9 @@ export async function POST(req: NextRequest) {
   }
   const { token, personal, kyc, job } = body;
 
-  if (!token || !personal?.fullName || !personal?.email || !personal?.phone) {
+  if (!token || !personal?.fullName || !personal?.phone) {
     return NextResponse.json(
-      { error: "Missing required fields: name, email, phone, and token" },
+      { error: "Missing required fields: name, phone, and token" },
       { status: 400 }
     );
   }
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
   const { error: profileError } = await supabaseAdmin.from("hr_profiles").insert({
     id: userId,
     full_name: personal.fullName,
-    email: personal.email,
+    email: personal.email || null,
     phone: personal.phone,
     address: personal.address || null,
     designation: job?.designation || null,
@@ -118,5 +118,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     success: true,
     message: `Account created for ${personal.fullName}.`,
+    loginPhone: cleanPhone,
+    defaultPassword,
   });
 }

@@ -23,6 +23,7 @@ export default function PublicOnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [credentials, setCredentials] = useState<{ phone: string; password: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [personal, setPersonal] = useState({
@@ -97,8 +98,17 @@ export default function PublicOnboardingPage() {
     if (currentStep < 3) {
       // Validate step 1 required fields
       if (currentStep === 1) {
-        if (!personal.fullName.trim() || !personal.email.trim() || !personal.phone.trim()) {
-          setError("Please fill in Name, Email, and Phone.");
+        if (!personal.fullName.trim() || !personal.phone.trim()) {
+          setError("Please fill in Name and Phone.");
+          return;
+        }
+        const digits = personal.phone.replace(/\D/g, "");
+        if (digits.length < 10) {
+          setError("Please enter a valid 10-digit phone number.");
+          return;
+        }
+        if (personal.fullName.replace(/\s+/g, "").length < 4) {
+          setError("Name must be at least 4 characters (needed to generate your password).");
           return;
         }
         setError(null);
@@ -132,6 +142,7 @@ export default function PublicOnboardingPage() {
       const data = await res.json();
 
       if (res.ok) {
+        setCredentials({ phone: data.loginPhone, password: data.defaultPassword });
         setSubmitted(true);
       } else {
         setError(data.error || "Something went wrong. Please try again.");
@@ -184,9 +195,24 @@ export default function PublicOnboardingPage() {
         <p className="text-sm text-gray-500 text-center mb-1">
           Your account has been created successfully.
         </p>
-        <p className="text-sm text-gray-500 text-center mb-6">
-          Your login credentials have been shared with your admin. Please contact them if you need help signing in.
-        </p>
+        {credentials && (
+          <div className="w-full max-w-xs bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4 my-4">
+            <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-3 text-center">Your Login Credentials</p>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Phone</span>
+                <span className="text-sm font-mono font-medium">{credentials.phone}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Password</span>
+                <span className="text-sm font-mono font-medium">{credentials.password}</span>
+              </div>
+            </div>
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-3">
+              Save these before leaving this page. You can change your password after logging in.
+            </p>
+          </div>
+        )}
         <Link href="/login" className="uds-btn-primary px-8">
           Go to Login
         </Link>

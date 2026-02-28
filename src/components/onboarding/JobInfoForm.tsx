@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, Building, Users, Calendar, ChevronDown, FolderKanban } from "lucide-react";
+import { Briefcase, Building, Calendar, ChevronDown, FolderKanban } from "lucide-react";
 
 interface JobInfoFormProps {
   data: {
@@ -65,18 +65,6 @@ export default function JobInfoForm({ data, onChange }: JobInfoFormProps) {
           <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
         </div>
 
-        {/* Reporting Manager */}
-        <div className="relative">
-          <Users className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            value={data.reportingManager}
-            onChange={(e) => onChange("reportingManager", e.target.value)}
-            placeholder="Reporting Manager"
-            className="uds-input pl-10"
-          />
-        </div>
-
         {/* Joining Date */}
         <div className="relative">
           <Calendar className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
@@ -88,19 +76,16 @@ export default function JobInfoForm({ data, onChange }: JobInfoFormProps) {
           />
         </div>
 
-        {/* Role */}
+        {/* Role (always employee — admin can change later) */}
         <div className="relative">
           <Briefcase className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
-          <select
-            value={data.role}
-            onChange={(e) => onChange("role", e.target.value)}
-            className="uds-input pl-10 pr-10 appearance-none"
-          >
-            <option value="employee">Employee</option>
-            <option value="manager">Manager</option>
-            <option value="admin">Admin</option>
-          </select>
-          <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value="Employee"
+            disabled
+            className="uds-input pl-10 bg-gray-50 dark:bg-slate-800 text-gray-500 cursor-not-allowed"
+          />
+          <p className="text-[10px] text-gray-400 mt-1 pl-1">Role is assigned by admin after onboarding</p>
         </div>
       </div>
     </div>

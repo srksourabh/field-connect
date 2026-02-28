@@ -32,17 +32,19 @@ export default function PersonalDetailsForm({ data, onChange }: PersonalDetailsF
           />
         </div>
 
-        {/* Email */}
-        <div className="relative">
-          <Mail className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
-          <input
-            type="email"
-            value={data.email}
-            onChange={(e) => onChange("email", e.target.value)}
-            placeholder="Email Address *"
-            required
-            className="uds-input pl-10"
-          />
+        {/* Personal Email (not used for login — login uses phone number) */}
+        <div>
+          <div className="relative">
+            <Mail className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
+            <input
+              type="email"
+              value={data.email}
+              onChange={(e) => onChange("email", e.target.value)}
+              placeholder="Personal Email (optional)"
+              className="uds-input pl-10"
+            />
+          </div>
+          <p className="text-[10px] text-gray-400 mt-1 pl-1">For HR communications only. Login uses your phone number.</p>
         </div>
 
         {/* Phone */}
@@ -55,9 +57,14 @@ export default function PersonalDetailsForm({ data, onChange }: PersonalDetailsF
             <input
               type="tel"
               value={data.phone}
-              onChange={(e) => onChange("phone", e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                onChange("phone", val);
+              }}
               placeholder="Phone Number *"
               required
+              maxLength={10}
+              inputMode="numeric"
               className="uds-input pl-10"
             />
           </div>

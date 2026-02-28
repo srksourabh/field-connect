@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Polyline, CircleMarker, Popup } from "react-le
 import "leaflet/dist/leaflet.css";
 import type { HrLocationLog } from "@/lib/database.types";
 import { snapToRoads } from "@/lib/location-api";
+import { supabase } from "@/lib/supabase";
 
 interface RouteMapInnerProps {
   logs: HrLocationLog[];
@@ -20,12 +21,15 @@ export default function RouteMapInner({ logs }: RouteMapInnerProps) {
     let cancelled = false;
     setSnapping(true);
 
-    snapToRoads(rawPositions).then((snapped) => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const snapped = await snapToRoads(rawPositions, token);
       if (!cancelled) {
         setRoutePositions(snapped);
         setSnapping(false);
       }
-    });
+    })();
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
