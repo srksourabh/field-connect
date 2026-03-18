@@ -14,6 +14,7 @@ export interface MapEmployee {
   status: "online" | "away" | "on_leave" | "offline";
   punchedIn?: boolean;
   trail: { lat: number; lng: number }[];
+  lastSeen?: string;
 }
 
 interface AdminLeafletMapProps {
