@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Phone, MessageCircle } from "lucide-react";
+import { ChevronDown, Phone, MessageCircle, Clock } from "lucide-react";
 
 interface OrgNodeData {
   id: string;
@@ -11,6 +11,8 @@ interface OrgNodeData {
   avatar?: string;
   phone?: string;
   status: "online" | "away" | "offline";
+  punchInTime?: string | null;
+  todayStatus?: string | null;
   children?: OrgNodeData[];
 }
 
@@ -82,6 +84,36 @@ export default function OrgNode({ node, isRoot = false, onSelect }: OrgNodeProps
             </button>
           )}
         </div>
+        {/* Today's Attendance Info */}
+        {(node.punchInTime || node.todayStatus) && (
+          <div className="flex items-center gap-2 mt-2 text-xs">
+            {node.punchInTime && (
+              <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                <Clock className="w-3 h-3" />
+                {node.punchInTime}
+              </span>
+            )}
+            {node.todayStatus && (
+              <span className={cn(
+                "px-1.5 py-0.5 rounded-full font-medium capitalize",
+                node.todayStatus === "present" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                node.todayStatus === "late" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
+                node.todayStatus === "half-day" ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" :
+                node.todayStatus === "on-leave" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
+                "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+              )}>
+                {node.todayStatus}
+              </span>
+            )}
+            {!node.punchInTime && !node.todayStatus?.includes("leave") && (
+              <span className="text-gray-400">Not punched in</span>
+            )}
+          </div>
+        )}
+        {!node.punchInTime && !node.todayStatus && (
+          <p className="text-xs text-gray-400 mt-2">Not punched in today</p>
+        )}
+
         {/* Action buttons */}
         <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
           {node.phone ? (

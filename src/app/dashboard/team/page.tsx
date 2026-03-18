@@ -92,7 +92,7 @@ export default function TeamPage() {
         const [{ data: todayAttendance }, { data: todayLocations }] = await Promise.all([
           supabase
             .from("hr_attendance")
-            .select("user_id, punch_out_at")
+            .select("user_id, punch_in_at, punch_out_at, status")
             .in("user_id", employeeIds)
             .gte("created_at", todayStartIST),
           supabase
@@ -106,8 +106,22 @@ export default function TeamPage() {
         // Build status lookup: open session = online/away, closed session = offline
         const statusMap = new Map<string, "online" | "away" | "offline">();
         const openSessionUsers = new Set<string>();
+        const punchInTimeMap = new Map<string, string>();
+        const todayStatusMap = new Map<string, string>();
+
         for (const a of (todayAttendance || [])) {
           if (!a.punch_out_at) openSessionUsers.add(a.user_id);
+          // Track earliest punch-in time per user
+          if (a.punch_in_at && !punchInTimeMap.has(a.user_id)) {
+            punchInTimeMap.set(a.user_id, new Date(a.punch_in_at).toLocaleTimeString("en-IN", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+              timeZone: "Asia/Kolkata",
+            }));
+          }
+          // Track attendance status
+          if (a.status) todayStatusMap.set(a.user_id, a.status);
         }
 
         // Latest location log per user
@@ -170,6 +184,8 @@ export default function TeamPage() {
             designation: profile.designation || "Employee",
             phone: profile.phone || undefined,
             status: statusMap.get(profile.id) || "offline",
+            punchInTime: punchInTimeMap.get(profile.id) || null,
+            todayStatus: todayStatusMap.get(profile.id) || null,
             children: children.length > 0 ? children.map(buildNode) : undefined,
           };
         };
