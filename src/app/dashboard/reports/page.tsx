@@ -11,7 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { toISTDateStr, todayIST } from "@/lib/utils";
 
-type ReportType = "attendance" | "monthly" | "employee" | "project";
+type ReportType = "attendance" | "monthly" | "employee" | "project" | "leave";
 type ReportStatus = "present" | "absent" | "late" | "half-day" | "on-leave" | "holiday" | "lwp";
 
 interface ReportRow {
@@ -63,11 +63,24 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", timeZone: "Asia/Kolkata" });
 }
 
+interface LeaveReportRow {
+  name: string;
+  project: string;
+  department: string;
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason: string;
+  status: string;
+}
+
 const reportTabs: { key: ReportType; label: string }[] = [
   { key: "attendance", label: "Attendance" },
   { key: "monthly", label: "Monthly Summary" },
   { key: "employee", label: "Employee" },
   { key: "project", label: "Project Summary" },
+  { key: "leave", label: "Leave Report" },
 ];
 
 export default function ReportsPage() {
@@ -88,6 +101,7 @@ export default function ReportsPage() {
   // Results
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [summaryRows, setSummaryRows] = useState<MonthlySummaryRow[]>([]);
+  const [leaveRows, setLeaveRows] = useState<LeaveReportRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -327,6 +341,63 @@ export default function ReportsPage() {
     }).sort((a, b) => a.name.localeCompare(b.name));
   }, [fetchAttendanceData, project, startDate, endDate]);
 
+  // Leave Report
+  const fetchLeaveReport = useCallback(async (): Promise<LeaveReportRow[]> => {
+    // Fetch leave requests with profile info
+    let profilesQuery = supabase
+      .from("hr_profiles")
+      .select("id, full_name, project_id, department")
+      .is("deactivated_at", null);
+
+    if (project) profilesQuery = profilesQuery.eq("project_id", project);
+    if (department) profilesQuery = profilesQuery.eq("department", department);
+
+    const { data: profiles } = await profilesQuery;
+    if (!profiles || profiles.length === 0) return [];
+
+    const profileMap = new Map(profiles.map((p) => [p.id, p]));
+    const userIds = profiles.map((p) => p.id);
+
+    const { data: requests } = await supabase
+      .from("hr_leave_requests")
+      .select("user_id, type, start_date, end_date, reason, status")
+      .in("user_id", userIds)
+      .gte("start_date", startDate)
+      .lte("start_date", endDate)
+      .order("start_date", { ascending: false })
+      .limit(500);
+    if (!requests || requests.length === 0) return [];
+
+    return requests.map((req) => {
+      const prof = profileMap.get(req.user_id);
+      const days = Math.round(
+        (Date.UTC(...req.end_date.split("-").map(Number) as [number, number, number]) -
+          Date.UTC(...req.start_date.split("-").map(Number) as [number, number, number])) /
+          (1000 * 60 * 60 * 24)
+      ) + 1;
+
+      const typeLabels: Record<string, string> = {
+        sick: "Sick Leave",
+        casual: "Casual Leave",
+        privilege: "Privilege Leave",
+        compoff: "Comp-Off",
+        wfh: "Work From Home",
+      };
+
+      return {
+        name: prof?.full_name || "Unknown",
+        project: prof?.project_id || "--",
+        department: prof?.department || "--",
+        leaveType: typeLabels[req.type] || req.type,
+        startDate: formatDate(req.start_date),
+        endDate: formatDate(req.end_date),
+        days,
+        reason: req.reason || "--",
+        status: req.status,
+      };
+    });
+  }, [project, department, startDate, endDate]);
+
   // Generate report
   const handlePreview = async () => {
     setLoading(true);
@@ -351,6 +422,13 @@ export default function ReportsPage() {
         const result = await fetchProjectSummary();
         setSummaryRows(result);
         setRows([]);
+        setLeaveRows([]);
+        setTotalCount(result.length);
+      } else if (reportType === "leave") {
+        const result = await fetchLeaveReport();
+        setLeaveRows(result);
+        setRows([]);
+        setSummaryRows([]);
         setTotalCount(result.length);
       }
       setShowPreview(true);
@@ -362,7 +440,17 @@ export default function ReportsPage() {
   const handleDownload = async () => {
     setLoading(true);
     try {
-      if (reportType === "attendance" || reportType === "employee") {
+      if (reportType === "leave") {
+        const result = await fetchLeaveReport();
+        setLeaveRows(result);
+        setTotalCount(result.length);
+        setShowPreview(true);
+        exportToCsv(
+          `leave-report-${startDate}-to-${endDate}.csv`,
+          ["Employee", "Project", "Department", "Leave Type", "Start Date", "End Date", "Days", "Reason", "Status"],
+          result.map((r) => [r.name, r.project, r.department, r.leaveType, r.startDate, r.endDate, String(r.days), r.reason, r.status])
+        );
+      } else if (reportType === "attendance" || reportType === "employee") {
         const result = reportType === "attendance" ? await fetchAttendanceReport() : await fetchEmployeeReport();
         setRows(result);
         setTotalCount(result.length);
@@ -537,6 +625,17 @@ export default function ReportsPage() {
                 </div>
               )
             )}
+
+            {/* Leave report table */}
+            {reportType === "leave" && (
+              leaveRows.length > 0 ? (
+                <LeaveTable rows={leaveRows} total={totalCount} />
+              ) : (
+                <div className="text-center py-8 text-sm text-gray-400">
+                  No leave requests found for the selected range.
+                </div>
+              )
+            )}
           </>
         )}
       </div>
@@ -578,6 +677,60 @@ function SummaryTable({ rows, total }: { rows: MonthlySummaryRow[]; total: numbe
                 <td className="py-3 px-3 whitespace-nowrap">{row.totalHours}</td>
                 <td className="py-3 px-3 whitespace-nowrap">{row.avgHoursPerDay}</td>
                 <td className="py-3 px-3 whitespace-nowrap text-gray-500">{row.totalDistanceKm}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function LeaveTable({ rows, total }: { rows: LeaveReportRow[]; total: number }) {
+  const statusColors: Record<string, string> = {
+    pending: "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400",
+    approved: "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400",
+    rejected: "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400",
+    withdrawn: "text-gray-500 bg-gray-50 dark:bg-gray-800 dark:text-gray-400",
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
+      <div className="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700/50">
+        <h3 className="text-sm font-semibold">Leave Report</h3>
+        <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+          {rows.length} of {total}
+        </span>
+      </div>
+      <div className="overflow-x-auto no-scrollbar">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 dark:bg-slate-900 text-xs text-gray-500 dark:text-gray-400">
+              <th className="text-left py-3 px-4 font-medium whitespace-nowrap">Employee</th>
+              <th className="text-left py-3 px-3 font-medium whitespace-nowrap">Project</th>
+              <th className="text-left py-3 px-3 font-medium whitespace-nowrap">Type</th>
+              <th className="text-left py-3 px-3 font-medium whitespace-nowrap">From</th>
+              <th className="text-left py-3 px-3 font-medium whitespace-nowrap">To</th>
+              <th className="text-center py-3 px-3 font-medium whitespace-nowrap">Days</th>
+              <th className="text-left py-3 px-3 font-medium whitespace-nowrap">Status</th>
+              <th className="text-left py-3 px-3 font-medium whitespace-nowrap">Reason</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+            {rows.map((row, idx) => (
+              <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <td className="py-3 px-4 font-medium whitespace-nowrap">{row.name}</td>
+                <td className="py-3 px-3 whitespace-nowrap text-gray-500">{row.project}</td>
+                <td className="py-3 px-3 whitespace-nowrap">{row.leaveType}</td>
+                <td className="py-3 px-3 whitespace-nowrap">{row.startDate}</td>
+                <td className="py-3 px-3 whitespace-nowrap">{row.endDate}</td>
+                <td className="py-3 px-3 text-center">{row.days}</td>
+                <td className="py-3 px-3">
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${statusColors[row.status] || ""}`}>
+                    {row.status}
+                  </span>
+                </td>
+                <td className="py-3 px-3 text-gray-500 max-w-[200px] truncate">{row.reason}</td>
               </tr>
             ))}
           </tbody>
