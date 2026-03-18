@@ -5,8 +5,6 @@ import { ChevronDown, Send, Calendar } from "lucide-react";
 
 interface RectificationFormProps {
   attendanceDate?: string;
-  originalPunchIn?: string;
-  originalPunchOut?: string;
   onSubmit: (data: {
     rectificationType: string;
     attendanceDate: string;
@@ -28,16 +26,12 @@ const rectificationTypes = [
 
 export default function RectificationForm({
   attendanceDate = "",
-  originalPunchIn = "",
-  originalPunchOut = "",
   onSubmit,
   onCancel,
   submitting = false,
 }: RectificationFormProps) {
   const [rectificationType, setRectificationType] = useState("missed_punch_in");
   const [date, setDate] = useState(attendanceDate);
-  const [correctedPunchIn, setCorrectedPunchIn] = useState("");
-  const [correctedPunchOut, setCorrectedPunchOut] = useState("");
   const [correctedStatus, setCorrectedStatus] = useState("present");
   const [reason, setReason] = useState("");
 
@@ -46,15 +40,12 @@ export default function RectificationForm({
     onSubmit({
       rectificationType,
       attendanceDate: date,
-      correctedPunchIn,
-      correctedPunchOut,
+      correctedPunchIn: "",
+      correctedPunchOut: "",
       correctedStatus,
       reason,
     });
   };
-
-  const showPunchIn = rectificationType !== "missed_punch_out";
-  const showPunchOut = rectificationType !== "missed_punch_in";
 
   return (
     <section className="px-6">
@@ -101,59 +92,6 @@ export default function RectificationForm({
           </div>
         </div>
 
-        {/* Original Values (read-only) */}
-        {(originalPunchIn || originalPunchOut) && (
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">
-              Currently Recorded
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              {originalPunchIn && (
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Punch In</p>
-                  <p className="text-sm font-medium">{originalPunchIn}</p>
-                </div>
-              )}
-              {originalPunchOut && (
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Punch Out</p>
-                  <p className="text-sm font-medium">{originalPunchOut}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Corrected Times */}
-        <div className="grid grid-cols-2 gap-4">
-          {showPunchIn && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Correct Punch In
-              </label>
-              <input
-                type="time"
-                value={correctedPunchIn}
-                onChange={(e) => setCorrectedPunchIn(e.target.value)}
-                className="w-full bg-white dark:bg-[#1c2a36] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg pl-3 pr-2 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm dark:[color-scheme:dark]"
-              />
-            </div>
-          )}
-          {showPunchOut && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Correct Punch Out
-              </label>
-              <input
-                type="time"
-                value={correctedPunchOut}
-                onChange={(e) => setCorrectedPunchOut(e.target.value)}
-                className="w-full bg-white dark:bg-[#1c2a36] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg pl-3 pr-2 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm dark:[color-scheme:dark]"
-              />
-            </div>
-          )}
-        </div>
-
         {/* Corrected Status */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -165,8 +103,7 @@ export default function RectificationForm({
               onChange={(e) => setCorrectedStatus(e.target.value)}
               className="w-full bg-white dark:bg-[#1c2a36] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg pl-4 pr-10 py-3 appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
             >
-              <option value="present">Present</option>
-              <option value="late">Late</option>
+              <option value="present">Present (Full Day)</option>
               <option value="half-day">Half Day</option>
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500 dark:text-gray-400">

@@ -80,7 +80,7 @@ export default function LeavePage() {
     setSubmitting(true);
     setSuccess(false);
 
-    const typeKey = data.type as "sick" | "casual" | "compoff" | "privilege";
+    const typeKey = data.type as "sick" | "casual" | "compoff" | "privilege" | "wfh";
     const insertPayload = {
       user_id: user.id,
       type: typeKey,
@@ -124,8 +124,8 @@ export default function LeavePage() {
       return;
     }
 
-    // Online path — validate balance
-    if (balance) {
+    // Online path — validate balance (skip for WFH — no balance consumed)
+    if (balance && typeKey !== "wfh") {
       const totalKeyMap: Record<string, string> = {
         sick: "sick_leave_total", casual: "casual_leave_total",
         privilege: "privilege_leave_total", compoff: "compoff_total",

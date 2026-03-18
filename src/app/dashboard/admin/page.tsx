@@ -13,6 +13,7 @@ import {
   X,
   Save,
   UserPlus,
+  Download,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
@@ -20,6 +21,7 @@ import { supabase } from "@/lib/supabase";
 import { showConfirm } from "@/components/ui/Dialog";
 import { showToast } from "@/components/ui/Toast";
 import { useMasterData } from "@/hooks/useMasterData";
+import { exportToCsv } from "@/lib/csv-export";
 import type { HrProfile } from "@/lib/database.types";
 
 interface ManagerOption {
@@ -234,6 +236,71 @@ export default function EmployeeManagementPage() {
     setActionLoading(null);
   };
 
+  const handleDownloadEmployees = () => {
+    const rows = filteredProfiles.map((p) => [
+      p.full_name,
+      p.phone || "",
+      p.email || "",
+      p.designation || "",
+      p.department || "",
+      p.project_id || "",
+      p.role,
+      p.reporting_manager_id ? (managers.find((m) => m.id === p.reporting_manager_id)?.full_name || p.reporting_manager_id) : "",
+      p.deactivated_at ? "Deactivated" : "Active",
+    ]);
+    exportToCsv(
+      `employee-list-${new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })}.csv`,
+      ["Name", "Phone", "Email", "Designation", "Department", "Project", "Role", "Reporting Manager", "Status"],
+      rows
+    );
+  };
+
+  const [pendingPunchLoading, setPendingPunchLoading] = useState(false);
+  const handleDownloadPendingPunch = async () => {
+    setPendingPunchLoading(true);
+    try {
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      const todayIST = `${today}T00:00:00+05:30`;
+
+      // Get today's attendance
+      const { data: attendance } = await supabase
+        .from("hr_attendance")
+        .select("user_id")
+        .gte("punch_in_at", todayIST);
+
+      const punchedInIds = new Set((attendance || []).map((a) => a.user_id));
+
+      // Active employees who haven't punched in
+      const pendingProfiles = profiles
+        .filter((p) => !p.deactivated_at && !punchedInIds.has(p.id));
+
+      if (pendingProfiles.length === 0) {
+        showToast("All employees have punched in today!", "success");
+        return;
+      }
+
+      const rows = pendingProfiles.map((p) => [
+        p.full_name,
+        p.phone || "",
+        p.designation || "",
+        p.department || "",
+        p.project_id || "",
+      ]);
+
+      exportToCsv(
+        `pending-punch-in-${today}.csv`,
+        ["Name", "Phone", "Designation", "Department", "Project"],
+        rows
+      );
+
+      showToast(`${pendingProfiles.length} employees pending punch-in downloaded.`, "success");
+    } catch {
+      showToast("Failed to generate report.", "error");
+    } finally {
+      setPendingPunchLoading(false);
+    }
+  };
+
   // Guard
   if (profile && !["admin", "super_admin"].includes(profile.role)) {
     return (
@@ -290,6 +357,25 @@ export default function EmployeeManagementPage() {
         <span className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-medium">
           {counts.employees} employees
         </span>
+      </div>
+
+      {/* Download Buttons */}
+      <div className="px-6 pt-3 flex gap-2">
+        <button
+          onClick={handleDownloadEmployees}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+        >
+          <Download className="w-3.5 h-3.5" />
+          Download Employee List
+        </button>
+        <button
+          onClick={handleDownloadPendingPunch}
+          disabled={pendingPunchLoading}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-xs font-medium hover:bg-amber-200 dark:hover:bg-amber-900/30 transition-colors disabled:opacity-50"
+        >
+          {pendingPunchLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+          Pending Punch-In
+        </button>
       </div>
 
       {/* Filters */}

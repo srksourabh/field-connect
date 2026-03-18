@@ -126,6 +126,7 @@ export default function LeaveApplicationForm({ onSubmit, submitting, privilegeEn
               <option value="sick">Sick Leave</option>
               {privilegeEnabled && <option value="privilege">Privilege Leave</option>}
               <option value="compoff">Comp-Off</option>
+              <option value="wfh">Work From Home</option>
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500 dark:text-gray-400">
               <ChevronDown className="w-5 h-5" />

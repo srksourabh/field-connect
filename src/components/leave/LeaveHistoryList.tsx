@@ -10,6 +10,7 @@ const typeLabels: Record<string, string> = {
   sick: "SL",
   privilege: "PL",
   compoff: "CO",
+  wfh: "WFH",
 };
 
 const typeBg: Record<string, string> = {
@@ -17,6 +18,7 @@ const typeBg: Record<string, string> = {
   sick: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
   privilege: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
   compoff: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300",
+  wfh: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300",
 };
 
 const statusBadge: Record<string, string> = {

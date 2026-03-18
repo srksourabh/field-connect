@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Eye, EyeOff, Phone, Lock, X, Mail, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Phone, Lock, X, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import PWAInstallPrompt from "@/components/ui/PWAInstallPrompt";
@@ -251,10 +251,9 @@ export default function LoginPage() {
 }
 
 function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
-  const [step, setStep] = useState<"phone" | "email" | "success" | "error">("phone");
+  const [step, setStep] = useState<"phone" | "confirm" | "success">("phone");
   const [phone, setPhone] = useState("");
-  const [maskedEmail, setMaskedEmail] = useState("");
-  const [email, setEmail] = useState("");
+  const [maskedName, setMaskedName] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -277,17 +276,12 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
       const data = await res.json();
 
       if (!res.ok) {
-        if (res.status === 400 && data.error?.includes("No email")) {
-          setErrorMsg(data.error);
-          setStep("error");
-        } else {
-          setErrorMsg(data.error || "Something went wrong");
-        }
+        setErrorMsg(data.error || "Something went wrong");
         return;
       }
 
-      setMaskedEmail(data.masked_email);
-      setStep("email");
+      setMaskedName(data.masked_name);
+      setStep("confirm");
     } catch {
       setErrorMsg("Network error. Please check your connection and try again.");
     } finally {
@@ -295,21 +289,15 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleReset = async () => {
     setErrorMsg("");
-    if (!email.trim()) {
-      setErrorMsg("Please enter your email");
-      return;
-    }
-
     setLoading(true);
     const cleanPhone = phone.replace(/\D/g, "");
     try {
       const res = await fetch("/api/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: cleanPhone, email: email.trim(), step: "verify" }),
+        body: JSON.stringify({ phone: cleanPhone, step: "reset" }),
       });
       const data = await res.json();
 
@@ -331,7 +319,7 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
       <div className="w-full max-w-sm bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            {step === "email" && (
+            {step === "confirm" && (
               <button onClick={() => { setStep("phone"); setErrorMsg(""); }} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
                 <ArrowLeft className="w-4 h-4 text-gray-500" />
               </button>
@@ -372,34 +360,26 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
           </form>
         )}
 
-        {step === "email" && (
-          <form onSubmit={handleVerify} className="space-y-4">
+        {step === "confirm" && (
+          <div className="space-y-4">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              To verify your identity, enter the email registered with your account.
+              We found an account. Is this you?
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
-              Hint: {maskedEmail}
+            <p className="text-sm font-medium bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2.5 text-center">
+              {maskedName}
             </p>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                autoFocus
-              />
-            </div>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Your password will be reset to the default: first 4 letters of your name (lowercase) + last 4 digits of your phone.
+            </p>
             {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}
             <button
-              type="submit"
-              disabled={loading || !email.trim()}
+              onClick={handleReset}
+              disabled={loading}
               className="w-full py-3 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
             >
-              {loading ? "Resetting..." : "Reset Password"}
+              {loading ? "Resetting..." : "Yes, Reset My Password"}
             </button>
-          </form>
+          </div>
         )}
 
         {step === "success" && (
@@ -409,25 +389,13 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
             </div>
             <p className="text-sm font-medium text-green-600">Password reset successfully!</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Your password has been reset. Please use the credentials provided during onboarding or contact your admin.
+              Your password is now: first 4 letters of your name (lowercase) + last 4 digits of your phone number. You can change it from your profile after logging in.
             </p>
             <button
               onClick={onClose}
               className="w-full py-3 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary/90 transition-colors"
             >
               Back to Login
-            </button>
-          </div>
-        )}
-
-        {step === "error" && (
-          <div className="text-center py-4 space-y-3">
-            <p className="text-sm text-gray-600 dark:text-gray-300">{errorMsg}</p>
-            <button
-              onClick={onClose}
-              className="w-full py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              Close
             </button>
           </div>
         )}

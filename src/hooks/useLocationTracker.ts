@@ -5,43 +5,71 @@ import { insertLocationLog } from "@/lib/location-api";
 import { addToQueue } from "@/lib/sync-queue";
 import { todayIST, logError } from "@/lib/utils";
 
-// Scheduled capture times (HH:MM in 24h)
-const SCHEDULE = ["09:30", "10:00", "13:00", "16:00", "19:00"];
-const TOLERANCE_MINUTES = 5;
+// Continuous capture interval (15 minutes) while punched in
+const CAPTURE_INTERVAL_MS = 15 * 60 * 1000;
 
 function todayKey(): string {
   return `uds_location_captured_${todayIST()}`;
 }
 
-function getCapturedSlots(): Set<string> {
+function getLastCaptureTime(): number {
   try {
-    const stored = localStorage.getItem(todayKey());
-    return stored ? new Set(JSON.parse(stored)) : new Set();
+    const stored = localStorage.getItem(`${todayKey()}_last`);
+    return stored ? parseInt(stored, 10) : 0;
   } catch {
-    return new Set();
+    return 0;
   }
 }
 
-function markSlotCaptured(slot: string) {
-  const captured = getCapturedSlots();
-  captured.add(slot);
-  localStorage.setItem(todayKey(), JSON.stringify(Array.from(captured)));
+function setLastCaptureTime(time: number) {
+  localStorage.setItem(`${todayKey()}_last`, String(time));
 }
 
-function isWithinSchedule(now: Date): string | null {
-  // Use IST time regardless of device timezone
-  const istStr = now.toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false });
-  const [hh, mm] = istStr.split(":").map(Number);
-  const nowMinutes = hh * 60 + mm;
+function captureLocation(
+  userId: string,
+  attendanceId: string | null | undefined,
+  isOnline: boolean | undefined
+) {
+  if (!navigator.geolocation) return;
 
-  for (const slot of SCHEDULE) {
-    const [sh, sm] = slot.split(":").map(Number);
-    const slotMinutes = sh * 60 + sm;
-    if (Math.abs(nowMinutes - slotMinutes) <= TOLERANCE_MINUTES) {
-      return slot;
-    }
-  }
-  return null;
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const { latitude, longitude } = position.coords;
+
+      if (isOnline !== false) {
+        try {
+          await insertLocationLog({
+            user_id: userId,
+            attendance_id: attendanceId ?? null,
+            lat: latitude,
+            long: longitude,
+            source: "scheduled",
+          });
+          setLastCaptureTime(Date.now());
+        } catch (e) {
+          logError("Location log failed:", e);
+        }
+      } else {
+        addToQueue({
+          id: crypto.randomUUID(),
+          type: "location_log",
+          payload: {
+            user_id: userId,
+            attendance_id: attendanceId ?? null,
+            lat: latitude,
+            long: longitude,
+            source: "scheduled",
+          },
+          timestamp: new Date().toISOString(),
+        });
+        setLastCaptureTime(Date.now());
+      }
+    },
+    (err) => {
+      logError("Location capture failed:", err.message);
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
 }
 
 export function useLocationTracker(
@@ -61,60 +89,19 @@ export function useLocationTracker(
       return;
     }
 
-    // Check every 60 seconds if we're within a scheduled capture window
+    // Capture every 15 minutes while punched in
     const check = () => {
-      const now = new Date();
-      const slot = isWithinSchedule(now);
-      if (!slot) return;
+      const lastCapture = getLastCaptureTime();
+      const elapsed = Date.now() - lastCapture;
 
-      const captured = getCapturedSlots();
-      if (captured.has(slot)) return;
-
-      if (!navigator.geolocation) return;
-
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-
-          if (isOnline !== false) {
-            try {
-              await insertLocationLog({
-                user_id: userId,
-                attendance_id: attendanceId ?? null,
-                lat: latitude,
-                long: longitude,
-                source: "scheduled",
-              });
-              markSlotCaptured(slot); // Only mark after successful persist
-            } catch (e) {
-              logError("Scheduled location log failed:", e);
-              // Don't mark slot — will retry next interval
-            }
-          } else {
-            addToQueue({
-              id: crypto.randomUUID(),
-              type: "location_log",
-              payload: {
-                user_id: userId,
-                attendance_id: attendanceId ?? null,
-                lat: latitude,
-                long: longitude,
-                source: "scheduled",
-              },
-              timestamp: now.toISOString(),
-            });
-            markSlotCaptured(slot); // Queue is synchronous — safe to mark
-          }
-        },
-        (err) => {
-          logError("Scheduled location capture failed:", err.message);
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
+      // Only capture if at least 15 minutes since last capture
+      if (elapsed >= CAPTURE_INTERVAL_MS) {
+        captureLocation(userId, attendanceId, isOnline);
+      }
     };
 
-    // Check immediately on mount, then every 60s
-    check();
+    // Capture immediately on punch-in, then check every 60s
+    captureLocation(userId, attendanceId, isOnline);
     intervalRef.current = setInterval(check, 60_000);
 
     return () => {

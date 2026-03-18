@@ -108,7 +108,7 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
-          type: "sick" | "casual" | "compoff" | "privilege";
+          type: "sick" | "casual" | "compoff" | "privilege" | "wfh";
           start_date: string;
           end_date: string;
           reason: string | null;
@@ -122,7 +122,7 @@ export type Database = {
         Insert: {
           id?: string;
           user_id: string;
-          type: "sick" | "casual" | "compoff" | "privilege";
+          type: "sick" | "casual" | "compoff" | "privilege" | "wfh";
           start_date: string;
           end_date: string;
           reason?: string | null;

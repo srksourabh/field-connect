@@ -7,7 +7,7 @@ interface LeaveRequestCardProps {
   request: {
     id: string;
     employeeName: string;
-    type: "sick" | "casual" | "compoff" | "privilege";
+    type: "sick" | "casual" | "compoff" | "privilege" | "wfh";
     startDate: string;
     endDate: string;
     reason: string;
@@ -25,6 +25,7 @@ const typeStyles: Record<string, { label: string; bg: string; text: string }> = 
   casual: { label: "Casual Leave", bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-800 dark:text-blue-400" },
   privilege: { label: "Privilege Leave", bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-800 dark:text-purple-400" },
   compoff: { label: "Comp-Off", bg: "bg-teal-100 dark:bg-teal-900/30", text: "text-teal-800 dark:text-teal-400" },
+  wfh: { label: "Work From Home", bg: "bg-indigo-100 dark:bg-indigo-900/30", text: "text-indigo-800 dark:text-indigo-400" },
 };
 
 export default function LeaveRequestCard({ request, onApprove, onReject, actionLoadingId }: LeaveRequestCardProps) {

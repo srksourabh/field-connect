@@ -29,19 +29,6 @@ const typeStyles = {
   other: { label: "Other", bg: "bg-gray-100 dark:bg-gray-700/50", text: "text-gray-800 dark:text-gray-300" },
 };
 
-function formatTime(value: string | null): string {
-  if (!value) return "—";
-  // Handle both ISO timestamps and HH:MM time strings
-  if (value.includes("T")) {
-    return new Date(value).toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-  }
-  return value;
-}
-
 export default function RectificationRequestCard({
   request,
   onApprove,
@@ -89,34 +76,15 @@ export default function RectificationRequestCard({
         Date: <span className="font-medium text-gray-700 dark:text-gray-200">{request.attendanceDate}</span>
       </div>
 
-      {/* Before vs After */}
-      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 mb-3">
-        <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Before</p>
-            <p className="text-xs">
-              <span className="text-gray-500 dark:text-gray-400">In:</span>{" "}
-              <span className="font-medium">{formatTime(request.originalPunchIn)}</span>
-            </p>
-            <p className="text-xs">
-              <span className="text-gray-500 dark:text-gray-400">Out:</span>{" "}
-              <span className="font-medium">{formatTime(request.originalPunchOut)}</span>
-            </p>
-          </div>
-          <div className="text-gray-300 dark:text-gray-600 text-lg px-1">→</div>
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-primary mb-1">After</p>
-            <p className="text-xs">
-              <span className="text-gray-500 dark:text-gray-400">In:</span>{" "}
-              <span className="font-medium text-primary">{formatTime(request.correctedPunchIn)}</span>
-            </p>
-            <p className="text-xs">
-              <span className="text-gray-500 dark:text-gray-400">Out:</span>{" "}
-              <span className="font-medium text-primary">{formatTime(request.correctedPunchOut)}</span>
-            </p>
-          </div>
+      {/* Corrected Status */}
+      {request.correctedStatus && (
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 mb-3">
+          <p className="text-xs">
+            <span className="text-gray-500 dark:text-gray-400">Requested Status:</span>{" "}
+            <span className="font-medium text-primary capitalize">{request.correctedStatus === "half-day" ? "Half Day" : "Present (Full Day)"}</span>
+          </p>
         </div>
-      </div>
+      )}
 
       {/* Reason */}
       <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">

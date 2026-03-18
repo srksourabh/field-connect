@@ -177,7 +177,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Insert on-leave attendance records
+  // Insert attendance records (on-leave for regular leave, present for WFH)
+  const isWfh = request.type === "wfh";
   const leaveStart = new Date(request.start_date);
   const leaveEnd = new Date(request.end_date);
   for (let d = new Date(leaveStart); d <= leaveEnd; d.setDate(d.getDate() + 1)) {
@@ -197,7 +198,7 @@ export async function POST(req: NextRequest) {
         user_id: request.user_id,
         created_at: istTimestamp,
         punch_in_at: istTimestamp,
-        status: "on-leave",
+        status: isWfh ? "present" : "on-leave",
         synced: true,
       });
     }
