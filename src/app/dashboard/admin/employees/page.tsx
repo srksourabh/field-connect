@@ -16,7 +16,7 @@ export default function AddEmployeePage() {
   const { profile, session } = useAuth();
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const email = phone ? `${phone.replace(/\D/g, "")}@uds.hr` : "";
+  const authEmail = phone ? `${phone.replace(/\D/g, "")}@uds.hr` : "";
   const [designation, setDesignation] = useState("");
   const [department, setDepartment] = useState("");
   const [project, setProject] = useState("");
@@ -63,7 +63,7 @@ export default function AddEmployeePage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ fullName, email, phone, designation, department, project, role, reportingManagerId: reportingManagerId || null }),
+        body: JSON.stringify({ fullName, email: authEmail, phone, designation, department, project, role, reportingManagerId: reportingManagerId || null }),
       });
       const data = await res.json();
 
@@ -134,9 +134,6 @@ export default function AddEmployeePage() {
             placeholder="e.g. 8210331886"
             className="w-full px-4 py-3 rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
-          {email && (
-            <p className="text-xs text-gray-400 mt-1">Login email: {email}</p>
-          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">

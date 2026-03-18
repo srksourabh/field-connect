@@ -110,7 +110,7 @@ export default function EmployeeInfoCard({ employee, onClose }: EmployeeInfoCard
                 Call
               </a>
             )}
-            {employee.email && (
+            {employee.email && !employee.email.endsWith("@uds.hr") && (
               <a
                 href={`mailto:${employee.email}`}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
@@ -180,7 +180,7 @@ export default function EmployeeInfoCard({ employee, onClose }: EmployeeInfoCard
                 <span className="text-sm">{employee.phone}</span>
               </a>
             )}
-            {employee.email && (
+            {employee.email && !employee.email.endsWith("@uds.hr") && (
               <a
                 href={`mailto:${employee.email}`}
                 className="flex items-center gap-3 w-full p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"

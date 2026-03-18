@@ -240,7 +240,7 @@ export default function EmployeeManagementPage() {
     const rows = filteredProfiles.map((p) => [
       p.full_name,
       p.phone || "",
-      p.email || "",
+      (p.email && !p.email.endsWith("@uds.hr")) ? p.email : "",
       p.designation || "",
       p.department || "",
       p.project_id || "",

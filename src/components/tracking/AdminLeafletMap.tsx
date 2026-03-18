@@ -85,7 +85,7 @@ export default function AdminLeafletMap({ employees, onSelectEmployee }: AdminLe
                   <a href={`tel:${emp.phone}`} className="text-blue-600 underline">{emp.phone}</a>
                 </p>
               )}
-              {emp.email && (
+              {emp.email && !emp.email.endsWith("@uds.hr") && (
                 <p className="text-xs">
                   <a href={`mailto:${emp.email}`} className="text-blue-600 underline">{emp.email}</a>
                 </p>
