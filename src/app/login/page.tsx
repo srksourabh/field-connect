@@ -119,7 +119,7 @@ export default function LoginPage() {
             </div>
           </div>
           <h1 className="text-white text-2xl font-bold tracking-tight mt-4">
-            Field Connect <span className="text-blue-400">HR</span> <span className="text-xs font-medium text-blue-300/70">(Beta)</span>
+            Field Connect <span className="text-blue-400">HR</span>
           </h1>
           <p className="text-white/70 text-sm mt-1">
             Workforce management, reimagined

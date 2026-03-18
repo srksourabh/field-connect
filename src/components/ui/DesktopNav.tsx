@@ -65,8 +65,7 @@ export default function DesktopNav() {
         <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-primary to-blue-500 flex items-center justify-center">
           <span className="text-white font-bold text-sm">U</span>
         </div>
-        <span className="text-lg font-bold">UDS HR</span>
-        <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">Beta</span>
+        <span className="text-lg font-bold">Field Connect HR</span>
       </Link>
 
       {/* Nav links */}
