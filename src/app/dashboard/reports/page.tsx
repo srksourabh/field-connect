@@ -40,6 +40,16 @@ interface EmployeeOption {
   full_name: string;
 }
 
+interface MonthlyGridRow {
+  name: string;
+  project: string;
+  userId: string;
+  days: Record<number, { status: string; punchIn: string | null; punchOut: string | null; hours: string }>;
+  totalPresent: number;
+  totalAbsent: number;
+  totalLeave: number;
+}
+
 function formatTime(iso: string | null): string {
   if (!iso) return "--";
   return new Date(iso).toLocaleTimeString("en-IN", {
@@ -102,8 +112,10 @@ export default function ReportsPage() {
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [summaryRows, setSummaryRows] = useState<MonthlySummaryRow[]>([]);
   const [leaveRows, setLeaveRows] = useState<LeaveReportRow[]>([]);
+  const [monthlyGrid, setMonthlyGrid] = useState<MonthlyGridRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
+  const [dayDetail, setDayDetail] = useState<{ name: string; date: string; punchIn: string; punchOut: string; hours: string; status: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Fetch employee list scoped by user's role/project
@@ -237,33 +249,69 @@ export default function ReportsPage() {
     }));
   }, [fetchAttendanceData, project, department, startDate, endDate]);
 
-  // Monthly Summary
+  // Monthly Summary — builds both summary rows AND day-by-day grid
   const fetchMonthlySummary = useCallback(async (): Promise<MonthlySummaryRow[]> => {
     const [year, month] = selectedMonth.split("-");
     const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
     const mStart = `${selectedMonth}-01`;
     const mEnd = `${selectedMonth}-${String(daysInMonth).padStart(2, "0")}`;
 
+    // Get profile info including project
+    let profileQuery = supabase.from("hr_profiles").select("id, full_name, project_id, department");
+    if (project) profileQuery = profileQuery.eq("project_id", project);
+    if (department) profileQuery = profileQuery.eq("department", department);
+    const { data: profilesList } = await profileQuery;
+
+    const profileInfoMap = new Map<string, { project: string }>();
+    for (const p of (profilesList || [])) {
+      profileInfoMap.set(p.id, { project: p.project_id || "--" });
+    }
+
     const data = await fetchAttendanceData(project, department, mStart, mEnd);
 
     // Group by user
-    const userMap = new Map<string, { name: string; entries: typeof data }>();
+    const userMap = new Map<string, { name: string; userId: string; entries: typeof data }>();
     for (const entry of data) {
       const existing = userMap.get(entry.user_id);
       if (!existing) {
-        userMap.set(entry.user_id, { name: entry.name, entries: [entry] });
+        userMap.set(entry.user_id, { name: entry.name, userId: entry.user_id, entries: [entry] });
       } else {
         existing.entries.push(entry);
       }
     }
 
-    return Array.from(userMap.values()).map(({ name, entries }) => {
+    // Build grid data
+    const gridRows: MonthlyGridRow[] = [];
+
+    const summaryRows = Array.from(userMap.values()).map(({ name, userId, entries }) => {
       const daysPresent = entries.filter((e) => ["present", "late", "half-day"].includes(e.status)).length;
       const lateDays = entries.filter((e) => e.status === "late").length;
       const leaveDays = entries.filter((e) => e.status === "on-leave").length;
       const totalMs = entries.reduce((sum, e) => sum + e.ms, 0);
       const totalDist = entries.reduce((sum, e) => sum + (e.distanceKm || 0), 0);
       const daysAbsent = daysInMonth - daysPresent - leaveDays;
+
+      // Build day-by-day data for grid
+      const dayData: Record<number, { status: string; punchIn: string | null; punchOut: string | null; hours: string }> = {};
+      for (const entry of entries) {
+        const dayNum = parseInt(entry.date.split("-")[2], 10);
+        dayData[dayNum] = {
+          status: entry.status,
+          punchIn: entry.firstIn,
+          punchOut: entry.lastOut,
+          hours: formatHours(entry.ms),
+        };
+      }
+
+      gridRows.push({
+        name,
+        project: profileInfoMap.get(userId)?.project || "--",
+        userId,
+        days: dayData,
+        totalPresent: daysPresent,
+        totalAbsent: Math.max(0, daysAbsent),
+        totalLeave: leaveDays,
+      });
 
       return {
         name,
@@ -276,6 +324,11 @@ export default function ReportsPage() {
         totalDistanceKm: totalDist > 0 ? `${totalDist.toFixed(1)} km` : "--",
       };
     }).sort((a, b) => a.name.localeCompare(b.name));
+
+    gridRows.sort((a, b) => a.name.localeCompare(b.name));
+    setMonthlyGrid(gridRows);
+
+    return summaryRows;
   }, [fetchAttendanceData, project, department, selectedMonth]);
 
   // Employee Report
@@ -460,14 +513,36 @@ export default function ReportsPage() {
           ["Employee", "Date", "Punch In", "Punch Out", "Hours", "Status", "Travel Distance"],
           result.map((r) => [r.name, r.date, r.punchIn, r.punchOut, r.hours, r.status, r.distanceKm || "--"])
         );
+      } else if (reportType === "monthly") {
+        await fetchMonthlySummary(); // populates monthlyGrid via state
+        setTotalCount(monthlyGrid.length);
+        setShowPreview(true);
+        // Export grid format: Employee, Project, Day1..DayN, Present, Absent, Leave
+        const [yr, mo] = selectedMonth.split("-").map(Number);
+        const dim = new Date(yr, mo, 0).getDate();
+        const dayHeaders = Array.from({ length: dim }, (_, i) => String(i + 1));
+        exportToCsv(
+          `monthly-attendance-${selectedMonth}.csv`,
+          ["Employee", "Project", ...dayHeaders, "Present", "Absent", "Leave"],
+          monthlyGrid.map((r) => [
+            r.name,
+            r.project,
+            ...Array.from({ length: dim }, (_, i) => {
+              const d = r.days[i + 1];
+              return d ? (statusShortLabels[d.status] || "?") : "-";
+            }),
+            String(r.totalPresent),
+            String(r.totalAbsent),
+            String(r.totalLeave),
+          ])
+        );
       } else {
-        const result = reportType === "monthly" ? await fetchMonthlySummary() : await fetchProjectSummary();
+        const result = await fetchProjectSummary();
         setSummaryRows(result);
         setTotalCount(result.length);
         setShowPreview(true);
-        const label = reportType === "monthly" ? `monthly-summary-${selectedMonth}` : `project-summary-${startDate}-to-${endDate}`;
         exportToCsv(
-          `${label}.csv`,
+          `project-summary-${startDate}-to-${endDate}.csv`,
           ["Employee", "Days Present", "Days Absent", "Late Days", "Leave Days", "Total Hours", "Avg Hours/Day", "Total Travel"],
           result.map((r) => [r.name, String(r.daysPresent), String(r.daysAbsent), String(r.lateDays), String(r.leaveDays), r.totalHours, r.avgHoursPerDay, r.totalDistanceKm])
         );
@@ -615,8 +690,38 @@ export default function ReportsPage() {
               )
             )}
 
-            {/* Monthly/Project summary table */}
-            {(reportType === "monthly" || reportType === "project") && (
+            {/* Monthly grid view */}
+            {reportType === "monthly" && (
+              monthlyGrid.length > 0 ? (
+                <MonthlyGridTable
+                  rows={monthlyGrid}
+                  month={selectedMonth}
+                  onDayClick={(name, dayNum) => {
+                    const row = monthlyGrid.find((r) => r.name === name);
+                    const dayData = row?.days[dayNum];
+                    if (dayData) {
+                      const [yr, mo] = selectedMonth.split("-");
+                      const dateStr = `${yr}-${mo}-${String(dayNum).padStart(2, "0")}`;
+                      setDayDetail({
+                        name,
+                        date: formatDate(dateStr),
+                        punchIn: formatTime(dayData.punchIn),
+                        punchOut: formatTime(dayData.punchOut),
+                        hours: dayData.hours,
+                        status: dayData.status,
+                      });
+                    }
+                  }}
+                />
+              ) : (
+                <div className="text-center py-8 text-sm text-gray-400">
+                  No data found for the selected month.
+                </div>
+              )
+            )}
+
+            {/* Project summary table */}
+            {reportType === "project" && (
               summaryRows.length > 0 ? (
                 <SummaryTable rows={summaryRows} total={totalCount} />
               ) : (
@@ -637,6 +742,36 @@ export default function ReportsPage() {
               )
             )}
           </>
+        )}
+
+        {/* Day Detail Modal */}
+        {dayDetail && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-6" onClick={() => setDayDetail(null)}>
+            <div className="w-full max-w-sm bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-sm font-semibold mb-4">{dayDetail.name} — {dayDetail.date}</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Status</span>
+                  <span className="font-medium capitalize">{dayDetail.status}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Punch In</span>
+                  <span className="font-medium">{dayDetail.punchIn}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Punch Out</span>
+                  <span className="font-medium">{dayDetail.punchOut}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Hours Worked</span>
+                  <span className="font-medium">{dayDetail.hours}</span>
+                </div>
+              </div>
+              <button onClick={() => setDayDetail(null)} className="mt-5 w-full py-2.5 rounded-xl bg-primary text-white text-sm font-medium">
+                Close
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -735,6 +870,110 @@ function LeaveTable({ rows, total }: { rows: LeaveReportRow[]; total: number }) 
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+const statusCellColors: Record<string, string> = {
+  present: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
+  late: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+  "half-day": "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400",
+  "on-leave": "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+  holiday: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400",
+  lwp: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+};
+
+const statusShortLabels: Record<string, string> = {
+  present: "P",
+  late: "L",
+  "half-day": "H",
+  "on-leave": "LV",
+  holiday: "HD",
+  lwp: "LWP",
+  absent: "A",
+};
+
+function MonthlyGridTable({ rows, month, onDayClick }: {
+  rows: MonthlyGridRow[];
+  month: string;
+  onDayClick: (name: string, dayNum: number) => void;
+}) {
+  const [year, mo] = month.split("-").map(Number);
+  const daysInMonth = new Date(year, mo, 0).getDate();
+  const dayNums = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
+      <div className="p-4 border-b border-gray-100 dark:border-gray-700/50">
+        <h3 className="text-sm font-semibold">Monthly Attendance Sheet</h3>
+        <p className="text-xs text-gray-400 mt-1">Tap any cell to see punch in/out details</p>
+      </div>
+      <div className="overflow-x-auto no-scrollbar">
+        <table className="text-xs border-collapse">
+          <thead>
+            <tr className="bg-gray-50 dark:bg-slate-900">
+              <th className="text-left py-2 px-3 font-medium whitespace-nowrap sticky left-0 bg-gray-50 dark:bg-slate-900 z-10 min-w-[120px]">Employee</th>
+              <th className="text-left py-2 px-2 font-medium whitespace-nowrap sticky left-[120px] bg-gray-50 dark:bg-slate-900 z-10 min-w-[80px]">Project</th>
+              {dayNums.map((d) => {
+                const dayOfWeek = new Date(year, mo - 1, d).getDay();
+                const isSunday = dayOfWeek === 0;
+                return (
+                  <th key={d} className={`text-center py-2 px-1 font-medium min-w-[32px] ${isSunday ? "text-red-400" : "text-gray-500 dark:text-gray-400"}`}>
+                    {d}
+                  </th>
+                );
+              })}
+              <th className="text-center py-2 px-2 font-medium whitespace-nowrap text-green-600">P</th>
+              <th className="text-center py-2 px-2 font-medium whitespace-nowrap text-red-500">A</th>
+              <th className="text-center py-2 px-2 font-medium whitespace-nowrap text-blue-500">LV</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+            {rows.map((row) => (
+              <tr key={row.userId} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                <td className="py-2 px-3 font-medium whitespace-nowrap sticky left-0 bg-white dark:bg-slate-800 z-10">{row.name}</td>
+                <td className="py-2 px-2 text-gray-500 whitespace-nowrap sticky left-[120px] bg-white dark:bg-slate-800 z-10">{row.project}</td>
+                {dayNums.map((d) => {
+                  const dayData = row.days[d];
+                  const dayOfWeek = new Date(year, mo - 1, d).getDay();
+                  const isSunday = dayOfWeek === 0;
+
+                  if (!dayData) {
+                    return (
+                      <td key={d} className={`py-2 px-1 text-center ${isSunday ? "bg-red-50/50 dark:bg-red-900/10" : ""}`}>
+                        <span className="text-gray-300 dark:text-gray-600">-</span>
+                      </td>
+                    );
+                  }
+
+                  return (
+                    <td
+                      key={d}
+                      onClick={() => onDayClick(row.name, d)}
+                      className="py-2 px-1 text-center cursor-pointer"
+                    >
+                      <span className={`inline-flex items-center justify-center w-6 h-5 rounded text-[10px] font-semibold ${statusCellColors[dayData.status] || "bg-gray-100 text-gray-500"}`}>
+                        {statusShortLabels[dayData.status] || "?"}
+                      </span>
+                    </td>
+                  );
+                })}
+                <td className="py-2 px-2 text-center font-medium text-green-600">{row.totalPresent}</td>
+                <td className="py-2 px-2 text-center font-medium text-red-500">{row.totalAbsent}</td>
+                <td className="py-2 px-2 text-center font-medium text-blue-500">{row.totalLeave}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="p-3 border-t border-gray-100 dark:border-gray-700/50 flex gap-3 flex-wrap text-[10px]">
+        <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-green-100 dark:bg-green-900/40"></span> P = Present</span>
+        <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-amber-100 dark:bg-amber-900/40"></span> L = Late</span>
+        <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-orange-100 dark:bg-orange-900/40"></span> H = Half Day</span>
+        <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-blue-100 dark:bg-blue-900/40"></span> LV = Leave</span>
+        <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-red-100 dark:bg-red-900/40"></span> LWP = Leave Without Pay</span>
+        <span className="flex items-center gap-1"><span className="text-gray-300">-</span> = No Record</span>
       </div>
     </div>
   );
