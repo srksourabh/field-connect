@@ -11,6 +11,7 @@ interface ReportRow {
   punchOut: string;
   hours: string;
   status: ReportStatus;
+  distanceKm?: string;
 }
 
 interface DataPreviewTableProps {
@@ -47,6 +48,7 @@ export default function DataPreviewTable({ rows, total }: DataPreviewTableProps)
               <th className="text-left py-3 px-4 font-medium whitespace-nowrap">Out</th>
               <th className="text-left py-3 px-4 font-medium whitespace-nowrap">Hours</th>
               <th className="text-left py-3 px-4 font-medium whitespace-nowrap">Status</th>
+              <th className="text-left py-3 px-4 font-medium whitespace-nowrap">Travel</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
@@ -65,6 +67,7 @@ export default function DataPreviewTable({ rows, total }: DataPreviewTableProps)
                     {row.status.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join("-")}
                   </StatusBadge>
                 </td>
+                <td className="py-3 px-4 whitespace-nowrap text-gray-500">{row.distanceKm || "--"}</td>
               </tr>
             ))}
           </tbody>

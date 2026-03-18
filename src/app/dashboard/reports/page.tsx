@@ -21,6 +21,7 @@ interface ReportRow {
   punchOut: string;
   hours: string;
   status: ReportStatus;
+  distanceKm?: string;
 }
 
 interface MonthlySummaryRow {
@@ -31,6 +32,7 @@ interface MonthlySummaryRow {
   leaveDays: number;
   totalHours: string;
   avgHoursPerDay: string;
+  totalDistanceKm: string;
 }
 
 interface EmployeeOption {
@@ -145,7 +147,7 @@ export default function ReportsPage() {
 
     const { data: attendance } = await supabase
       .from("hr_attendance")
-      .select("user_id, punch_in_at, punch_out_at, status, created_at")
+      .select("user_id, punch_in_at, punch_out_at, status, created_at, total_distance_km")
       .in("user_id", userIds)
       .gte("punch_in_at", startIso)
       .lte("punch_in_at", endIso)
@@ -153,7 +155,7 @@ export default function ReportsPage() {
 
     const { data: leaveAttendance } = await supabase
       .from("hr_attendance")
-      .select("user_id, punch_in_at, punch_out_at, status, created_at")
+      .select("user_id, punch_in_at, punch_out_at, status, created_at, total_distance_km")
       .in("user_id", userIds)
       .in("status", ["on-leave", "holiday"])
       .gte("created_at", startIso)
@@ -169,7 +171,7 @@ export default function ReportsPage() {
     });
 
     // Group by user+date
-    const dayMap = new Map<string, { user_id: string; date: string; firstIn: string | null; lastOut: string | null; status: string }>();
+    const dayMap = new Map<string, { user_id: string; date: string; firstIn: string | null; lastOut: string | null; status: string; distanceKm: number }>();
 
     for (const rec of deduped) {
       const ts = rec.punch_in_at || rec.created_at;
@@ -177,6 +179,7 @@ export default function ReportsPage() {
       if (!dateStr) continue;
       const key = `${rec.user_id}_${dateStr}`;
       const existing = dayMap.get(key);
+      const recDistance = (rec as Record<string, unknown>).total_distance_km as number | null;
       if (!existing) {
         dayMap.set(key, {
           user_id: rec.user_id,
@@ -184,12 +187,14 @@ export default function ReportsPage() {
           firstIn: rec.punch_in_at,
           lastOut: rec.punch_out_at,
           status: rec.status || "present",
+          distanceKm: recDistance || 0,
         });
       } else {
         if (rec.punch_in_at && (!existing.firstIn || rec.punch_in_at < existing.firstIn)) existing.firstIn = rec.punch_in_at;
         if (rec.punch_out_at && (!existing.lastOut || rec.punch_out_at > existing.lastOut)) existing.lastOut = rec.punch_out_at;
         if (rec.status === "on-leave" || rec.status === "holiday") existing.status = rec.status;
         else if (rec.status === "late" && existing.status !== "on-leave" && existing.status !== "holiday") existing.status = "late";
+        existing.distanceKm += recDistance || 0;
       }
     }
 
@@ -199,6 +204,7 @@ export default function ReportsPage() {
       ms: entry.firstIn && entry.lastOut
         ? new Date(entry.lastOut).getTime() - new Date(entry.firstIn).getTime()
         : 0,
+      distanceKm: entry.distanceKm,
     }));
   }, []);
 
@@ -213,6 +219,7 @@ export default function ReportsPage() {
       punchOut: formatTime(entry.lastOut),
       hours: formatHours(entry.ms),
       status: validStatuses.includes(entry.status as ReportStatus) ? (entry.status as ReportStatus) : "present",
+      distanceKm: entry.distanceKm > 0 ? `${entry.distanceKm.toFixed(1)} km` : "--",
     }));
   }, [fetchAttendanceData, project, department, startDate, endDate]);
 
@@ -241,6 +248,7 @@ export default function ReportsPage() {
       const lateDays = entries.filter((e) => e.status === "late").length;
       const leaveDays = entries.filter((e) => e.status === "on-leave").length;
       const totalMs = entries.reduce((sum, e) => sum + e.ms, 0);
+      const totalDist = entries.reduce((sum, e) => sum + (e.distanceKm || 0), 0);
       const daysAbsent = daysInMonth - daysPresent - leaveDays;
 
       return {
@@ -251,6 +259,7 @@ export default function ReportsPage() {
         leaveDays,
         totalHours: formatHours(totalMs),
         avgHoursPerDay: daysPresent > 0 ? formatHours(totalMs / daysPresent) : "0h",
+        totalDistanceKm: totalDist > 0 ? `${totalDist.toFixed(1)} km` : "--",
       };
     }).sort((a, b) => a.name.localeCompare(b.name));
   }, [fetchAttendanceData, project, department, selectedMonth]);
@@ -267,6 +276,7 @@ export default function ReportsPage() {
       punchOut: formatTime(entry.lastOut),
       hours: formatHours(entry.ms),
       status: validStatuses.includes(entry.status as ReportStatus) ? (entry.status as ReportStatus) : "present",
+      distanceKm: entry.distanceKm > 0 ? `${entry.distanceKm.toFixed(1)} km` : "--",
     }));
   }, [fetchAttendanceData, startDate, endDate, selectedEmployee]);
 
@@ -301,6 +311,7 @@ export default function ReportsPage() {
       const lateDays = entries.filter((e) => e.status === "late").length;
       const leaveDays = entries.filter((e) => e.status === "on-leave").length;
       const totalMs = entries.reduce((sum, e) => sum + e.ms, 0);
+      const totalDist = entries.reduce((sum, e) => sum + (e.distanceKm || 0), 0);
       const daysAbsent = workingDays - daysPresent - leaveDays;
 
       return {
@@ -311,6 +322,7 @@ export default function ReportsPage() {
         leaveDays,
         totalHours: formatHours(totalMs),
         avgHoursPerDay: daysPresent > 0 ? formatHours(totalMs / daysPresent) : "0h",
+        totalDistanceKm: totalDist > 0 ? `${totalDist.toFixed(1)} km` : "--",
       };
     }).sort((a, b) => a.name.localeCompare(b.name));
   }, [fetchAttendanceData, project, startDate, endDate]);
@@ -357,8 +369,8 @@ export default function ReportsPage() {
         setShowPreview(true);
         exportToCsv(
           `${reportType}-report-${startDate}-to-${endDate}.csv`,
-          ["Employee", "Date", "Punch In", "Punch Out", "Hours", "Status"],
-          result.map((r) => [r.name, r.date, r.punchIn, r.punchOut, r.hours, r.status])
+          ["Employee", "Date", "Punch In", "Punch Out", "Hours", "Status", "Travel Distance"],
+          result.map((r) => [r.name, r.date, r.punchIn, r.punchOut, r.hours, r.status, r.distanceKm || "--"])
         );
       } else {
         const result = reportType === "monthly" ? await fetchMonthlySummary() : await fetchProjectSummary();
@@ -368,8 +380,8 @@ export default function ReportsPage() {
         const label = reportType === "monthly" ? `monthly-summary-${selectedMonth}` : `project-summary-${startDate}-to-${endDate}`;
         exportToCsv(
           `${label}.csv`,
-          ["Employee", "Days Present", "Days Absent", "Late Days", "Leave Days", "Total Hours", "Avg Hours/Day"],
-          result.map((r) => [r.name, String(r.daysPresent), String(r.daysAbsent), String(r.lateDays), String(r.leaveDays), r.totalHours, r.avgHoursPerDay])
+          ["Employee", "Days Present", "Days Absent", "Late Days", "Leave Days", "Total Hours", "Avg Hours/Day", "Total Travel"],
+          result.map((r) => [r.name, String(r.daysPresent), String(r.daysAbsent), String(r.lateDays), String(r.leaveDays), r.totalHours, r.avgHoursPerDay, r.totalDistanceKm])
         );
       }
     } finally {
@@ -552,6 +564,7 @@ function SummaryTable({ rows, total }: { rows: MonthlySummaryRow[]; total: numbe
               <th className="text-center py-3 px-3 font-medium whitespace-nowrap">Leave</th>
               <th className="text-left py-3 px-3 font-medium whitespace-nowrap">Total Hrs</th>
               <th className="text-left py-3 px-3 font-medium whitespace-nowrap">Avg/Day</th>
+              <th className="text-left py-3 px-3 font-medium whitespace-nowrap">Travel</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
@@ -564,6 +577,7 @@ function SummaryTable({ rows, total }: { rows: MonthlySummaryRow[]; total: numbe
                 <td className="py-3 px-3 text-center text-blue-500">{row.leaveDays}</td>
                 <td className="py-3 px-3 whitespace-nowrap">{row.totalHours}</td>
                 <td className="py-3 px-3 whitespace-nowrap">{row.avgHoursPerDay}</td>
+                <td className="py-3 px-3 whitespace-nowrap text-gray-500">{row.totalDistanceKm}</td>
               </tr>
             ))}
           </tbody>
