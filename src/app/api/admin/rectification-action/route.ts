@@ -110,14 +110,21 @@ export async function POST(req: NextRequest) {
   }
 
   // Update or insert attendance record
+  // Build fallback timestamps from attendance_date when corrected times are null
+  const fallbackPunchIn = request.corrected_punch_in || `${request.attendance_date}T09:00:00+05:30`;
+  const fallbackPunchOut = request.corrected_punch_out || `${request.attendance_date}T18:00:00+05:30`;
+
   if (request.attendance_id) {
+    // Only update punch times if corrected values were provided; always update status
+    const updatePayload: Record<string, unknown> = {
+      status: request.corrected_status || "present",
+    };
+    if (request.corrected_punch_in) updatePayload.punch_in_at = request.corrected_punch_in;
+    if (request.corrected_punch_out) updatePayload.punch_out_at = request.corrected_punch_out;
+
     const { error: attError } = await supabaseAdmin
       .from("hr_attendance")
-      .update({
-        punch_in_at: request.corrected_punch_in,
-        punch_out_at: request.corrected_punch_out,
-        status: request.corrected_status || "present",
-      })
+      .update(updatePayload)
       .eq("id", request.attendance_id);
 
     if (attError) {
@@ -137,13 +144,16 @@ export async function POST(req: NextRequest) {
         .lte("created_at", dateEnd);
     }
   } else {
+    // Insert new attendance record with created_at set to attendance_date
+    // so the calendar query finds it in the correct month
     const { error: attError } = await supabaseAdmin
       .from("hr_attendance")
       .insert({
         user_id: request.user_id,
-        punch_in_at: request.corrected_punch_in,
-        punch_out_at: request.corrected_punch_out,
+        punch_in_at: fallbackPunchIn,
+        punch_out_at: fallbackPunchOut,
         status: request.corrected_status || "present",
+        created_at: `${request.attendance_date}T00:00:00+05:30`,
         synced: true,
       });
 

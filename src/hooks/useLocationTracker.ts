@@ -32,41 +32,50 @@ function captureLocation(
 ) {
   if (!navigator.geolocation) return;
 
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const { latitude, longitude } = position.coords;
-
-      if (isOnline !== false) {
-        try {
-          await insertLocationLog({
-            user_id: userId,
-            attendance_id: attendanceId ?? null,
-            lat: latitude,
-            long: longitude,
-            source: "scheduled",
-          });
-          setLastCaptureTime(Date.now());
-        } catch (e) {
-          logError("Location log failed:", e);
-        }
-      } else {
-        addToQueue({
-          id: crypto.randomUUID(),
-          type: "location_log",
-          payload: {
-            user_id: userId,
-            attendance_id: attendanceId ?? null,
-            lat: latitude,
-            long: longitude,
-            source: "scheduled",
-          },
-          timestamp: new Date().toISOString(),
+  const saveLocation = async (latitude: number, longitude: number) => {
+    if (isOnline !== false) {
+      try {
+        await insertLocationLog({
+          user_id: userId,
+          attendance_id: attendanceId ?? null,
+          lat: latitude,
+          long: longitude,
+          source: "scheduled",
         });
         setLastCaptureTime(Date.now());
+      } catch (e) {
+        logError("Location log failed:", e);
       }
-    },
+    } else {
+      addToQueue({
+        id: crypto.randomUUID(),
+        type: "location_log",
+        payload: {
+          user_id: userId,
+          attendance_id: attendanceId ?? null,
+          lat: latitude,
+          long: longitude,
+          source: "scheduled",
+        },
+        timestamp: new Date().toISOString(),
+      });
+      setLastCaptureTime(Date.now());
+    }
+  };
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => { saveLocation(position.coords.latitude, position.coords.longitude); },
     (err) => {
-      logError("Location capture failed:", err.message);
+      // Retry with low accuracy if high accuracy fails (e.g. GPS timeout on mobile)
+      if (err.code === err.TIMEOUT) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => { saveLocation(position.coords.latitude, position.coords.longitude); },
+          (retryErr) => { logError("Location capture retry failed:", retryErr.message); },
+          { enableHighAccuracy: false, timeout: 15000 }
+        );
+      } else {
+        logError("Location capture failed:", err.message);
+      }
     },
     { enableHighAccuracy: true, timeout: 10000 }
   );

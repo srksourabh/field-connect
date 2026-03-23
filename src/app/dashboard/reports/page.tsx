@@ -250,7 +250,7 @@ export default function ReportsPage() {
   }, [fetchAttendanceData, project, department, startDate, endDate]);
 
   // Monthly Summary — builds both summary rows AND day-by-day grid
-  const fetchMonthlySummary = useCallback(async (): Promise<MonthlySummaryRow[]> => {
+  const fetchMonthlySummary = useCallback(async (): Promise<{ summaryRows: MonthlySummaryRow[]; gridRows: MonthlyGridRow[] }> => {
     const [year, month] = selectedMonth.split("-");
     const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
     const mStart = `${selectedMonth}-01`;
@@ -328,7 +328,7 @@ export default function ReportsPage() {
     gridRows.sort((a, b) => a.name.localeCompare(b.name));
     setMonthlyGrid(gridRows);
 
-    return summaryRows;
+    return { summaryRows, gridRows };
   }, [fetchAttendanceData, project, department, selectedMonth]);
 
   // Employee Report
@@ -462,7 +462,7 @@ export default function ReportsPage() {
         setSummaryRows([]);
         setTotalCount(result.length);
       } else if (reportType === "monthly") {
-        const result = await fetchMonthlySummary();
+        const { summaryRows: result } = await fetchMonthlySummary();
         setSummaryRows(result);
         setRows([]);
         setTotalCount(result.length);
@@ -514,8 +514,8 @@ export default function ReportsPage() {
           result.map((r) => [r.name, r.date, r.punchIn, r.punchOut, r.hours, r.status, r.distanceKm || "--"])
         );
       } else if (reportType === "monthly") {
-        await fetchMonthlySummary(); // populates monthlyGrid via state
-        setTotalCount(monthlyGrid.length);
+        const { gridRows } = await fetchMonthlySummary();
+        setTotalCount(gridRows.length);
         setShowPreview(true);
         // Export grid format: Employee, Project, Day1..DayN, Present, Absent, Leave
         const [yr, mo] = selectedMonth.split("-").map(Number);
@@ -524,7 +524,7 @@ export default function ReportsPage() {
         exportToCsv(
           `monthly-attendance-${selectedMonth}.csv`,
           ["Employee", "Project", ...dayHeaders, "Present", "Absent", "Leave"],
-          monthlyGrid.map((r) => [
+          gridRows.map((r) => [
             r.name,
             r.project,
             ...Array.from({ length: dim }, (_, i) => {
