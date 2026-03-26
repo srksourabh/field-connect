@@ -12,7 +12,7 @@ import { useAuth } from "@/lib/auth";
 import { showToast } from "@/components/ui/Toast";
 import { toISTDateStr, todayIST } from "@/lib/utils";
 
-type ReportType = "attendance" | "monthly" | "employee" | "project" | "leave";
+type ReportType = "attendance" | "monthly" | "employee" | "project" | "leave" | "not_present";
 type ReportStatus = "present" | "absent" | "late" | "half-day" | "on-leave" | "holiday" | "lwp";
 
 interface ReportRow {
@@ -86,7 +86,17 @@ interface LeaveReportRow {
   status: string;
 }
 
+interface NotPresentRow {
+  name: string;
+  designation: string;
+  state: string;
+  project: string;
+  reportingManager: string;
+  reason: string; // "absent" | "on-leave" | "half-day"
+}
+
 const reportTabs: { key: ReportType; label: string }[] = [
+  { key: "not_present", label: "Not Present Today" },
   { key: "attendance", label: "Attendance" },
   { key: "monthly", label: "Monthly Summary" },
   { key: "employee", label: "Employee" },
@@ -99,7 +109,7 @@ export default function ReportsPage() {
   const today = todayIST();
   const firstOfMonth = today.slice(0, 8) + "01";
 
-  const [reportType, setReportType] = useState<ReportType>("attendance");
+  const [reportType, setReportType] = useState<ReportType>("not_present");
   const [startDate, setStartDate] = useState(firstOfMonth);
   const [endDate, setEndDate] = useState(today);
   const [project, setProject] = useState("");
@@ -113,6 +123,7 @@ export default function ReportsPage() {
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [summaryRows, setSummaryRows] = useState<MonthlySummaryRow[]>([]);
   const [leaveRows, setLeaveRows] = useState<LeaveReportRow[]>([]);
+  const [notPresentRows, setNotPresentRows] = useState<NotPresentRow[]>([]);
   const [monthlyGrid, setMonthlyGrid] = useState<MonthlyGridRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
@@ -242,14 +253,28 @@ export default function ReportsPage() {
       }
     }
 
-    return Array.from(dayMap.values()).map((entry) => ({
-      ...entry,
-      name: profileMap.get(entry.user_id) || "Unknown",
-      ms: entry.firstIn && entry.lastOut
+    return Array.from(dayMap.values()).map((entry) => {
+      const ms = entry.firstIn && entry.lastOut
         ? new Date(entry.lastOut).getTime() - new Date(entry.firstIn).getTime()
-        : 0,
-      distanceKm: entry.distanceKm,
-    }));
+        : 0;
+      const hours = ms / 3600000;
+
+      // Recompute status based on actual hours worked (skip on-leave/holiday)
+      let correctedStatus = entry.status;
+      if (!["on-leave", "holiday", "lwp"].includes(entry.status)) {
+        if (hours >= 4) correctedStatus = "present";
+        else if (hours >= 1) correctedStatus = "half-day";
+        else correctedStatus = "absent";
+      }
+
+      return {
+        ...entry,
+        status: correctedStatus,
+        name: profileMap.get(entry.user_id) || "Unknown",
+        ms,
+        distanceKm: entry.distanceKm,
+      };
+    });
   }, []);
 
   // Attendance Report (original behavior)
@@ -480,12 +505,129 @@ export default function ReportsPage() {
     });
   }, [project, department, startDate, endDate]);
 
+  // Not Present Today — immediate report
+  const fetchNotPresent = useCallback(async (): Promise<NotPresentRow[]> => {
+    const todayStr = todayIST();
+    const todayIso = todayStr + "T00:00:00+05:30";
+
+    // Get all employees with full profile
+    let empQuery = supabase
+      .from("hr_profiles")
+      .select("id, full_name, designation, state, project_id, reporting_manager_id")
+      .is("deactivated_at", null);
+
+    const isUniversal =
+      profile?.role === "super_admin" ||
+      (profile?.designation?.toLowerCase().includes("hr") &&
+        ["admin", "super_admin"].includes(profile?.role || ""));
+
+    if (!isUniversal && profile?.project_id) {
+      empQuery = empQuery.eq("project_id", profile.project_id);
+    }
+
+    const { data: allEmps } = await empQuery;
+    if (!allEmps || allEmps.length === 0) return [];
+
+    const empIds = allEmps.map((e) => e.id);
+
+    // Fetch today's attendance in batches
+    const batchSize = 50;
+    const todayRecords: { user_id: string; punch_in_at: string | null; punch_out_at: string | null; status: string }[] = [];
+    for (let i = 0; i < empIds.length; i += batchSize) {
+      const batch = empIds.slice(i, i + batchSize);
+      const { data } = await supabase
+        .from("hr_attendance")
+        .select("user_id, punch_in_at, punch_out_at, status")
+        .in("user_id", batch)
+        .gte("created_at", todayIso)
+        .limit(5000);
+      if (data) todayRecords.push(...data);
+    }
+
+    // Fetch today's approved leaves
+    const { data: todayLeaves } = await supabase
+      .from("hr_leave_requests")
+      .select("user_id, type")
+      .in("user_id", empIds)
+      .eq("status", "approved")
+      .lte("start_date", todayStr)
+      .gte("end_date", todayStr);
+
+    const onLeaveIds = new Set((todayLeaves || []).map((l) => l.user_id));
+    const leaveTypeMap = new Map((todayLeaves || []).map((l) => [l.user_id, l.type]));
+
+    // Compute actual hours per user
+    const userHoursMs = new Map<string, number>();
+    const userPresentIds = new Set<string>();
+    for (const rec of todayRecords) {
+      userPresentIds.add(rec.user_id);
+      if (rec.punch_in_at) {
+        const inMs = new Date(rec.punch_in_at).getTime();
+        const outMs = rec.punch_out_at ? new Date(rec.punch_out_at).getTime() : Date.now();
+        userHoursMs.set(rec.user_id, (userHoursMs.get(rec.user_id) || 0) + (outMs - inMs));
+      }
+    }
+
+    // Resolve reporting manager names
+    const mgrIds = Array.from(new Set(allEmps.map((e) => e.reporting_manager_id).filter(Boolean))) as string[];
+    const mgrNames = new Map<string, string>();
+    if (mgrIds.length > 0) {
+      for (let i = 0; i < mgrIds.length; i += batchSize) {
+        const batch = mgrIds.slice(i, i + batchSize);
+        const { data } = await supabase.from("hr_profiles").select("id, full_name").in("id", batch);
+        for (const m of data || []) mgrNames.set(m.id, m.full_name);
+      }
+    }
+
+    // Build not-present list
+    const result: NotPresentRow[] = [];
+    const leaveLabels: Record<string, string> = { sick: "Sick Leave", casual: "Casual Leave", privilege: "Privilege Leave", compoff: "Comp-Off", wfh: "WFH" };
+
+    for (const emp of allEmps) {
+      const hoursMs = userHoursMs.get(emp.id) || 0;
+      const hours = hoursMs / 3600000;
+      const isOnLeave = onLeaveIds.has(emp.id);
+      const hasPunched = userPresentIds.has(emp.id);
+
+      let reason = "";
+      if (isOnLeave) {
+        reason = leaveLabels[leaveTypeMap.get(emp.id) || ""] || "On Leave";
+      } else if (!hasPunched) {
+        reason = "Absent — No Punch";
+      } else if (hours < 1) {
+        reason = "Absent — Less than 1h";
+      } else if (hours < 4) {
+        reason = `Half Day — ${Math.floor(hours)}h ${Math.floor((hours % 1) * 60)}m`;
+      } else {
+        continue; // Present — skip
+      }
+
+      result.push({
+        name: emp.full_name,
+        designation: emp.designation || "--",
+        state: emp.state || "--",
+        project: emp.project_id || "--",
+        reportingManager: emp.reporting_manager_id ? mgrNames.get(emp.reporting_manager_id) || "--" : "--",
+        reason,
+      });
+    }
+
+    return result.sort((a, b) => a.reason.localeCompare(b.reason));
+  }, [profile]);
+
   // Generate report
   const handlePreview = async () => {
     setLoading(true);
     setShowPreview(false);
     try {
-      if (reportType === "attendance") {
+      if (reportType === "not_present") {
+        const result = await fetchNotPresent();
+        setNotPresentRows(result);
+        setRows([]);
+        setSummaryRows([]);
+        setLeaveRows([]);
+        setTotalCount(result.length);
+      } else if (reportType === "attendance") {
         const result = await fetchAttendanceReport();
         setRows(result);
         setSummaryRows([]);
@@ -522,7 +664,17 @@ export default function ReportsPage() {
   const handleDownload = async () => {
     setLoading(true);
     try {
-      if (reportType === "leave") {
+      if (reportType === "not_present") {
+        const result = await fetchNotPresent();
+        setNotPresentRows(result);
+        setTotalCount(result.length);
+        setShowPreview(true);
+        exportToCsv(
+          `not-present-today-${todayIST()}.csv`,
+          ["Employee", "Designation", "State", "Project", "Reporting Manager", "Reason"],
+          result.map((r) => [r.name, r.designation, r.state, r.project, r.reportingManager, r.reason])
+        );
+      } else if (reportType === "leave") {
         const result = await fetchLeaveReport();
         setLeaveRows(result);
         setTotalCount(result.length);
@@ -631,8 +783,38 @@ export default function ReportsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-4 space-y-4">
-        {/* Date inputs — different for monthly vs others */}
-        {reportType === "monthly" ? (
+        {/* Not Present Today — no filters needed */}
+        {reportType === "not_present" && (
+          <>
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700/50">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Showing employees who are absent, on leave, or have less than 4 hours today ({new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata" })})
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={handlePreview} disabled={loading} className="uds-btn-secondary">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                {loading ? "Loading..." : "Refresh"}
+              </button>
+              <button onClick={handleDownload} disabled={loading} className="uds-btn-primary">
+                <Download className="w-4 h-4" /> Download CSV
+              </button>
+            </div>
+            {showPreview && (
+              notPresentRows.length > 0 ? (
+                <NotPresentTable rows={notPresentRows} total={totalCount} />
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-green-600 font-medium">Everyone is present today!</p>
+                  <p className="text-xs text-gray-400 mt-1">No absent or half-day employees found</p>
+                </div>
+              )
+            )}
+          </>
+        )}
+
+        {/* Date inputs — different for monthly vs others (hidden for not_present) */}
+        {reportType === "not_present" ? null : reportType === "monthly" ? (
           <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700/50">
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 block">Select Month</label>
             <input
@@ -651,8 +833,8 @@ export default function ReportsPage() {
           />
         )}
 
-        {/* Filters — different per type */}
-        {reportType === "employee" ? (
+        {/* Filters — different per type (hidden for not_present) */}
+        {reportType === "not_present" ? null : reportType === "employee" ? (
           <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700/50">
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 block">Select Employee</label>
             <div className="relative mb-2">
@@ -686,8 +868,8 @@ export default function ReportsPage() {
           />
         )}
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Action Buttons (hidden for not_present — it has its own) */}
+        {reportType !== "not_present" && <div className="grid grid-cols-2 gap-3">
           <button
             onClick={handlePreview}
             disabled={loading || (reportType === "employee" && !selectedEmployee) || (reportType === "project" && !project)}
@@ -703,7 +885,7 @@ export default function ReportsPage() {
           >
             <Download className="w-4 h-4" /> Download CSV
           </button>
-        </div>
+        </div>}
 
         {/* Preview */}
         {showPreview && (
@@ -1059,6 +1241,66 @@ function MonthlyGridTable({ rows, month, onDayClick }: {
         <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-blue-100 dark:bg-blue-900/40"></span> LV = Leave</span>
         <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-red-100 dark:bg-red-900/40"></span> LWP = Leave Without Pay</span>
         <span className="flex items-center gap-1"><span className="text-gray-300">-</span> = No Record</span>
+      </div>
+    </div>
+  );
+}
+
+function NotPresentTable({ rows, total }: { rows: NotPresentRow[]; total: number }) {
+  const absentCount = rows.filter((r) => r.reason.startsWith("Absent")).length;
+  const halfDayCount = rows.filter((r) => r.reason.startsWith("Half")).length;
+  const leaveCount = rows.filter((r) => !r.reason.startsWith("Absent") && !r.reason.startsWith("Half")).length;
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
+      <div className="p-4 border-b border-gray-100 dark:border-gray-700/50">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold">Not Present Today</h3>
+          <span className="text-xs text-gray-500 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-2 py-0.5 rounded-full">
+            {total} employees
+          </span>
+        </div>
+        <div className="flex gap-3 text-xs text-gray-500">
+          <span className="text-red-500 font-medium">{absentCount} Absent</span>
+          <span className="text-orange-500 font-medium">{halfDayCount} Half Day</span>
+          <span className="text-blue-500 font-medium">{leaveCount} On Leave</span>
+        </div>
+      </div>
+      <div className="overflow-x-auto no-scrollbar">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 dark:bg-slate-900 text-xs text-gray-500 dark:text-gray-400">
+              <th className="text-left py-3 px-4 font-medium whitespace-nowrap">Employee</th>
+              <th className="text-left py-3 px-3 font-medium whitespace-nowrap">Designation</th>
+              <th className="text-left py-3 px-3 font-medium whitespace-nowrap">State</th>
+              <th className="text-left py-3 px-3 font-medium whitespace-nowrap">Manager</th>
+              <th className="text-left py-3 px-3 font-medium whitespace-nowrap">Reason</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+            {rows.map((row, idx) => {
+              const isAbsent = row.reason.startsWith("Absent");
+              const isHalf = row.reason.startsWith("Half");
+              return (
+                <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <td className="py-3 px-4 font-medium whitespace-nowrap">{row.name}</td>
+                  <td className="py-3 px-3 whitespace-nowrap text-gray-500">{row.designation}</td>
+                  <td className="py-3 px-3 whitespace-nowrap text-gray-500">{row.state}</td>
+                  <td className="py-3 px-3 whitespace-nowrap text-gray-500">{row.reportingManager}</td>
+                  <td className="py-3 px-3">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                      isAbsent ? "text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-400" :
+                      isHalf ? "text-orange-700 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-400" :
+                      "text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400"
+                    }`}>
+                      {row.reason}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
