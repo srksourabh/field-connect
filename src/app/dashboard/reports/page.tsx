@@ -174,23 +174,38 @@ export default function ReportsPage() {
     const startIso = dateStart + "T00:00:00+05:30";
     const endIso = dateEnd + "T23:59:59+05:30";
 
-    const { data: attendance } = await supabase
-      .from("hr_attendance")
-      .select("user_id, punch_in_at, punch_out_at, status, created_at, total_distance_km")
-      .in("user_id", userIds)
-      .gte("punch_in_at", startIso)
-      .lte("punch_in_at", endIso)
-      .order("punch_in_at", { ascending: true });
+    // Fetch in batches of 50 user IDs to avoid URL length limits
+    // and use higher row limits to get full month data
+    const batchSize = 50;
+    type AttendanceRec = { user_id: string; punch_in_at: string | null; punch_out_at: string | null; status: string; created_at: string; total_distance_km: number | null };
+    const allRecords: AttendanceRec[] = [];
 
-    const { data: leaveAttendance } = await supabase
-      .from("hr_attendance")
-      .select("user_id, punch_in_at, punch_out_at, status, created_at, total_distance_km")
-      .in("user_id", userIds)
-      .in("status", ["on-leave", "holiday"])
-      .gte("created_at", startIso)
-      .lte("created_at", endIso);
+    for (let i = 0; i < userIds.length; i += batchSize) {
+      const batch = userIds.slice(i, i + batchSize);
 
-    const allRecords = [...(attendance || []), ...(leaveAttendance || [])];
+      const [{ data: attendance }, { data: leaveAttendance }] = await Promise.all([
+        supabase
+          .from("hr_attendance")
+          .select("user_id, punch_in_at, punch_out_at, status, created_at, total_distance_km")
+          .in("user_id", batch)
+          .gte("punch_in_at", startIso)
+          .lte("punch_in_at", endIso)
+          .order("punch_in_at", { ascending: true })
+          .limit(5000),
+        supabase
+          .from("hr_attendance")
+          .select("user_id, punch_in_at, punch_out_at, status, created_at, total_distance_km")
+          .in("user_id", batch)
+          .in("status", ["on-leave", "holiday"])
+          .gte("created_at", startIso)
+          .lte("created_at", endIso)
+          .limit(5000),
+      ]);
+
+      if (attendance) allRecords.push(...attendance);
+      if (leaveAttendance) allRecords.push(...leaveAttendance);
+    }
+
     const seen = new Set<string>();
     const deduped = allRecords.filter((r) => {
       const key = `${r.user_id}_${r.punch_in_at || r.created_at}_${r.status}`;
