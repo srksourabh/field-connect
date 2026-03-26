@@ -7,6 +7,8 @@ interface RectificationRequestCardProps {
   request: {
     id: string;
     employeeName: string;
+    managerName?: string;
+    employeeState?: string;
     attendanceDate: string;
     rectificationType: string;
     correctedPunchIn?: string | null;
@@ -63,6 +65,13 @@ export default function RectificationRequestCard({
           </div>
           <div>
             <p className="text-sm font-semibold">{request.employeeName}</p>
+            {(request.managerName || request.employeeState) && (
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                {request.managerName && <>Mgr: {request.managerName}</>}
+                {request.managerName && request.employeeState && " · "}
+                {request.employeeState}
+              </p>
+            )}
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400">
               {typeLabel}
             </span>

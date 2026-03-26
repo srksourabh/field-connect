@@ -25,6 +25,7 @@ const leaveTypeLabels: Record<string, string> = {
   casual: "Casual Leave",
   privilege: "Privilege Leave",
   compoff: "Comp Off",
+  wfh: "Work From Home",
 };
 
 export default function DaySummary({ date, status, totalHours, leaveType }: DaySummaryProps) {

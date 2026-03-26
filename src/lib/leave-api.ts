@@ -7,6 +7,8 @@ import { toISTDateStr } from "./utils";
 export interface LeaveRequestWithProfile extends HrLeaveRequest {
   employee_name: string;
   days: number;
+  manager_name?: string;
+  employee_state?: string;
 }
 
 export async function getTeamLeaveRequests(
@@ -15,13 +17,27 @@ export async function getTeamLeaveRequests(
   // Get direct reports
   const { data: reports } = await supabase
     .from("hr_profiles")
-    .select("id, full_name")
+    .select("id, full_name, reporting_manager_id, state")
     .eq("reporting_manager_id", managerId);
 
   if (!reports || reports.length === 0) return [];
 
   const reportIds = reports.map((r) => r.id);
   const nameMap = new Map(reports.map((r) => [r.id, r.full_name]));
+  const stateMap = new Map(reports.map((r) => [r.id, r.state || ""]));
+
+  // Resolve manager names
+  const managerIds = Array.from(new Set(reports.map((r) => r.reporting_manager_id).filter(Boolean))) as string[];
+  const managerNameMap = new Map<string, string>();
+  if (managerIds.length > 0) {
+    const { data: managers } = await supabase
+      .from("hr_profiles")
+      .select("id, full_name")
+      .in("id", managerIds);
+    for (const m of managers || []) {
+      managerNameMap.set(m.id, m.full_name);
+    }
+  }
 
   const { data, error } = await supabase
     .from("hr_leave_requests")
@@ -40,10 +56,13 @@ export async function getTeamLeaveRequests(
     const end = new Date(r.end_date);
     const days =
       Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const report = reports.find((rep) => rep.id === r.user_id);
     return {
       ...r,
       employee_name: nameMap.get(r.user_id) || "Unknown",
       days,
+      manager_name: report?.reporting_manager_id ? managerNameMap.get(report.reporting_manager_id) || "" : "",
+      employee_state: stateMap.get(r.user_id) || "",
     };
   });
 }
@@ -113,6 +132,7 @@ export async function approveLeaveRequest(
     casual: "casual_leave_used",
     privilege: "privilege_leave_used",
     compoff: "compoff_used",
+    wfh: "wfh_used",
   };
   const usedKey = usedKeyMap[request.type];
   if (!usedKey) {
@@ -270,6 +290,8 @@ export interface LeaveBalance {
   compoff_used: number;
   privilege_total: number;
   privilege_used: number;
+  wfh_total: number;
+  wfh_used: number;
 }
 
 export async function getUserLeaveBalance(
@@ -295,6 +317,8 @@ export async function getUserLeaveBalance(
     compoff_used: (d.compoff_used as number) ?? 0,
     privilege_total: (d.privilege_leave_total as number) ?? 0,
     privilege_used: (d.privilege_leave_used as number) ?? 0,
+    wfh_total: (d.wfh_total as number) ?? 10,
+    wfh_used: (d.wfh_used as number) ?? 0,
   };
 }
 

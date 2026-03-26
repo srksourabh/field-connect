@@ -25,6 +25,8 @@ interface EmployeeBalance {
     compoff_used: number;
     privilege_leave_total: number;
     privilege_leave_used: number;
+    wfh_total: number;
+    wfh_used: number;
   } | null;
 }
 
@@ -48,6 +50,9 @@ export default function LeaveAllotmentPage() {
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkValues, setBulkValues] = useState<Record<string, number>>({ compoff_total: 0 });
   const [bulkSaving, setBulkSaving] = useState(false);
+
+  // FY reset state
+  const [fyResetting, setFyResetting] = useState(false);
 
   const year = new Date().getFullYear();
 
@@ -199,7 +204,7 @@ export default function LeaveAllotmentPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ year, sick_total: 5, casual_total: 10, privilege_total: 15 }),
+        body: JSON.stringify({ year, sick_total: 5, casual_total: 10, privilege_total: 15, wfh_total: 10 }),
       });
       const data = await res.json();
       setMessage({ type: "success", text: data.message });
@@ -223,6 +228,8 @@ export default function LeaveAllotmentPage() {
       privilege_leave_used: emp.balance.privilege_leave_used,
       compoff_total: emp.balance.compoff_total,
       compoff_used: emp.balance.compoff_used,
+      wfh_total: emp.balance.wfh_total,
+      wfh_used: emp.balance.wfh_used,
     });
   };
 
@@ -334,6 +341,10 @@ export default function LeaveAllotmentPage() {
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-purple-400" />
               <span className="text-gray-600 dark:text-gray-400">Privilege: <strong>15</strong></span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-indigo-400" />
+              <span className="text-gray-600 dark:text-gray-400">WFH: <strong>10</strong></span>
             </div>
           </div>
           {!isUniversal && (
@@ -524,6 +535,17 @@ export default function LeaveAllotmentPage() {
                       placeholder="—"
                     />
                   </div>
+                  <div>
+                    <label className="text-xs text-gray-500 block mb-1">WFH Total</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={bulkValues.wfh_total ?? ""}
+                      onChange={(e) => setBulkValues((p) => ({ ...p, wfh_total: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm"
+                      placeholder="—"
+                    />
+                  </div>
                 </>
               )}
               <div>
@@ -546,6 +568,56 @@ export default function LeaveAllotmentPage() {
               {bulkSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Update {selectedIds.size} Employees
             </button>
+          </div>
+        )}
+
+        {/* Financial Year Reset — super_admin only */}
+        {profile?.role === "super_admin" && (
+          <div className="bg-white dark:bg-surface-dark rounded-xl border-2 border-amber-200 dark:border-amber-800/50 p-4">
+            <h3 className="text-sm font-semibold mb-1">Financial Year Reset</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              Creates fresh leave balances for a new financial year. All leave counts reset to 0 used. Previous year data is preserved.
+            </p>
+            <div className="flex gap-2 items-center">
+              <button
+                onClick={async () => {
+                  if (!session?.access_token) return;
+                  const newYear = new Date().getFullYear();
+                  const ok = await showConfirm(
+                    "Reset Financial Year",
+                    `This will create fresh leave balances for FY ${newYear}-${(newYear + 1).toString().slice(-2)} with all leave counts starting at 0. Previous year data will be kept. Continue?`
+                  );
+                  if (!ok) return;
+                  setFyResetting(true);
+                  try {
+                    const res = await fetch("/api/admin/financial-year-reset", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${session.access_token}`,
+                      },
+                      body: JSON.stringify({ new_fy_year: newYear, confirm: true }),
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      showToast(data.message, "success");
+                      fetchData();
+                    } else {
+                      showToast(data.error || "Reset failed", "error");
+                    }
+                  } catch {
+                    showToast("Reset failed", "error");
+                  } finally {
+                    setFyResetting(false);
+                  }
+                }}
+                disabled={fyResetting}
+                className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {fyResetting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                Reset for FY {new Date().getFullYear()}-{(new Date().getFullYear() + 1).toString().slice(-2)}
+              </button>
+            </div>
           </div>
         )}
 
@@ -622,7 +694,7 @@ export default function LeaveAllotmentPage() {
                   </div>
 
                   {b && (
-                    <div className="grid grid-cols-4 gap-2 text-xs">
+                    <div className="grid grid-cols-5 gap-2 text-xs">
                       <LeaveCell
                         label="Sick"
                         color="orange"
@@ -649,6 +721,15 @@ export default function LeaveAllotmentPage() {
                         editing={isEditing && !!isUniversal}
                         onChangeUsed={(v) => setEditValues((p) => ({ ...p, privilege_leave_used: v }))}
                         onChangeTotal={(v) => setEditValues((p) => ({ ...p, privilege_leave_total: v }))}
+                      />
+                      <LeaveCell
+                        label="WFH"
+                        color="indigo"
+                        used={isEditing ? editValues.wfh_used : b.wfh_used}
+                        total={isEditing ? editValues.wfh_total : b.wfh_total}
+                        editing={isEditing && !!isUniversal}
+                        onChangeUsed={(v) => setEditValues((p) => ({ ...p, wfh_used: v }))}
+                        onChangeTotal={(v) => setEditValues((p) => ({ ...p, wfh_total: v }))}
                       />
                       <LeaveCell
                         label="Comp Off"
@@ -687,6 +768,7 @@ function LeaveCell({
     blue: "text-blue-600 dark:text-blue-400",
     purple: "text-purple-600 dark:text-purple-400",
     teal: "text-teal-600 dark:text-teal-400",
+    indigo: "text-indigo-600 dark:text-indigo-400",
   };
 
   return (

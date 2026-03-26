@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Pill, Umbrella, Clock, Award } from "lucide-react";
+import { Pill, Umbrella, Clock, Award, Home } from "lucide-react";
 import type { HrLeaveBalance } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
 
@@ -58,6 +58,15 @@ export default function LeaveBalanceCards({ balance }: LeaveBalanceCardsProps) {
           },
         ]
       : []),
+    {
+      label: "WFH",
+      icon: Home,
+      iconColor: "text-indigo-600 dark:text-indigo-400",
+      iconBg: "bg-indigo-100 dark:bg-indigo-500/20",
+      barColor: "bg-indigo-500",
+      used: balance?.wfh_used ?? 0,
+      total: balance?.wfh_total ?? 10,
+    },
     {
       label: "Comp-Off",
       icon: Clock,

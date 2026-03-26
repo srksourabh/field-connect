@@ -134,6 +134,7 @@ export async function POST(req: NextRequest) {
     casual: "casual_leave_used",
     privilege: "privilege_leave_used",
     compoff: "compoff_used",
+    wfh: "wfh_used",
   };
   const usedKey = usedKeyMap[request.type];
 

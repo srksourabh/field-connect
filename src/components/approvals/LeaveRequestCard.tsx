@@ -7,6 +7,8 @@ interface LeaveRequestCardProps {
   request: {
     id: string;
     employeeName: string;
+    managerName?: string;
+    employeeState?: string;
     type: "sick" | "casual" | "compoff" | "privilege" | "wfh";
     startDate: string;
     endDate: string;
@@ -45,6 +47,13 @@ export default function LeaveRequestCard({ request, onApprove, onReject, actionL
           </div>
           <div>
             <p className="text-sm font-semibold">{request.employeeName}</p>
+            {(request.managerName || request.employeeState) && (
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                {request.managerName && <>Mgr: {request.managerName}</>}
+                {request.managerName && request.employeeState && " · "}
+                {request.employeeState}
+              </p>
+            )}
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${style.bg} ${style.text}`}>
               {style.label}
             </span>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ChevronLeft, FileEdit } from "lucide-react";
+import { startOfMonth, endOfMonth, eachDayOfInterval, format } from "date-fns";
 import Link from "next/link";
 import AttendanceCalendar from "@/components/attendance/AttendanceCalendar";
 import DaySummary from "@/components/attendance/DaySummary";
@@ -69,6 +70,7 @@ export default function AttendancePage() {
     toISTDateStr(new Date(r.punch_in_at || r.created_at));
 
   // Transform records → calendar format (deduplicate per date, keep worst status)
+  // Also fill in "absent" for past working days (Mon-Sat) with no record
   const calendarRecords = useMemo(() => {
     const dateMap = new Map<string, string>();
     for (const r of records) {
@@ -77,11 +79,26 @@ export default function AttendancePage() {
       // Keep the first status encountered (records are ordered ascending)
       if (!existing) dateMap.set(date, r.status);
     }
+
+    // Fill absent for past working days with no attendance
+    const now = new Date();
+    const todayStr = toISTDateStr(now);
+    const monthStart = startOfMonth(selectedDate);
+    const monthEnd = endOfMonth(selectedDate);
+    const daysInView = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+    for (const day of daysInView) {
+      const dateKey = format(day, "yyyy-MM-dd");
+      // Skip: future dates, weekends (Sunday = 0), already has record
+      if (dateKey >= todayStr || day.getDay() === 0 || dateMap.has(dateKey)) continue;
+      dateMap.set(dateKey, "absent");
+    }
+
     return Array.from(dateMap.entries()).map(([date, status]) => ({
       date,
       status: status as "present" | "absent" | "late" | "half-day" | "on-leave" | "holiday" | "lwp",
     }));
-  }, [records]);
+  }, [records, selectedDate]);
 
   // Find ALL records for the selected day (multiple sessions)
   const dateStr = toISTDateStr(selectedDate);

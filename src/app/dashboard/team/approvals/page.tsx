@@ -226,6 +226,8 @@ export default function ApprovalsPage() {
                     request={{
                       id: request.id,
                       employeeName: request.employee_name,
+                      managerName: request.manager_name,
+                      employeeState: request.employee_state,
                       type: request.type,
                       startDate: request.start_date,
                       endDate: request.end_date,
@@ -255,6 +257,8 @@ export default function ApprovalsPage() {
                     request={{
                       id: request.id,
                       employeeName: request.employee_name,
+                      managerName: request.manager_name,
+                      employeeState: request.employee_state,
                       attendanceDate: request.attendance_date,
                       rectificationType: request.rectification_type,
                       correctedPunchIn: request.corrected_punch_in,

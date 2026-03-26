@@ -9,6 +9,7 @@ import DataPreviewTable from "@/components/reports/DataPreviewTable";
 import { exportToCsv } from "@/lib/csv-export";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { showToast } from "@/components/ui/Toast";
 import { toISTDateStr, todayIST } from "@/lib/utils";
 
 type ReportType = "attendance" | "monthly" | "employee" | "project" | "leave";
@@ -94,7 +95,7 @@ const reportTabs: { key: ReportType; label: string }[] = [
 ];
 
 export default function ReportsPage() {
-  const { profile } = useAuth();
+  const { profile, session } = useAuth();
   const today = todayIST();
   const firstOfMonth = today.slice(0, 8) + "01";
 
@@ -115,7 +116,9 @@ export default function ReportsPage() {
   const [monthlyGrid, setMonthlyGrid] = useState<MonthlyGridRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
-  const [dayDetail, setDayDetail] = useState<{ name: string; date: string; punchIn: string; punchOut: string; hours: string; status: string } | null>(null);
+  const [dayDetail, setDayDetail] = useState<{ name: string; date: string; rawDate: string; userId: string; punchIn: string; punchOut: string; hours: string; status: string } | null>(null);
+  const [overrideStatus, setOverrideStatus] = useState("");
+  const [overrideLoading, setOverrideLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Fetch employee list scoped by user's role/project
@@ -289,7 +292,18 @@ export default function ReportsPage() {
       const leaveDays = entries.filter((e) => e.status === "on-leave").length;
       const totalMs = entries.reduce((sum, e) => sum + e.ms, 0);
       const totalDist = entries.reduce((sum, e) => sum + (e.distanceKm || 0), 0);
-      const daysAbsent = daysInMonth - daysPresent - leaveDays;
+
+      // Count working days (exclude Sundays) up to today or end of month
+      const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      const mEndStr = `${selectedMonth}-${String(daysInMonth).padStart(2, "0")}`;
+      const effectiveEnd = todayStr < mEndStr ? todayStr : mEndStr;
+      const effectiveEndDay = parseInt(effectiveEnd.split("-")[2], 10);
+      let workingDays = 0;
+      for (let d = 1; d <= effectiveEndDay; d++) {
+        const dayOfWeek = new Date(parseInt(year), parseInt(month) - 1, d).getDay();
+        if (dayOfWeek !== 0) workingDays++; // Exclude Sundays
+      }
+      const daysAbsent = workingDays - daysPresent - leaveDays;
 
       // Build day-by-day data for grid
       const dayData: Record<number, { status: string; punchIn: string | null; punchOut: string | null; hours: string }> = {};
@@ -696,21 +710,22 @@ export default function ReportsPage() {
                 <MonthlyGridTable
                   rows={monthlyGrid}
                   month={selectedMonth}
-                  onDayClick={(name, dayNum) => {
-                    const row = monthlyGrid.find((r) => r.name === name);
+                  onDayClick={(name, dayNum, userId) => {
+                    const row = monthlyGrid.find((r) => r.userId === userId);
                     const dayData = row?.days[dayNum];
-                    if (dayData) {
-                      const [yr, mo] = selectedMonth.split("-");
-                      const dateStr = `${yr}-${mo}-${String(dayNum).padStart(2, "0")}`;
-                      setDayDetail({
-                        name,
-                        date: formatDate(dateStr),
-                        punchIn: formatTime(dayData.punchIn),
-                        punchOut: formatTime(dayData.punchOut),
-                        hours: dayData.hours,
-                        status: dayData.status,
-                      });
-                    }
+                    const [yr, mo] = selectedMonth.split("-");
+                    const rawDate = `${yr}-${mo}-${String(dayNum).padStart(2, "0")}`;
+                    setOverrideStatus("");
+                    setDayDetail({
+                      name,
+                      date: formatDate(rawDate),
+                      rawDate,
+                      userId,
+                      punchIn: dayData ? formatTime(dayData.punchIn) : "--",
+                      punchOut: dayData ? formatTime(dayData.punchOut) : "--",
+                      hours: dayData?.hours || "0h",
+                      status: dayData?.status || "no-record",
+                    });
                   }}
                 />
               ) : (
@@ -767,7 +782,61 @@ export default function ReportsPage() {
                   <span className="font-medium">{dayDetail.hours}</span>
                 </div>
               </div>
-              <button onClick={() => setDayDetail(null)} className="mt-5 w-full py-2.5 rounded-xl bg-primary text-white text-sm font-medium">
+
+              {/* Admin Override */}
+              {profile && ["admin", "super_admin"].includes(profile.role) && (
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 block">Override Status</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={overrideStatus}
+                      onChange={(e) => setOverrideStatus(e.target.value)}
+                      className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm"
+                    >
+                      <option value="">Select status...</option>
+                      <option value="absent">Absent</option>
+                      <option value="present">Present</option>
+                      <option value="half-day">Half Day</option>
+                      <option value="lwp">LWP</option>
+                      <option value="late">Late</option>
+                    </select>
+                    <button
+                      disabled={!overrideStatus || overrideLoading}
+                      onClick={async () => {
+                        if (!session?.access_token || !overrideStatus) return;
+                        setOverrideLoading(true);
+                        try {
+                          const res = await fetch("/api/admin/attendance-override", {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${session.access_token}`,
+                            },
+                            body: JSON.stringify({ user_id: dayDetail.userId, date: dayDetail.rawDate, status: overrideStatus }),
+                          });
+                          const data = await res.json();
+                          if (res.ok) {
+                            showToast(data.message || "Status updated", "success");
+                            setDayDetail(null);
+                            handlePreview(); // Refresh grid
+                          } else {
+                            showToast(data.error || "Failed to update", "error");
+                          }
+                        } catch {
+                          showToast("Failed to update status", "error");
+                        } finally {
+                          setOverrideLoading(false);
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {overrideLoading ? "..." : "Apply"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <button onClick={() => setDayDetail(null)} className="mt-4 w-full py-2.5 rounded-xl bg-primary text-white text-sm font-medium">
                 Close
               </button>
             </div>
@@ -877,6 +946,7 @@ function LeaveTable({ rows, total }: { rows: LeaveReportRow[]; total: number }) 
 
 const statusCellColors: Record<string, string> = {
   present: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
+  absent: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
   late: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
   "half-day": "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400",
   "on-leave": "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
@@ -897,7 +967,7 @@ const statusShortLabels: Record<string, string> = {
 function MonthlyGridTable({ rows, month, onDayClick }: {
   rows: MonthlyGridRow[];
   month: string;
-  onDayClick: (name: string, dayNum: number) => void;
+  onDayClick: (name: string, dayNum: number, userId: string) => void;
 }) {
   const [year, mo] = month.split("-").map(Number);
   const daysInMonth = new Date(year, mo, 0).getDate();
@@ -950,7 +1020,7 @@ function MonthlyGridTable({ rows, month, onDayClick }: {
                   return (
                     <td
                       key={d}
-                      onClick={() => onDayClick(row.name, d)}
+                      onClick={() => onDayClick(row.name, d, row.userId)}
                       className="py-2 px-1 text-center cursor-pointer"
                     >
                       <span className={`inline-flex items-center justify-center w-6 h-5 rounded text-[10px] font-semibold ${statusCellColors[dayData.status] || "bg-gray-100 text-gray-500"}`}>

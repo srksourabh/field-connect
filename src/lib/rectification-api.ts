@@ -5,6 +5,8 @@ import { endOfDayIST, logError } from "./utils";
 
 export interface RectificationWithProfile extends HrRectificationRequest {
   employee_name: string;
+  manager_name?: string;
+  employee_state?: string;
 }
 
 export async function createRectificationRequest(data: {
@@ -67,13 +69,27 @@ export async function getTeamRectificationRequests(
   // Get direct reports first
   const { data: reports } = await supabase
     .from("hr_profiles")
-    .select("id, full_name")
+    .select("id, full_name, reporting_manager_id, state")
     .eq("reporting_manager_id", managerId);
 
   if (!reports || reports.length === 0) return [];
 
   const reportIds = reports.map((r) => r.id);
   const nameMap = new Map(reports.map((r) => [r.id, r.full_name]));
+  const stateMap = new Map(reports.map((r) => [r.id, r.state || ""]));
+
+  // Resolve manager names
+  const managerIds = Array.from(new Set(reports.map((r) => r.reporting_manager_id).filter(Boolean))) as string[];
+  const managerNameMap = new Map<string, string>();
+  if (managerIds.length > 0) {
+    const { data: managers } = await supabase
+      .from("hr_profiles")
+      .select("id, full_name")
+      .in("id", managerIds);
+    for (const m of managers || []) {
+      managerNameMap.set(m.id, m.full_name);
+    }
+  }
 
   const { data, error } = await supabase
     .from("hr_rectification_requests")
@@ -86,10 +102,15 @@ export async function getTeamRectificationRequests(
     logError("Fetch team rectifications error:", error);
     return [];
   }
-  return (data || []).map((r) => ({
-    ...r,
-    employee_name: nameMap.get(r.user_id) || "Unknown",
-  }));
+  return (data || []).map((r) => {
+    const report = reports.find((rep) => rep.id === r.user_id);
+    return {
+      ...r,
+      employee_name: nameMap.get(r.user_id) || "Unknown",
+      manager_name: report?.reporting_manager_id ? managerNameMap.get(report.reporting_manager_id) || "" : "",
+      employee_state: stateMap.get(r.user_id) || "",
+    };
+  });
 }
 
 export async function approveRectificationRequest(

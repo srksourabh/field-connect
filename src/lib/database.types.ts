@@ -86,6 +86,8 @@ export type Database = {
           compoff_used: number;
           privilege_leave_total: number;
           privilege_leave_used: number;
+          wfh_total: number;
+          wfh_used: number;
           created_at: string;
           updated_at: string;
         };
@@ -101,6 +103,8 @@ export type Database = {
           compoff_used?: number;
           privilege_leave_total?: number;
           privilege_leave_used?: number;
+          wfh_total?: number;
+          wfh_used?: number;
         };
         Update: Partial<Database["public"]["Tables"]["hr_leave_balances"]["Insert"]>;
       };

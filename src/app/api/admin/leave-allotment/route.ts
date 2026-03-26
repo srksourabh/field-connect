@@ -106,6 +106,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "All employees already have balances", created: 0 });
   }
 
+  const wfhTotal = body.wfh_total ?? 10;
+
   const records = missing.map((e) => ({
     user_id: e.id,
     year,
@@ -117,6 +119,8 @@ export async function POST(request: Request) {
     compoff_used: 0,
     privilege_leave_total: privilegeTotal,
     privilege_leave_used: 0,
+    wfh_total: wfhTotal,
+    wfh_used: 0,
   }));
 
   const { error } = await supabaseAdmin
@@ -152,6 +156,7 @@ export async function PUT(request: Request) {
     "casual_leave_total", "casual_leave_used",
     "compoff_total", "compoff_used",
     "privilege_leave_total", "privilege_leave_used",
+    "wfh_total", "wfh_used",
   ];
   const allowedFields = admin.isUniversal ? allFields : compoffFields;
 
@@ -251,6 +256,7 @@ export async function PATCH(request: Request) {
     "casual_leave_total", "casual_leave_used",
     "compoff_total", "compoff_used",
     "privilege_leave_total", "privilege_leave_used",
+    "wfh_total", "wfh_used",
   ];
   const allowedFields = admin.isUniversal ? allFields : compoffFields;
 

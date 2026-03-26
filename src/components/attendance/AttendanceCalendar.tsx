@@ -35,7 +35,7 @@ const statusDotColor: Record<string, string> = {
   absent: "bg-red-500",
   late: "bg-yellow-400",
   "half-day": "bg-orange-500",
-  "on-leave": "bg-red-500",
+  "on-leave": "bg-blue-500",
   holiday: "bg-blue-500",
   lwp: "bg-rose-400",
   weekend: "bg-gray-300 dark:bg-gray-700",

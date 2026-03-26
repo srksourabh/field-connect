@@ -39,7 +39,7 @@ export default function LeavePage() {
     try {
       const { data } = await supabase
         .from("hr_leave_balances")
-        .select("id, user_id, year, sick_leave_total, sick_leave_used, casual_leave_total, casual_leave_used, compoff_total, compoff_used, privilege_leave_total, privilege_leave_used, created_at, updated_at")
+        .select("id, user_id, year, sick_leave_total, sick_leave_used, casual_leave_total, casual_leave_used, compoff_total, compoff_used, privilege_leave_total, privilege_leave_used, wfh_total, wfh_used, created_at, updated_at")
         .eq("user_id", user.id)
         .eq("year", new Date().getFullYear())
         .single();
@@ -124,15 +124,17 @@ export default function LeavePage() {
       return;
     }
 
-    // Online path — validate balance (skip for WFH — no balance consumed)
-    if (balance && typeKey !== "wfh") {
+    // Online path — validate balance
+    if (balance) {
       const totalKeyMap: Record<string, string> = {
         sick: "sick_leave_total", casual: "casual_leave_total",
         privilege: "privilege_leave_total", compoff: "compoff_total",
+        wfh: "wfh_total",
       };
       const usedKeyMap: Record<string, string> = {
         sick: "sick_leave_used", casual: "casual_leave_used",
         privilege: "privilege_leave_used", compoff: "compoff_used",
+        wfh: "wfh_used",
       };
       const totalKey = (totalKeyMap[typeKey] || `${typeKey}_leave_total`) as keyof HrLeaveBalance;
       const usedKey = (usedKeyMap[typeKey] || `${typeKey}_leave_used`) as keyof HrLeaveBalance;
