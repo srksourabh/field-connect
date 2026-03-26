@@ -371,6 +371,139 @@ export async function GET(request: Request) {
       avgHours: data.present.size > 0 ? Math.round((data.hours / data.present.size) * 10) / 10 : 0,
     }));
 
+  // ===== TODAY'S STATUS (detailed) =====
+  const todayRecords = todayAttendance || [];
+
+  // Earliest punch-in today
+  const punchedInRecords = todayRecords.filter((r) => r.punch_in_at);
+  let earliestPunchIn: { name: string; time: string; userId: string } | null = null;
+  if (punchedInRecords.length > 0) {
+    const earliest = punchedInRecords.reduce((prev, curr) =>
+      prev.punch_in_at < curr.punch_in_at ? prev : curr
+    );
+    const emp = empMap.get(earliest.user_id);
+    earliestPunchIn = {
+      name: emp?.full_name || "Unknown",
+      time: new Date(earliest.punch_in_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" }),
+      userId: earliest.user_id,
+    };
+  }
+
+  // Longest active time today (cumulative per user)
+  const userActiveMs = new Map<string, number>();
+  for (const rec of todayRecords) {
+    if (!rec.punch_in_at) continue;
+    const inTime = new Date(rec.punch_in_at).getTime();
+    const outTime = rec.punch_out_at ? new Date(rec.punch_out_at).getTime() : Date.now();
+    const dur = outTime - inTime;
+    userActiveMs.set(rec.user_id, (userActiveMs.get(rec.user_id) || 0) + dur);
+  }
+  let longestActive: { name: string; hours: string; userId: string } | null = null;
+  if (userActiveMs.size > 0) {
+    let maxMs = 0;
+    let maxUserId = "";
+    userActiveMs.forEach((ms, uid) => { if (ms > maxMs) { maxMs = ms; maxUserId = uid; } });
+    const emp = empMap.get(maxUserId);
+    const h = Math.floor(maxMs / 3600000);
+    const m = Math.floor((maxMs % 3600000) / 60000);
+    longestActive = { name: emp?.full_name || "Unknown", hours: `${h}h ${m}m`, userId: maxUserId };
+  }
+
+  // Maximum distance traveled today
+  const { data: todayDistances } = await supabaseAdmin
+    .from("hr_attendance")
+    .select("user_id, total_distance_km")
+    .in("user_id", employeeIds)
+    .gte("created_at", todayStartIST)
+    .not("total_distance_km", "is", null)
+    .order("total_distance_km", { ascending: false })
+    .limit(1);
+
+  let maxDistance: { name: string; distance: string; userId: string } | null = null;
+  if (todayDistances && todayDistances.length > 0 && todayDistances[0].total_distance_km > 0) {
+    const emp = empMap.get(todayDistances[0].user_id);
+    maxDistance = {
+      name: emp?.full_name || "Unknown",
+      distance: `${todayDistances[0].total_distance_km.toFixed(1)} km`,
+      userId: todayDistances[0].user_id,
+    };
+  }
+
+  // Currently active (punched in, not punched out)
+  const currentlyActive = todayRecords
+    .filter((r) => r.punch_in_at && !r.punch_out_at)
+    .map((r) => {
+      const emp = empMap.get(r.user_id);
+      return { userId: r.user_id, name: emp?.full_name || "Unknown", designation: emp?.designation || "" };
+    });
+  // Deduplicate by userId
+  const seenActiveIds = new Set<string>();
+  const uniqueActive = currentlyActive.filter((a) => {
+    if (seenActiveIds.has(a.userId)) return false;
+    seenActiveIds.add(a.userId);
+    return true;
+  });
+
+  // DNT (Did Not Turn-up) — employees who haven't punched in and aren't on leave
+  const dntList = employees
+    .filter((e) => !presentTodayIds.has(e.id) && !onLeaveTodayIds.has(e.id))
+    .map((e) => {
+      // Get reporting manager name
+      return { userId: e.id, name: e.full_name, designation: e.designation || "", project: e.project_id || "" };
+    });
+
+  // Resolve reporting manager names for DNT list
+  const dntUserIds = dntList.map((d) => d.userId);
+  const { data: dntProfiles } = dntUserIds.length > 0
+    ? await supabaseAdmin
+        .from("hr_profiles")
+        .select("id, reporting_manager_id")
+        .in("id", dntUserIds)
+    : { data: [] };
+
+  const managerIdsToResolve = Array.from(new Set(
+    (dntProfiles || []).map((p) => p.reporting_manager_id).filter(Boolean)
+  )) as string[];
+
+  const mgrNameMap = new Map<string, string>();
+  if (managerIdsToResolve.length > 0) {
+    const { data: managers } = await supabaseAdmin
+      .from("hr_profiles")
+      .select("id, full_name")
+      .in("id", managerIdsToResolve);
+    for (const m of managers || []) mgrNameMap.set(m.id, m.full_name);
+  }
+
+  const dntProfileMap = new Map((dntProfiles || []).map((p) => [p.id, p.reporting_manager_id]));
+  const dntWithManager = dntList.map((d) => ({
+    ...d,
+    reportingManager: mgrNameMap.get(dntProfileMap.get(d.userId) || "") || "",
+  }));
+
+  // Punched out already today (completed their day)
+  const punchedOutUsers = new Set<string>();
+  for (const rec of todayRecords) {
+    if (rec.punch_in_at && rec.punch_out_at) punchedOutUsers.add(rec.user_id);
+  }
+  // Remove users who also have an open session
+  for (const rec of todayRecords) {
+    if (rec.punch_in_at && !rec.punch_out_at) punchedOutUsers.delete(rec.user_id);
+  }
+  const completedCount = punchedOutUsers.size;
+
+  const todayStatus = {
+    presentCount: presentTodayIds.size,
+    absentCount: Math.max(0, employees.length - presentTodayIds.size - onLeaveTodayIds.size),
+    onLeaveCount: onLeaveTodayIds.size,
+    activeNowCount: uniqueActive.length,
+    completedCount,
+    earliestPunchIn,
+    longestActive,
+    maxDistance,
+    currentlyActive: uniqueActive.slice(0, 20),
+    dntList: dntWithManager.slice(0, 50),
+  };
+
   return NextResponse.json({
     summary,
     attendance: attendanceStats,
@@ -382,6 +515,7 @@ export async function GET(request: Request) {
     projectBreakdown,
     departmentBreakdown,
     weeklyComparison,
+    todayStatus,
   });
 }
 

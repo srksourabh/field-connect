@@ -13,6 +13,7 @@ import PunchInDistribution from "@/components/analytics/PunchInDistribution";
 import DayOfWeekChart from "@/components/analytics/DayOfWeekChart";
 import BreakdownCards from "@/components/analytics/BreakdownCards";
 import WeeklyComparison from "@/components/analytics/WeeklyComparison";
+import TodayStatus from "@/components/analytics/TodayStatus";
 
 interface AnalyticsData {
   summary: {
@@ -44,6 +45,18 @@ interface AnalyticsData {
   projectBreakdown: { name: string; employees: number; avgHours: number; latePercent: number }[];
   departmentBreakdown: { name: string; employees: number; avgHours: number; latePercent: number }[];
   weeklyComparison: { week: string; presentCount: number; avgHours: number }[];
+  todayStatus: {
+    presentCount: number;
+    absentCount: number;
+    onLeaveCount: number;
+    activeNowCount: number;
+    completedCount: number;
+    earliestPunchIn: { name: string; time: string; userId: string } | null;
+    longestActive: { name: string; hours: string; userId: string } | null;
+    maxDistance: { name: string; distance: string; userId: string } | null;
+    currentlyActive: { userId: string; name: string; designation: string }[];
+    dntList: { userId: string; name: string; designation: string; project: string; reportingManager: string }[];
+  };
 }
 
 type Period = "this_month" | "last_month" | "last_3_months";
@@ -122,6 +135,11 @@ export default function AnalyticsPage() {
           </div>
         ) : data ? (
           <>
+            {/* Today's Status — live overview */}
+            {data.todayStatus && (
+              <TodayStatus todayStatus={data.todayStatus} totalEmployees={data.summary.totalEmployees} />
+            )}
+
             {/* Summary Cards */}
             <SummaryCards {...data.summary} />
 
