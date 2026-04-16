@@ -258,3 +258,49 @@ export interface HrMessage {
   is_read: boolean;
   created_at: string;
 }
+
+// Payroll types
+
+export interface HrSalaryComponent {
+  id: string;
+  name: string;
+  type: "earning" | "deduction";
+  is_statutory: boolean;
+  calc_rule: string | null;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface HrEmployeeSalary {
+  id: string;
+  employee_id: string;
+  component_id: string;
+  amount: number;
+  effective_from: string;
+  effective_to: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HrPayroll {
+  id: string;
+  employee_id: string;
+  month: string;
+  gross_earnings: number;
+  total_deductions: number;
+  net_payable: number;
+  working_days: number;
+  days_present: number;
+  days_absent: number;
+  lwp_days: number;
+  leave_days: number;
+  earnings_breakdown: Record<string, number>;
+  deductions_breakdown: Record<string, number>;
+  status: "draft" | "processed" | "paid";
+  processed_by: string | null;
+  processed_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
