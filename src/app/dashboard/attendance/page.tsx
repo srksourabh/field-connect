@@ -73,11 +73,16 @@ export default function AttendancePage() {
   // Also fill in "absent" for past working days (Mon-Sat) with no record
   const calendarRecords = useMemo(() => {
     const dateMap = new Map<string, string>();
+    const autoCloseSet = new Set<string>();
     for (const r of records) {
       const date = recordDate(r);
       const existing = dateMap.get(date);
       // Keep the first status encountered (records are ordered ascending)
       if (!existing) dateMap.set(date, r.status);
+      // Track auto-closed dates (missed punch-out — system closed at 23:59)
+      if (r.punch_out_at && isAutoCloseTime(r.punch_out_at)) {
+        autoCloseSet.add(date);
+      }
     }
 
     // Fill absent for past working days with no attendance
@@ -97,6 +102,7 @@ export default function AttendancePage() {
     return Array.from(dateMap.entries()).map(([date, status]) => ({
       date,
       status: status as "present" | "absent" | "late" | "half-day" | "on-leave" | "holiday" | "lwp",
+      autoClose: autoCloseSet.has(date),
     }));
   }, [records, selectedDate]);
 

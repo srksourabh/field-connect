@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+/** Recursively get all employee IDs in a manager's reporting tree */
+async function getSubtreeIds(managerId: string): Promise<Set<string>> {
+  const result = new Set<string>();
+  const queue = [managerId];
+
+  while (queue.length > 0) {
+    const batch = queue.splice(0, 50);
+    const { data } = await supabaseAdmin
+      .from("hr_profiles")
+      .select("id")
+      .in("reporting_manager_id", batch)
+      .is("deactivated_at", null);
+
+    for (const p of data || []) {
+      if (!result.has(p.id)) {
+        result.add(p.id);
+        queue.push(p.id);
+      }
+    }
+  }
+
+  return result;
+}
+
 export async function POST(req: NextRequest) {
   // Auth
   const authHeader = req.headers.get("authorization");
@@ -12,7 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Verify caller is active admin
+  // Verify caller is active admin or manager
   const { data: callerProfile } = await supabaseAdmin
     .from("hr_profiles")
     .select("id, role, designation, project_id")
@@ -20,8 +44,8 @@ export async function POST(req: NextRequest) {
     .is("deactivated_at", null)
     .single();
 
-  if (!callerProfile || !["admin", "super_admin"].includes(callerProfile.role)) {
-    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  if (!callerProfile || !["manager", "admin", "super_admin"].includes(callerProfile.role)) {
+    return NextResponse.json({ error: "Manager or admin access required" }, { status: 403 });
   }
 
   let body;
@@ -39,14 +63,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Invalid status. Must be one of: ${validStatuses.join(", ")}` }, { status: 400 });
   }
 
-  // Verify target employee exists and is in admin's scope
-  const isUniversal = callerProfile.role === "super_admin" ||
-    (callerProfile.designation?.toLowerCase().includes("hr") &&
-      ["admin", "super_admin"].includes(callerProfile.role));
-
+  // Verify target employee exists
   const { data: targetProfile } = await supabaseAdmin
     .from("hr_profiles")
-    .select("id, project_id, full_name")
+    .select("id, project_id, full_name, reporting_manager_id")
     .eq("id", user_id)
     .is("deactivated_at", null)
     .single();
@@ -55,8 +75,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Employee not found" }, { status: 404 });
   }
 
-  if (!isUniversal && targetProfile.project_id !== callerProfile.project_id) {
-    return NextResponse.json({ error: "You can only manage employees in your project" }, { status: 403 });
+  // Authorization scoping
+  const isUniversal = callerProfile.role === "super_admin" ||
+    (callerProfile.designation?.toLowerCase().includes("hr") &&
+      ["admin", "super_admin"].includes(callerProfile.role));
+
+  if (!isUniversal) {
+    if (callerProfile.role === "manager") {
+      // Manager can only override employees in their reporting tree
+      const subtreeIds = await getSubtreeIds(callerProfile.id);
+      if (!subtreeIds.has(user_id)) {
+        return NextResponse.json({ error: "You can only override attendance for employees in your team" }, { status: 403 });
+      }
+    } else {
+      // Regular admin — scoped to their project
+      if (targetProfile.project_id !== callerProfile.project_id) {
+        return NextResponse.json({ error: "You can only manage employees in your project" }, { status: 403 });
+      }
+    }
   }
 
   // Find attendance records for this date
@@ -100,11 +136,12 @@ export async function POST(req: NextRequest) {
   }
 
   // Notify the employee
+  const roleLabel = callerProfile.role === "manager" ? "manager" : "admin";
   const statusLabel = status === "lwp" ? "LWP" : status.charAt(0).toUpperCase() + status.slice(1);
   await supabaseAdmin.from("hr_notifications").insert({
     user_id,
     title: "Attendance Updated",
-    body: `Your attendance for ${date} has been marked as "${statusLabel}" by admin.`,
+    body: `Your attendance for ${date} has been marked as "${statusLabel}" by your ${roleLabel}.`,
     type: "attendance_override",
   });
 

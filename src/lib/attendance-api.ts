@@ -116,13 +116,13 @@ export function computeCumulativeSeconds(sessions: HrAttendance[]): number {
 }
 
 /** After punch-out, update attendance status based on cumulative hours:
- *  >=4h → present, 1-4h → half-day, <1h → absent */
+ *  >=8h → present, 4-8h → half-day, <4h → absent */
 export async function updateAttendanceStatus(userId: string): Promise<void> {
   const sessions = await getTodayAllSessions(userId);
   if (!sessions) return; // Server unreachable — skip
   const totalSecs = computeCumulativeSeconds(sessions);
   const totalHours = totalSecs / 3600;
-  const status = totalHours >= 4 ? "present" : totalHours >= 1 ? "half-day" : "absent";
+  const status = totalHours >= 8 ? "present" : totalHours >= 4 ? "half-day" : "absent";
 
   // Update today's work sessions to the computed status (skip on-leave/holiday records)
   const today = todayISTTimestamp();
@@ -170,10 +170,10 @@ export async function closeStaleSession(
     .toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const autoCloseTimestamp = autoCloseIST(punchInDate);
 
-  // Compute actual hours to set correct status: >=4h present, 1-4h half-day, <1h absent
+  // Compute actual hours to set correct status: >=8h present, 4-8h half-day, <4h absent
   const durMs = new Date(autoCloseTimestamp).getTime() - new Date(session.punch_in_at).getTime();
   const durHours = durMs / 3600000;
-  const status = durHours >= 4 ? "present" : durHours >= 1 ? "half-day" : "absent";
+  const status = durHours >= 8 ? "present" : durHours >= 4 ? "half-day" : "absent";
 
   const { data, error } = await supabase
     .from("hr_attendance")

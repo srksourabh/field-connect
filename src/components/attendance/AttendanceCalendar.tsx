@@ -21,6 +21,7 @@ type DayStatus = "present" | "absent" | "late" | "half-day" | "on-leave" | "holi
 interface AttendanceRecord {
   date: string;
   status: DayStatus;
+  autoClose?: boolean;
 }
 
 interface AttendanceCalendarProps {
@@ -62,6 +63,12 @@ export default function AttendanceCalendar({
   const statusMap = useMemo(() => {
     const map = new Map<string, DayStatus>();
     records.forEach((r) => map.set(r.date, r.status));
+    return map;
+  }, [records]);
+
+  const autoCloseMap = useMemo(() => {
+    const map = new Set<string>();
+    records.forEach((r) => { if (r.autoClose) map.add(r.date); });
     return map;
   }, [records]);
 
@@ -107,6 +114,15 @@ export default function AttendanceCalendar({
         ))}
       </div>
 
+      {/* Legend */}
+      <div className="flex items-center gap-3 mb-4 text-[10px] text-gray-400 dark:text-gray-500 justify-center flex-wrap">
+        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Present</span>
+        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Half Day</span>
+        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Absent</span>
+        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Leave</span>
+        <span className="flex items-center gap-1"><span className="w-0 h-0 border-l-[4px] border-l-transparent border-t-[4px] border-t-emerald-500" /> Missed Punch-Out</span>
+      </div>
+
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-y-6 text-center text-sm font-medium">
         {days.map((day) => {
@@ -114,6 +130,7 @@ export default function AttendanceCalendar({
           const status = statusMap.get(dateKey);
           const isCurrentMonth = isSameMonth(day, currentMonth);
           const isSelected = isSameDay(day, selectedDate);
+          const isAutoClose = autoCloseMap.has(dateKey);
 
           return (
             <div
@@ -124,6 +141,10 @@ export default function AttendanceCalendar({
                 !isCurrentMonth && "text-gray-300 dark:text-gray-600"
               )}
             >
+              {/* Green triangle for missed punch-out (auto-closed) */}
+              {isAutoClose && isCurrentMonth && (
+                <span className="absolute top-0 right-0.5 w-0 h-0 border-l-[5px] border-l-transparent border-t-[5px] border-t-emerald-500" title="Missed punch-out" />
+              )}
               {isSelected && isCurrentMonth ? (
                 <div className="w-8 h-8 flex items-center justify-center bg-primary rounded-full text-white shadow-lg shadow-primary/30 mb-1">
                   {format(day, "d")}

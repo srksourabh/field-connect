@@ -50,6 +50,7 @@ export default function DashboardHome() {
   const [routeMapOpen, setRouteMapOpen] = useState(false);
   const [sessionModalOpen, setSessionModalOpen] = useState(false);
   const [todaySessions, setTodaySessions] = useState<HrAttendance[]>([]);
+  const [onLeaveToday, setOnLeaveToday] = useState(false);
   const lastInitUserId = useRef("");
   const punchingRef = useRef(false); // debounce guard
 
@@ -142,11 +143,22 @@ export default function DashboardHome() {
       setLocationLogs(logs);
       setDistanceKm(await computeRoadDistanceKm(logs));
 
-      // Fetch leave balance + pending count
-      const [balance, pending] = await Promise.all([
+      // Fetch leave balance + pending count + check if on leave today
+      const todayStr = todayIST();
+      const [balance, pending, leaveToday] = await Promise.all([
         getUserLeaveBalance(userId),
         getPendingLeaveCount(userId),
+        supabase
+          .from("hr_leave_requests")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("status", "approved")
+          .lte("start_date", todayStr)
+          .gte("end_date", todayStr)
+          .limit(1),
       ]);
+      setOnLeaveToday((leaveToday.data?.length ?? 0) > 0);
+
       if (balance) {
         const info: LeaveInfo = {
           sickRemaining: balance.sick_total - balance.sick_used,
@@ -360,6 +372,7 @@ export default function DashboardHome() {
         ready={isReady}
         geoLoading={geo.loading}
         geoError={geo.error}
+        onLeaveToday={onLeaveToday}
       />
 
       {/* Location */}

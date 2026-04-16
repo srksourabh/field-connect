@@ -262,8 +262,8 @@ export default function ReportsPage() {
       // Recompute status based on actual hours worked (skip on-leave/holiday)
       let correctedStatus = entry.status;
       if (!["on-leave", "holiday", "lwp"].includes(entry.status)) {
-        if (hours >= 4) correctedStatus = "present";
-        else if (hours >= 1) correctedStatus = "half-day";
+        if (hours >= 8) correctedStatus = "present";
+        else if (hours >= 4) correctedStatus = "half-day";
         else correctedStatus = "absent";
       }
 

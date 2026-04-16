@@ -12,6 +12,7 @@ interface PunchCardProps {
   ready?: boolean;
   geoLoading?: boolean;
   geoError?: string | null;
+  onLeaveToday?: boolean;
 }
 
 export default function PunchCard({
@@ -22,8 +23,9 @@ export default function PunchCard({
   ready = true,
   geoLoading = false,
   geoError = null,
+  onLeaveToday = false,
 }: PunchCardProps) {
-  const canPunch = ready && !geoLoading;
+  const canPunch = ready && !geoLoading && !onLeaveToday;
 
   return (
     <section className="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/50 p-6 mb-6 relative overflow-hidden group">
@@ -50,7 +52,14 @@ export default function PunchCard({
           <AnalogClock size={110} />
         </div>
 
-        {!canPunch ? (
+        {onLeaveToday ? (
+          <div className="w-full max-w-[280px] mb-4 text-center">
+            <div className="h-16 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 flex items-center justify-center">
+              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">On Leave Today</p>
+            </div>
+            <p className="text-xs text-blue-500/70 mt-2">Punch-in is disabled for approved leave days</p>
+          </div>
+        ) : !canPunch ? (
           <div className="w-full max-w-[280px] mb-4">
             <div className="h-16 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse" />
             {geoLoading && ready && (
