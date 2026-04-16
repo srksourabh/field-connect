@@ -8,7 +8,7 @@ const sections = [
   { icon: Layers, label: "Salary Components", description: "Manage earning & deduction types", href: "/dashboard/admin/payroll/components", color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20" },
   { icon: Users, label: "Employee Salary", description: "Assign salary to employees", href: "/dashboard/admin/payroll/salary", color: "text-green-500 bg-green-50 dark:bg-green-900/20" },
   { icon: Play, label: "Run Payroll", description: "Process monthly payroll", href: "/dashboard/admin/payroll/run", color: "text-blue-500 bg-blue-50 dark:bg-blue-900/20" },
-  { icon: FileText, label: "Payslips", description: "View generated payslips", href: "/dashboard/admin/payroll/payslip", color: "text-amber-500 bg-amber-50 dark:bg-amber-900/20", disabled: true },
+  { icon: FileText, label: "Payslips", description: "View generated payslips", href: "/dashboard/admin/payroll/payslip", color: "text-amber-500 bg-amber-50 dark:bg-amber-900/20" },
 ];
 
 export default function PayrollHubPage() {
