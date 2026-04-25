@@ -160,6 +160,25 @@ export async function getAttendanceByMonth(
   return data || [];
 }
 
+/** Returns all open (no punch_out_at) sessions from previous IST days for a user */
+export async function getStaleOpenSessions(userId: string): Promise<HrAttendance[]> {
+  const todayMidnight = todayISTTimestamp();
+  const { data, error } = await supabase
+    .from("hr_attendance")
+    .select()
+    .eq("user_id", userId)
+    .lt("created_at", todayMidnight)
+    .is("punch_out_at", null)
+    .not("status", "in", '("on-leave","holiday")')
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    logError("Get stale sessions error:", error);
+    return [];
+  }
+  return data || [];
+}
+
 /** Close an open session from a previous IST day at 23:59 of its punch-in date */
 export async function closeStaleSession(
   session: HrAttendance

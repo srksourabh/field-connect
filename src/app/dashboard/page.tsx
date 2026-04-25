@@ -16,8 +16,9 @@ import { useLocationTracker } from "@/hooks/useLocationTracker";
 import { MapPin, FileText } from "lucide-react";
 import { addToQueue } from "@/lib/sync-queue";
 import { cacheSet, cacheGet } from "@/lib/offline-cache";
-import { createPunchIn, updatePunchOut, getTodayAllSessions, closeStaleSession, updateAttendanceStatus } from "@/lib/attendance-api";
-import { todayIST, toISTDateStr } from "@/lib/utils";
+import { createPunchIn, updatePunchOut, getTodayAllSessions, getStaleOpenSessions, closeStaleSession, updateAttendanceStatus } from "@/lib/attendance-api";
+import { todayIST } from "@/lib/utils";
+import { useMidnightAutoClose } from "@/hooks/useMidnightAutoClose";
 import { insertLocationLog, getTodayLocationLogs, computeRoadDistanceKm } from "@/lib/location-api";
 import RouteMapModal from "@/components/punch/RouteMapModal";
 import SessionTimelineModal from "@/components/punch/SessionTimelineModal";
@@ -56,6 +57,28 @@ export default function DashboardHome() {
 
   // Location tracker — captures GPS at scheduled times while punched in
   useLocationTracker(isPunchedIn, userId, attendanceId, isOnline);
+
+  // Midnight auto-close — detects IST day change and closes stale sessions
+  const handleMidnight = useCallback(async () => {
+    if (!userId) return;
+    const stale = await getStaleOpenSessions(userId);
+    if (stale.length > 0) {
+      await Promise.all(stale.map((s) => closeStaleSession(s)));
+    }
+    if (isPunchedIn) punchOut();
+    // Re-init from server for the new day
+    const sessions = await getTodayAllSessions(userId);
+    if (sessions) {
+      initFromServer(sessions, null);
+      setTodaySessions(sessions);
+    }
+    setFirstPunchIn(null);
+    setLastPunchOut(null);
+    setAttendanceId(null);
+    setDistanceKm(0);
+    setLocationLogs([]);
+  }, [userId, isPunchedIn, punchOut, initFromServer]);
+  useMidnightAutoClose(userId, isPunchedIn, handleMidnight);
 
   // Live clock — updates every 30 seconds (minute display only, reduces re-renders)
   useEffect(() => {
@@ -102,7 +125,7 @@ export default function DashboardHome() {
     if (cachedLeave) setLeaveInfo(cachedLeave.data);
 
     (async () => {
-      let sessions = await getTodayAllSessions(userId);
+      const sessions = await getTodayAllSessions(userId);
 
       // Server unreachable — fall back to localStorage (last known state on this device)
       if (sessions === null) {
@@ -110,20 +133,14 @@ export default function DashboardHome() {
         return;
       }
 
-      let openSession = sessions.find((s) => !s.punch_out_at) ?? null;
-
-      // Auto-close ALL stale sessions from previous IST days
-      const staleSessions = sessions.filter((s) => {
-        if (!s.punch_in_at || s.punch_out_at) return false;
-        return toISTDateStr(new Date(s.punch_in_at)) !== todayIST();
-      });
+      // Auto-close ALL stale sessions from previous IST days (separate query
+      // because getTodayAllSessions only returns today's records)
+      const staleSessions = await getStaleOpenSessions(userId);
       if (staleSessions.length > 0) {
         await Promise.all(staleSessions.map((s) => closeStaleSession(s)));
-        // Re-fetch today's sessions after closing stale ones
-        sessions = await getTodayAllSessions(userId);
-        if (sessions === null) { initFromCache(); return; }
-        openSession = sessions.find((s) => !s.punch_out_at) ?? null;
       }
+
+      const openSession = sessions.find((s) => !s.punch_out_at) ?? null;
 
       initFromServer(sessions, openSession ? { punch_in_at: openSession.punch_in_at! } : null);
       setTodaySessions(sessions);

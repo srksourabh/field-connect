@@ -8,8 +8,13 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
  */
 export async function GET(req: NextRequest) {
   // Verify the request is from Vercel Cron (authorization header)
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    console.error("CRON_SECRET env var is not set — cron job cannot authenticate");
+    return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 500 });
+  }
   const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
