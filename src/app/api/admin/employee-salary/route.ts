@@ -26,7 +26,7 @@ async function verifyUniversalAdmin(req: NextRequest) {
   return { id: user.id };
 }
 
-// GET: salary structure for a specific employee
+// GET: salary structure + payroll preferences for a specific employee
 export async function GET(req: NextRequest) {
   const admin = await verifyUniversalAdmin(req);
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -38,17 +38,30 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "employee_id is required" }, { status: 400 });
   }
 
-  // Get currently active salary entries (effective_to is null)
-  const { data, error } = await supabaseAdmin
-    .from("hr_employee_salary")
-    .select("id, employee_id, component_id, amount, effective_from, effective_to")
-    .eq("employee_id", employeeId)
-    .is("effective_to", null)
-    .order("component_id");
+  const [{ data: salaryData, error }, { data: profileData }] = await Promise.all([
+    supabaseAdmin
+      .from("hr_employee_salary")
+      .select("id, employee_id, component_id, amount, effective_from, effective_to")
+      .eq("employee_id", employeeId)
+      .is("effective_to", null)
+      .order("component_id"),
+    supabaseAdmin
+      .from("hr_profiles")
+      .select("tds_regime, pf_opted_out, uan_number")
+      .eq("id", employeeId)
+      .single(),
+  ]);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ salary: data || [] });
+  return NextResponse.json({
+    salary: salaryData || [],
+    payroll_prefs: {
+      tds_regime: profileData?.tds_regime || "new",
+      pf_opted_out: profileData?.pf_opted_out || false,
+      uan_number: profileData?.uan_number || "",
+    },
+  });
 }
 
 // POST: bulk upsert salary components for an employee
@@ -115,4 +128,43 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ success: true, saved: newEntries.length });
+}
+
+// PATCH: update payroll preferences (tds_regime, pf_opted_out, uan_number) on hr_profiles
+export async function PATCH(req: NextRequest) {
+  const admin = await verifyUniversalAdmin(req);
+  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  let body;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  const { employee_id, tds_regime, pf_opted_out, uan_number } = body as {
+    employee_id: string;
+    tds_regime?: string;
+    pf_opted_out?: boolean;
+    uan_number?: string;
+  };
+
+  if (!employee_id) return NextResponse.json({ error: "employee_id required" }, { status: 400 });
+
+  const updates: Record<string, unknown> = {};
+  if (tds_regime === "old" || tds_regime === "new") updates.tds_regime = tds_regime;
+  if (typeof pf_opted_out === "boolean") updates.pf_opted_out = pf_opted_out;
+  if (typeof uan_number === "string") updates.uan_number = uan_number || null;
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+  }
+
+  const { error } = await supabaseAdmin
+    .from("hr_profiles")
+    .update(updates)
+    .eq("id", employee_id)
+    .is("deactivated_at", null);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ success: true });
 }

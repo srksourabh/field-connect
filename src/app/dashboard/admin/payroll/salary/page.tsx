@@ -22,8 +22,10 @@ export default function EmployeeSalaryPage() {
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [amounts, setAmounts] = useState<Record<string, number>>({});
+  const [payrollPrefs, setPayrollPrefs] = useState({ tds_regime: "new", pf_opted_out: false, uan_number: "" });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savingPrefs, setSavingPrefs] = useState(false);
   const [fetchingEmployee, setFetchingEmployee] = useState(false);
 
   const hasAccess = profile?.role === "super_admin" ||
@@ -69,8 +71,16 @@ export default function EmployeeSalaryPage() {
         newAmounts[entry.component_id] = entry.amount;
       }
       setAmounts(newAmounts);
+      if (data.payroll_prefs) {
+        setPayrollPrefs({
+          tds_regime: data.payroll_prefs.tds_regime || "new",
+          pf_opted_out: data.payroll_prefs.pf_opted_out || false,
+          uan_number: data.payroll_prefs.uan_number || "",
+        });
+      }
     } else {
       setAmounts({});
+      setPayrollPrefs({ tds_regime: "new", pf_opted_out: false, uan_number: "" });
     }
     setFetchingEmployee(false);
   }, [session]);
@@ -97,6 +107,23 @@ export default function EmployeeSalaryPage() {
 
   const totalEarnings = earnings.reduce((sum, c) => sum + (amounts[c.id] || 0), 0);
   const totalDeductions = deductions.reduce((sum, c) => sum + (amounts[c.id] || 0), 0);
+
+  const handleSavePrefs = async () => {
+    if (!selectedEmployee || !session?.access_token) return;
+    setSavingPrefs(true);
+    const res = await fetch("/api/admin/employee-salary", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ employee_id: selectedEmployee, ...payrollPrefs }),
+    });
+    if (res.ok) {
+      showToast("Preferences saved", "success");
+    } else {
+      const d = await res.json();
+      showToast(d.error || "Failed to save preferences", "error");
+    }
+    setSavingPrefs(false);
+  };
 
   const handleSave = async () => {
     if (!selectedEmployee || !session?.access_token) return;
@@ -211,6 +238,68 @@ export default function EmployeeSalaryPage() {
                         Deductions: ₹{totalDeductions.toLocaleString("en-IN")} · Net: ₹{(totalEarnings - totalDeductions).toLocaleString("en-IN")}
                       </p>
                     )}
+                  </div>
+
+                  {/* Payroll Preferences */}
+                  <div className="bg-white dark:bg-surface-dark rounded-xl p-4 border border-gray-100 dark:border-gray-700/50 space-y-3">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Payroll Preferences</p>
+
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1.5 block">TDS Regime</label>
+                      <div className="flex gap-2">
+                        {["new", "old"].map((r) => (
+                          <button
+                            key={r}
+                            onClick={() => setPayrollPrefs((p) => ({ ...p, tds_regime: r }))}
+                            className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                              payrollPrefs.tds_regime === r
+                                ? "bg-primary text-white border-primary"
+                                : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+                            }`}
+                          >
+                            {r === "new" ? "New Regime" : "Old Regime"}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-gray-400 mt-1">
+                        {payrollPrefs.tds_regime === "new"
+                          ? "Std. deduction ₹75k, lower slabs, no exemptions"
+                          : "Std. deduction ₹50k + 80C, higher slabs with exemptions"}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">PF Opt-out</p>
+                        <p className="text-[11px] text-gray-400">Skip employee & employer PF</p>
+                      </div>
+                      <button
+                        onClick={() => setPayrollPrefs((p) => ({ ...p, pf_opted_out: !p.pf_opted_out }))}
+                        className={`relative w-10 h-6 rounded-full transition-colors ${payrollPrefs.pf_opted_out ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"}`}
+                      >
+                        <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${payrollPrefs.pf_opted_out ? "translate-x-5" : "translate-x-1"}`} />
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1.5 block">UAN Number</label>
+                      <input
+                        type="text"
+                        value={payrollPrefs.uan_number}
+                        onChange={(e) => setPayrollPrefs((p) => ({ ...p, uan_number: e.target.value }))}
+                        placeholder="101234567890"
+                        className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleSavePrefs}
+                      disabled={savingPrefs}
+                      className="w-full py-2.5 rounded-xl bg-gray-700 dark:bg-gray-600 text-white font-medium text-sm hover:bg-gray-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                    >
+                      {savingPrefs ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      {savingPrefs ? "Saving..." : "Save Preferences"}
+                    </button>
                   </div>
 
                   {/* Earnings */}

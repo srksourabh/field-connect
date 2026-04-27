@@ -64,12 +64,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Get employee profile
+  // Get employee profile with payroll-relevant fields
   const { data: empProfile } = await supabaseAdmin
     .from("hr_profiles")
-    .select("full_name, designation, department, project_id, employee_code, date_of_joining")
+    .select("full_name, designation, department, project_id, employee_code, date_of_joining, uan_number, kyc_data")
     .eq("id", payroll.employee_id)
     .single();
+
+  const kyc = (empProfile?.kyc_data as Record<string, string> | null) || {};
+  const panRaw: string = kyc.pan || "";
+  const panMasked = panRaw.length >= 4
+    ? panRaw.slice(0, -4).replace(/./g, "X") + panRaw.slice(-4)
+    : panRaw;
+  const accountRaw: string = kyc.account_no || "";
+  const accountMasked = accountRaw.length > 4
+    ? "X".repeat(accountRaw.length - 4) + accountRaw.slice(-4)
+    : accountRaw;
 
   return NextResponse.json({
     payslip: {
@@ -80,6 +90,11 @@ export async function GET(req: NextRequest) {
       project: empProfile?.project_id || "",
       employee_code: empProfile?.employee_code || "",
       date_of_joining: empProfile?.date_of_joining || "",
+      uan_number: empProfile?.uan_number || "",
+      pan_masked: panMasked,
+      bank_name: kyc.bank_name || "",
+      account_masked: accountMasked,
+      ifsc: kyc.ifsc || "",
     },
   });
 }

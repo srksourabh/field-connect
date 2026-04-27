@@ -30,6 +30,16 @@ interface PayslipData {
   deductions_breakdown: Record<string, number>;
   status: string;
   processed_at: string | null;
+  tds_amount: number;
+  tds_regime: string | null;
+  employer_pf: number;
+  employer_esi: number;
+  payment_date: string | null;
+  uan_number: string;
+  pan_masked: string;
+  bank_name: string;
+  account_masked: string;
+  ifsc: string;
 }
 
 interface EmployeeOption {
@@ -46,12 +56,27 @@ export default function PayslipViewPage() {
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [payslip, setPayslip] = useState<PayslipData | null>(null);
+  const [companySettings, setCompanySettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
 
   const hasAccess = profile?.role === "super_admin" ||
     (profile?.designation?.toLowerCase().includes("hr") &&
       ["admin", "super_admin"].includes(profile?.role || ""));
+
+  useEffect(() => {
+    async function fetchCompany() {
+      if (!session?.access_token) return;
+      const res = await fetch("/api/admin/company-settings", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setCompanySettings(d.settings || {});
+      }
+    }
+    fetchCompany();
+  }, [session]);
 
   // Fetch employees with processed payroll
   useEffect(() => {
@@ -102,119 +127,173 @@ export default function PayslipViewPage() {
       const { jsPDF } = await import("jspdf");
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const w = doc.internal.pageSize.getWidth();
-      let y = 20;
+      const L = 15;
+      const R = w / 2 + 5;
+      let y = 15;
+
+      // Load logo
+      let logoBase64 = "";
+      try {
+        const imgRes = await fetch("/brands/uds-logo.jpg");
+        const blob = await imgRes.blob();
+        logoBase64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      } catch { /* logo optional */ }
 
       // Company header
-      doc.setFontSize(16);
+      const logoW = 18;
+      const logoH = 18;
+      if (logoBase64) {
+        doc.addImage(logoBase64, "JPEG", L, y, logoW, logoH);
+      }
+      const hx = L + (logoBase64 ? logoW + 4 : 0);
+      const companyName = companySettings.company_full_name || "Ultimate Digital Solutions";
+      doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
-      doc.text("UDS - Ultimate Digital Solutions", w / 2, y, { align: "center" });
-      y += 7;
-      doc.setFontSize(10);
+      doc.text(companyName, hx, y + 5);
+      doc.setFontSize(7.5);
       doc.setFont("helvetica", "normal");
-      doc.text("Payslip", w / 2, y, { align: "center" });
-      y += 5;
+      if (companySettings.company_address) {
+        const addrLines = doc.splitTextToSize(companySettings.company_address, w - hx - 15);
+        doc.text(addrLines, hx, y + 11);
+      }
+      const regTexts: string[] = [];
+      if (companySettings.company_pf_no) regTexts.push(`PF: ${companySettings.company_pf_no}`);
+      if (companySettings.company_esic_code) regTexts.push(`ESIC: ${companySettings.company_esic_code}`);
+      if (regTexts.length) doc.text(regTexts.join("   "), hx, y + 19);
 
+      y += logoH + 5;
+
+      // Payslip title
       const monthLabel = new Date(`${payslip.month}-01`).toLocaleDateString("en-IN", { month: "long", year: "numeric" });
-      doc.text(monthLabel, w / 2, y, { align: "center" });
-      y += 8;
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(19, 127, 236);
+      doc.text(`PAYSLIP — ${monthLabel.toUpperCase()}`, w / 2, y, { align: "center" });
+      doc.setTextColor(0);
+      y += 6;
 
-      // Divider
+      doc.setDrawColor(19, 127, 236);
+      doc.setLineWidth(0.5);
+      doc.line(L, y, w - L, y);
+      doc.setLineWidth(0.2);
       doc.setDrawColor(200);
-      doc.line(15, y, w - 15, y);
-      y += 8;
+      y += 6;
 
-      // Employee details
-      doc.setFontSize(9);
-      const leftCol = 15;
-      const rightCol = w / 2 + 10;
-
-      const empDetails = [
-        ["Employee Name", payslip.employee_name],
+      // Employee details — left column
+      doc.setFontSize(8.5);
+      const empLeft = [
+        ["Name", payslip.employee_name],
         ["Designation", payslip.designation || "—"],
         ["Department", payslip.department || "—"],
         ["Employee Code", payslip.employee_code || "—"],
+        ["Date of Joining", payslip.date_of_joining || "—"],
+        ["UAN", payslip.uan_number || "—"],
+        ["PAN", payslip.pan_masked || "—"],
       ];
-      const rightDetails = [
+      const empRight = [
         ["Project", payslip.project || "—"],
         ["Working Days", String(payslip.working_days)],
         ["Days Present", String(payslip.days_present)],
+        ["Days Absent", String(payslip.days_absent)],
         ["LWP Days", String(payslip.lwp_days)],
+        ["Bank", payslip.bank_name || "—"],
+        ["Account", payslip.account_masked || "—"],
       ];
-
-      for (let i = 0; i < Math.max(empDetails.length, rightDetails.length); i++) {
-        if (empDetails[i]) {
+      const detailRows = Math.max(empLeft.length, empRight.length);
+      for (let i = 0; i < detailRows; i++) {
+        if (empLeft[i]) {
           doc.setFont("helvetica", "bold");
-          doc.text(empDetails[i][0] + ":", leftCol, y);
+          doc.text(`${empLeft[i][0]}:`, L, y);
           doc.setFont("helvetica", "normal");
-          doc.text(empDetails[i][1], leftCol + 35, y);
+          doc.text(empLeft[i][1], L + 28, y);
         }
-        if (rightDetails[i]) {
+        if (empRight[i]) {
           doc.setFont("helvetica", "bold");
-          doc.text(rightDetails[i][0] + ":", rightCol, y);
+          doc.text(`${empRight[i][0]}:`, R, y);
           doc.setFont("helvetica", "normal");
-          doc.text(rightDetails[i][1], rightCol + 30, y);
+          doc.text(empRight[i][1], R + 26, y);
         }
         y += 5;
       }
-
-      y += 5;
-      doc.line(15, y, w - 15, y);
-      y += 8;
-
-      // Earnings table
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.text("Earnings", leftCol, y);
-      doc.text("Deductions", rightCol, y);
+      y += 3;
+      doc.line(L, y, w - L, y);
       y += 6;
 
-      doc.setFontSize(9);
+      // Earnings & Deductions header
+      const colMid = w / 2;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setFillColor(240, 248, 255);
+      doc.rect(L, y - 4, colMid - L - 2, 8, "F");
+      doc.rect(colMid + 2, y - 4, w - colMid - L - 2, 8, "F");
+      doc.text("EARNINGS", L + 2, y);
+      doc.text("DEDUCTIONS", colMid + 4, y);
+      y += 5;
+
+      doc.setFontSize(8.5);
       const earningEntries = Object.entries(payslip.earnings_breakdown);
       const deductionEntries = Object.entries(payslip.deductions_breakdown);
       const maxRows = Math.max(earningEntries.length, deductionEntries.length);
 
       for (let i = 0; i < maxRows; i++) {
+        doc.setFont("helvetica", "normal");
         if (earningEntries[i]) {
-          doc.setFont("helvetica", "normal");
-          doc.text(earningEntries[i][0], leftCol, y);
-          doc.text(`₹${Number(earningEntries[i][1]).toLocaleString("en-IN")}`, leftCol + 65, y, { align: "right" });
+          doc.text(earningEntries[i][0], L + 2, y);
+          doc.text(`Rs.${Number(earningEntries[i][1]).toLocaleString("en-IN")}`, colMid - 2, y, { align: "right" });
         }
         if (deductionEntries[i]) {
-          doc.setFont("helvetica", "normal");
-          doc.text(deductionEntries[i][0], rightCol, y);
-          doc.text(`₹${Number(deductionEntries[i][1]).toLocaleString("en-IN")}`, rightCol + 65, y, { align: "right" });
+          doc.text(deductionEntries[i][0], colMid + 4, y);
+          doc.text(`Rs.${Number(deductionEntries[i][1]).toLocaleString("en-IN")}`, w - L, y, { align: "right" });
         }
         y += 5;
       }
 
-      y += 3;
-      doc.line(15, y, w - 15, y);
-      y += 6;
+      y += 2;
+      doc.line(L, y, w - L, y);
+      y += 5;
 
-      // Totals
       doc.setFont("helvetica", "bold");
-      doc.text("Gross Earnings:", leftCol, y);
-      doc.text(`₹${payslip.gross_earnings.toLocaleString("en-IN")}`, leftCol + 65, y, { align: "right" });
-      doc.text("Total Deductions:", rightCol, y);
-      doc.text(`₹${payslip.total_deductions.toLocaleString("en-IN")}`, rightCol + 65, y, { align: "right" });
+      doc.text("Gross Earnings:", L + 2, y);
+      doc.text(`Rs.${payslip.gross_earnings.toLocaleString("en-IN")}`, colMid - 2, y, { align: "right" });
+      doc.text("Total Deductions:", colMid + 4, y);
+      doc.text(`Rs.${payslip.total_deductions.toLocaleString("en-IN")}`, w - L, y, { align: "right" });
       y += 8;
 
-      // Net Pay
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("Net Payable:", leftCol, y);
-      doc.text(`₹${payslip.net_payable.toLocaleString("en-IN")}`, w - 15, y, { align: "right" });
-      y += 10;
+      // Net payable
+      doc.setFontSize(11);
+      doc.setFillColor(19, 127, 236);
+      doc.roundedRect(L, y - 5, w - 2 * L, 10, 2, 2, "F");
+      doc.setTextColor(255);
+      doc.text("NET PAYABLE", L + 4, y + 1);
+      doc.text(`Rs.${payslip.net_payable.toLocaleString("en-IN")}`, w - L - 2, y + 1, { align: "right" });
+      doc.setTextColor(0);
+      y += 14;
 
-      doc.setDrawColor(200);
-      doc.line(15, y, w - 15, y);
-      y += 8;
+      // Employer contributions (informational)
+      if ((payslip.employer_pf || 0) > 0 || (payslip.employer_esi || 0) > 0) {
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.text("Employer Contributions (not deducted from salary):", L, y);
+        y += 4.5;
+        doc.setFont("helvetica", "normal");
+        if (payslip.employer_pf) doc.text(`Employer PF: Rs.${Number(payslip.employer_pf).toLocaleString("en-IN")}`, L, y);
+        if (payslip.employer_esi) doc.text(`Employer ESI: Rs.${Number(payslip.employer_esi).toLocaleString("en-IN")}`, L + 55, y);
+        if (payslip.ifsc) doc.text(`IFSC: ${payslip.ifsc}`, R + 20, y);
+        y += 8;
+      }
+
+      doc.line(L, y, w - L, y);
+      y += 5;
 
       // Footer
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
       doc.setFont("helvetica", "italic");
       doc.setTextColor(150);
-      doc.text("This is a system-generated payslip. No signature required.", w / 2, y, { align: "center" });
+      doc.text("This is a system-generated payslip and does not require a signature.", w / 2, y, { align: "center" });
 
       doc.save(`payslip-${payslip.employee_name.replace(/\s+/g, "-")}-${payslip.month}.pdf`);
       showToast("Payslip downloaded", "success");
@@ -360,6 +439,39 @@ export default function PayslipViewPage() {
                 <p className="text-3xl font-bold text-primary">{payslip.net_payable.toLocaleString("en-IN")}</p>
               </div>
             </div>
+
+            {/* Employer Contributions */}
+            {((payslip.employer_pf || 0) > 0 || (payslip.employer_esi || 0) > 0) && (
+              <div className="bg-white dark:bg-surface-dark rounded-xl border border-gray-100 dark:border-gray-700/50 overflow-hidden">
+                <div className="px-4 py-2.5 bg-blue-50 dark:bg-blue-900/10 border-b border-gray-100 dark:border-gray-700/50">
+                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase">Employer Contributions (informational)</p>
+                </div>
+                {(payslip.employer_pf || 0) > 0 && (
+                  <div className="flex justify-between px-4 py-2.5">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Employer PF</span>
+                    <span className="text-sm font-medium text-blue-600">₹{Number(payslip.employer_pf).toLocaleString("en-IN")}</span>
+                  </div>
+                )}
+                {(payslip.employer_esi || 0) > 0 && (
+                  <div className="flex justify-between px-4 py-2.5 border-t border-gray-100 dark:border-gray-700/50">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Employer ESI</span>
+                    <span className="text-sm font-medium text-blue-600">₹{Number(payslip.employer_esi).toLocaleString("en-IN")}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Bank & PAN info */}
+            {(payslip.bank_name || payslip.uan_number || payslip.pan_masked) && (
+              <div className="bg-white dark:bg-surface-dark rounded-xl p-4 border border-gray-100 dark:border-gray-700/50 space-y-1.5">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Bank & KYC Info</p>
+                {payslip.bank_name && <div className="flex justify-between text-sm"><span className="text-gray-500">Bank</span><span className="font-medium">{payslip.bank_name}</span></div>}
+                {payslip.account_masked && <div className="flex justify-between text-sm"><span className="text-gray-500">Account</span><span className="font-medium font-mono">{payslip.account_masked}</span></div>}
+                {payslip.ifsc && <div className="flex justify-between text-sm"><span className="text-gray-500">IFSC</span><span className="font-medium font-mono">{payslip.ifsc}</span></div>}
+                {payslip.uan_number && <div className="flex justify-between text-sm"><span className="text-gray-500">UAN</span><span className="font-medium font-mono">{payslip.uan_number}</span></div>}
+                {payslip.pan_masked && <div className="flex justify-between text-sm"><span className="text-gray-500">PAN</span><span className="font-medium font-mono">{payslip.pan_masked}</span></div>}
+              </div>
+            )}
 
             {/* Download PDF */}
             <button

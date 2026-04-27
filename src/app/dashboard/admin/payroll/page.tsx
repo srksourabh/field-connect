@@ -1,14 +1,15 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Layers, Users, Play, FileText } from "lucide-react";
+import { ChevronLeft, ChevronRight, Layers, Users, Play, FileText, Settings } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 
 const sections = [
   { icon: Layers, label: "Salary Components", description: "Manage earning & deduction types", href: "/dashboard/admin/payroll/components", color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20" },
-  { icon: Users, label: "Employee Salary", description: "Assign salary to employees", href: "/dashboard/admin/payroll/salary", color: "text-green-500 bg-green-50 dark:bg-green-900/20" },
-  { icon: Play, label: "Run Payroll", description: "Process monthly payroll", href: "/dashboard/admin/payroll/run", color: "text-blue-500 bg-blue-50 dark:bg-blue-900/20" },
-  { icon: FileText, label: "Payslips", description: "View generated payslips", href: "/dashboard/admin/payroll/payslip", color: "text-amber-500 bg-amber-50 dark:bg-amber-900/20" },
+  { icon: Users, label: "Employee Salary", description: "Assign salary, TDS regime & PF", href: "/dashboard/admin/payroll/salary", color: "text-green-500 bg-green-50 dark:bg-green-900/20" },
+  { icon: Play, label: "Run Payroll", description: "Process, mark paid & export", href: "/dashboard/admin/payroll/run", color: "text-blue-500 bg-blue-50 dark:bg-blue-900/20" },
+  { icon: FileText, label: "Payslips", description: "View & download payslips", href: "/dashboard/admin/payroll/payslip", color: "text-amber-500 bg-amber-50 dark:bg-amber-900/20" },
+  { icon: Settings, label: "Company Settings", description: "PF reg no., ESIC code, address", href: "/dashboard/admin/payroll/settings", color: "text-gray-500 bg-gray-50 dark:bg-gray-800" },
 ];
 
 export default function PayrollHubPage() {
