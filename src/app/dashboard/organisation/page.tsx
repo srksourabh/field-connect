@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ChevronLeft, ChevronRight, Users, UserPlus, FolderKanban, Building2, Briefcase, ShieldCheck, CalendarDays, Bell, Link2, FileBarChart, FileText, Upload, Loader2, ExternalLink, Trash2, MessageSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, UserPlus, FolderKanban, Building2, Briefcase, ShieldCheck, CalendarDays, Bell, Link2, FileBarChart, FileText, Upload, Loader2, ExternalLink, Trash2, MessageSquare, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { showToast } from "@/components/ui/Toast";
@@ -19,6 +19,7 @@ const sections = [
   { icon: Link2, label: "Onboarding", description: "Generate onboarding links", href: "/dashboard/onboarding", color: "text-cyan-500 bg-cyan-50 dark:bg-cyan-900/20" },
   { icon: FileBarChart, label: "Reports", description: "Generate reports", href: "/dashboard/reports", color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20" },
   { icon: MessageSquare, label: "HR Inbox", description: "View employee messages", href: "/dashboard/organisation/hr-inbox", color: "text-pink-500 bg-pink-50 dark:bg-pink-900/20" },
+  { icon: Wallet, label: "Payroll", description: "Salary & payroll management", href: "/dashboard/admin/payroll", color: "text-violet-500 bg-violet-50 dark:bg-violet-900/20" },
 ];
 
 export default function OrganisationPage() {

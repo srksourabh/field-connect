@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import { ChevronLeft, LogOut, Bell, Moon, Sun, Monitor, ChevronRight, KeyRound, Camera, X, Eye, EyeOff, Building2, FileText, FolderKanban, MessageSquare } from "lucide-react";
+import { ChevronLeft, LogOut, Bell, Moon, Sun, Monitor, ChevronRight, KeyRound, Camera, X, Eye, EyeOff, Building2, FileText, FolderKanban, MessageSquare, Wallet } from "lucide-react";
 import { logError } from "@/lib/utils";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
@@ -95,6 +95,7 @@ export default function ProfilePage() {
     { icon: Bell, label: "Leave Application", href: "/dashboard/leave" },
     { icon: FileText, label: "Attendance History", href: "/dashboard/attendance" },
     { icon: FolderKanban, label: "My Projects", href: "/dashboard/my-projects" },
+    { icon: Wallet, label: "My Payslips", href: "/dashboard/payslips" },
     { icon: MessageSquare, label: "Message HR", href: "/dashboard/message-hr" },
     ...(isUniversal
       ? [{ icon: Building2, label: "Manage Organisation", href: "/dashboard/organisation" }]
