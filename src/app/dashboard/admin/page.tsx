@@ -236,7 +236,7 @@ export default function EmployeeManagementPage() {
     setActionLoading(null);
   };
 
-  const handleDownloadEmployees = () => {
+  const handleDownloadEmployees = async () => {
     const rows = filteredProfiles.map((p) => [
       p.full_name,
       p.phone || "",
@@ -248,7 +248,7 @@ export default function EmployeeManagementPage() {
       p.reporting_manager_id ? (managers.find((m) => m.id === p.reporting_manager_id)?.full_name || p.reporting_manager_id) : "",
       p.deactivated_at ? "Deactivated" : "Active",
     ]);
-    exportToCsv(
+    await exportToCsv(
       `employee-list-${new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })}.csv`,
       ["Name", "Phone", "Email", "Designation", "Department", "Project", "Role", "Reporting Manager", "Status"],
       rows
@@ -287,7 +287,7 @@ export default function EmployeeManagementPage() {
         p.project_id || "",
       ]);
 
-      exportToCsv(
+      await exportToCsv(
         `pending-punch-in-${today}.csv`,
         ["Name", "Phone", "Designation", "Department", "Project"],
         rows
