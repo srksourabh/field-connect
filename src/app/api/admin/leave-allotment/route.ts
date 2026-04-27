@@ -44,6 +44,7 @@ export async function GET(request: Request) {
   let empQuery = supabaseAdmin
     .from("hr_profiles")
     .select("id, full_name, designation, department, role")
+    .is("deactivated_at", null)
     .order("full_name");
 
   // Project scoping for regular admins

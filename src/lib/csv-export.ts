@@ -8,7 +8,7 @@ function sanitizeCell(cell: string): string {
   return `"${sanitized}"`;
 }
 
-export function exportToCsv(
+export async function exportToCsv(
   filename: string,
   headers: string[],
   rows: string[][]
@@ -18,7 +18,24 @@ export function exportToCsv(
     ...rows.map((row) => row.map(sanitizeCell).join(",")),
   ].join("\n");
 
-  const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["﻿" + csvContent], { type: "text/csv;charset=utf-8;" });
+
+  // Web Share API (files) — works on iOS 15+ and Android Chrome; preferred on mobile
+  if (typeof navigator !== "undefined" && navigator.canShare) {
+    const file = new File([blob], filename, { type: "text/csv" });
+    if (navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: filename });
+        return;
+      } catch (e) {
+        // User cancelled share — do not fall through to download
+        if ((e as Error).name === "AbortError") return;
+        // Other error — fall through to link download
+      }
+    }
+  }
+
+  // Fallback: programmatic link click (desktop browsers, Android older versions)
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

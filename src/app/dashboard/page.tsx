@@ -215,6 +215,9 @@ export default function DashboardHome() {
         if (record) {
           setAttendanceId(record.id);
           if (!firstPunchIn) setFirstPunchIn(timestamp);
+          // Refresh session list so timeline modal reflects the new punch-in
+          const refreshed = await getTodayAllSessions(userId);
+          if (refreshed) setTodaySessions(refreshed);
         } else {
           // Server rejected punch-in — revert local state completely
           punchOut();
@@ -270,6 +273,9 @@ export default function DashboardHome() {
         setLastPunchOut(now);
         // Update attendance status based on 8-hour rule
         await updateAttendanceStatus(userId);
+        // Refresh session list so timeline modal reflects the completed punch-out
+        const refreshed = await getTodayAllSessions(userId);
+        if (refreshed) setTodaySessions(refreshed);
         // Log punch-out location
         if (geo.lat != null && geo.long != null) {
           await insertLocationLog({

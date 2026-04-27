@@ -669,7 +669,7 @@ export default function ReportsPage() {
         setNotPresentRows(result);
         setTotalCount(result.length);
         setShowPreview(true);
-        exportToCsv(
+        await exportToCsv(
           `not-present-today-${todayIST()}.csv`,
           ["Employee", "Designation", "State", "Project", "Reporting Manager", "Reason"],
           result.map((r) => [r.name, r.designation, r.state, r.project, r.reportingManager, r.reason])
@@ -679,7 +679,7 @@ export default function ReportsPage() {
         setLeaveRows(result);
         setTotalCount(result.length);
         setShowPreview(true);
-        exportToCsv(
+        await exportToCsv(
           `leave-report-${startDate}-to-${endDate}.csv`,
           ["Employee", "Project", "Department", "Leave Type", "Start Date", "End Date", "Days", "Reason", "Status"],
           result.map((r) => [r.name, r.project, r.department, r.leaveType, r.startDate, r.endDate, String(r.days), r.reason, r.status])
@@ -689,7 +689,7 @@ export default function ReportsPage() {
         setRows(result);
         setTotalCount(result.length);
         setShowPreview(true);
-        exportToCsv(
+        await exportToCsv(
           `${reportType}-report-${startDate}-to-${endDate}.csv`,
           ["Employee", "Date", "Punch In", "Punch Out", "Hours", "Status", "Travel Distance"],
           result.map((r) => [r.name, r.date, r.punchIn, r.punchOut, r.hours, r.status, r.distanceKm || "--"])
@@ -702,7 +702,7 @@ export default function ReportsPage() {
         const [yr, mo] = selectedMonth.split("-").map(Number);
         const dim = new Date(yr, mo, 0).getDate();
         const dayHeaders = Array.from({ length: dim }, (_, i) => String(i + 1));
-        exportToCsv(
+        await exportToCsv(
           `monthly-attendance-${selectedMonth}.csv`,
           ["Employee", "Project", ...dayHeaders, "Present", "Absent", "Leave"],
           gridRows.map((r) => [
@@ -722,7 +722,7 @@ export default function ReportsPage() {
         setSummaryRows(result);
         setTotalCount(result.length);
         setShowPreview(true);
-        exportToCsv(
+        await exportToCsv(
           `project-summary-${startDate}-to-${endDate}.csv`,
           ["Employee", "Days Present", "Days Absent", "Late Days", "Leave Days", "Total Hours", "Avg Hours/Day", "Total Travel"],
           result.map((r) => [r.name, String(r.daysPresent), String(r.daysAbsent), String(r.lateDays), String(r.leaveDays), r.totalHours, r.avgHoursPerDay, r.totalDistanceKm])
