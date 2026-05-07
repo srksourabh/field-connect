@@ -20,22 +20,7 @@ export async function exportToCsv(
 
   const blob = new Blob(["﻿" + csvContent], { type: "text/csv;charset=utf-8;" });
 
-  // Web Share API (files) — works on iOS 15+ and Android Chrome; preferred on mobile
-  if (typeof navigator !== "undefined" && navigator.canShare) {
-    const file = new File([blob], filename, { type: "text/csv" });
-    if (navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: filename });
-        return;
-      } catch (e) {
-        // User cancelled share — do not fall through to download
-        if ((e as Error).name === "AbortError") return;
-        // Other error — fall through to link download
-      }
-    }
-  }
-
-  // Fallback: programmatic link click (desktop browsers, Android older versions)
+  // Programmatic link click — triggers direct file download on all platforms
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

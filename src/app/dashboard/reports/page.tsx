@@ -259,9 +259,11 @@ export default function ReportsPage() {
         : 0;
       const hours = ms / 3600000;
 
-      // Recompute status based on actual hours worked (skip on-leave/holiday)
+      // Recompute from hours only when both punch timestamps exist.
+      // Without punch_out, trust DB status — covers admin overrides, WFH leave inserts, and stale open sessions.
       let correctedStatus = entry.status;
-      if (!["on-leave", "holiday", "lwp"].includes(entry.status)) {
+      if (!["on-leave", "holiday", "lwp"].includes(entry.status)
+          && entry.firstIn && entry.lastOut) {
         if (hours >= 8) correctedStatus = "present";
         else if (hours >= 4) correctedStatus = "half-day";
         else correctedStatus = "absent";
@@ -733,6 +735,45 @@ export default function ReportsPage() {
     }
   };
 
+  const handleDownloadMonthlyDetail = async () => {
+    setLoading(true);
+    try {
+      const { gridRows } = await fetchMonthlySummary();
+      const [yr, mo] = selectedMonth.split("-").map(Number);
+      const dim = new Date(yr, mo, 0).getDate();
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const rows: string[][] = [];
+      for (const r of gridRows) {
+        for (let d = 1; d <= dim; d++) {
+          const dayData = r.days[d];
+          const cellDate = new Date(yr, mo - 1, d);
+          const dayName = dayNames[cellDate.getDay()];
+          const isSunday = cellDate.getDay() === 0;
+          const status = dayData
+            ? (statusShortLabels[dayData.status] || dayData.status)
+            : isSunday ? "SU" : "A";
+          rows.push([
+            r.name,
+            r.project,
+            `${yr}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`,
+            dayName,
+            dayData?.punchIn ? new Date(dayData.punchIn).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" }) : "",
+            dayData?.punchOut ? new Date(dayData.punchOut).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" }) : "",
+            dayData?.hours || "",
+            status,
+          ]);
+        }
+      }
+      await exportToCsv(
+        `monthly-detail-${selectedMonth}.csv`,
+        ["Employee", "Project", "Date", "Day", "Punch In", "Punch Out", "Hours", "Status"],
+        rows
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Guard
   if (profile && profile.role === "employee") {
     return (
@@ -869,23 +910,36 @@ export default function ReportsPage() {
         )}
 
         {/* Action Buttons (hidden for not_present — it has its own) */}
-        {reportType !== "not_present" && <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={handlePreview}
-            disabled={loading || (reportType === "employee" && !selectedEmployee) || (reportType === "project" && !project)}
-            className="uds-btn-secondary"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
-            {loading ? "Loading..." : "Preview"}
-          </button>
-          <button
-            onClick={handleDownload}
-            disabled={loading || (reportType === "employee" && !selectedEmployee) || (reportType === "project" && !project)}
-            className="uds-btn-primary"
-          >
-            <Download className="w-4 h-4" /> Download CSV
-          </button>
-        </div>}
+        {reportType !== "not_present" && (
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handlePreview}
+                disabled={loading || (reportType === "employee" && !selectedEmployee) || (reportType === "project" && !project)}
+                className="uds-btn-secondary"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                {loading ? "Loading..." : "Preview"}
+              </button>
+              <button
+                onClick={handleDownload}
+                disabled={loading || (reportType === "employee" && !selectedEmployee) || (reportType === "project" && !project)}
+                className="uds-btn-primary"
+              >
+                <Download className="w-4 h-4" /> {reportType === "monthly" ? "Summary CSV" : "Download CSV"}
+              </button>
+            </div>
+            {reportType === "monthly" && (
+              <button
+                onClick={handleDownloadMonthlyDetail}
+                disabled={loading}
+                className="uds-btn-secondary w-full flex items-center justify-center gap-2"
+              >
+                <Download className="w-4 h-4" /> Daily Detail CSV (Punch In/Out)
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Preview */}
         {showPreview && (
@@ -901,30 +955,33 @@ export default function ReportsPage() {
               )
             )}
 
-            {/* Monthly grid view */}
+            {/* Monthly grid view + day-wise detail */}
             {reportType === "monthly" && (
               monthlyGrid.length > 0 ? (
-                <MonthlyGridTable
-                  rows={monthlyGrid}
-                  month={selectedMonth}
-                  onDayClick={(name, dayNum, userId) => {
-                    const row = monthlyGrid.find((r) => r.userId === userId);
-                    const dayData = row?.days[dayNum];
-                    const [yr, mo] = selectedMonth.split("-");
-                    const rawDate = `${yr}-${mo}-${String(dayNum).padStart(2, "0")}`;
-                    setOverrideStatus("");
-                    setDayDetail({
-                      name,
-                      date: formatDate(rawDate),
-                      rawDate,
-                      userId,
-                      punchIn: dayData ? formatTime(dayData.punchIn) : "--",
-                      punchOut: dayData ? formatTime(dayData.punchOut) : "--",
-                      hours: dayData?.hours || "0h",
-                      status: dayData?.status || "no-record",
-                    });
-                  }}
-                />
+                <>
+                  <MonthlyGridTable
+                    rows={monthlyGrid}
+                    month={selectedMonth}
+                    onDayClick={(name, dayNum, userId) => {
+                      const row = monthlyGrid.find((r) => r.userId === userId);
+                      const dayData = row?.days[dayNum];
+                      const [yr, mo] = selectedMonth.split("-");
+                      const rawDate = `${yr}-${mo}-${String(dayNum).padStart(2, "0")}`;
+                      setOverrideStatus("");
+                      setDayDetail({
+                        name,
+                        date: formatDate(rawDate),
+                        rawDate,
+                        userId,
+                        punchIn: dayData ? formatTime(dayData.punchIn) : "--",
+                        punchOut: dayData ? formatTime(dayData.punchOut) : "--",
+                        hours: dayData?.hours || "0h",
+                        status: dayData?.status || "no-record",
+                      });
+                    }}
+                  />
+                  <MonthlyDayDetailTable rows={monthlyGrid} month={selectedMonth} />
+                </>
               ) : (
                 <div className="text-center py-8 text-sm text-gray-400">
                   No data found for the selected month.
@@ -1169,6 +1226,7 @@ function MonthlyGridTable({ rows, month, onDayClick }: {
   const [year, mo] = month.split("-").map(Number);
   const daysInMonth = new Date(year, mo, 0).getDate();
   const dayNums = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
@@ -1186,7 +1244,7 @@ function MonthlyGridTable({ rows, month, onDayClick }: {
                 const dayOfWeek = new Date(year, mo - 1, d).getDay();
                 const isSunday = dayOfWeek === 0;
                 return (
-                  <th key={d} className={`text-center py-2 px-1 font-medium min-w-[32px] ${isSunday ? "text-red-400" : "text-gray-500 dark:text-gray-400"}`}>
+                  <th key={d} className={`text-center py-2 px-1 font-medium min-w-[32px] ${isSunday ? "text-orange-400" : "text-gray-500 dark:text-gray-400"}`}>
                     {d}
                   </th>
                 );
@@ -1203,12 +1261,33 @@ function MonthlyGridTable({ rows, month, onDayClick }: {
                 <td className="py-2 px-2 text-gray-500 whitespace-nowrap sticky left-[120px] bg-white dark:bg-slate-800 z-10">{row.project}</td>
                 {dayNums.map((d) => {
                   const dayData = row.days[d];
-                  const dayOfWeek = new Date(year, mo - 1, d).getDay();
+                  const cellDate = new Date(year, mo - 1, d);
+                  const cellDateStr = cellDate.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+                  const dayOfWeek = cellDate.getDay();
                   const isSunday = dayOfWeek === 0;
+                  const isPast = cellDateStr < todayStr;
 
                   if (!dayData) {
+                    if (isSunday) {
+                      return (
+                        <td key={d} className="py-2 px-1 text-center bg-orange-50/60 dark:bg-orange-900/10">
+                          <span className="inline-flex items-center justify-center w-6 h-5 rounded text-[10px] font-semibold bg-orange-100 dark:bg-orange-900/40 text-orange-500">
+                            SU
+                          </span>
+                        </td>
+                      );
+                    }
+                    if (isPast) {
+                      return (
+                        <td key={d} onClick={() => onDayClick(row.name, d, row.userId)} className="py-2 px-1 text-center cursor-pointer">
+                          <span className="inline-flex items-center justify-center w-6 h-5 rounded text-[10px] font-semibold bg-red-100 dark:bg-red-900/40 text-red-500">
+                            A
+                          </span>
+                        </td>
+                      );
+                    }
                     return (
-                      <td key={d} className={`py-2 px-1 text-center ${isSunday ? "bg-red-50/50 dark:bg-red-900/10" : ""}`}>
+                      <td key={d} className="py-2 px-1 text-center">
                         <span className="text-gray-300 dark:text-gray-600">-</span>
                       </td>
                     );
@@ -1218,9 +1297,9 @@ function MonthlyGridTable({ rows, month, onDayClick }: {
                     <td
                       key={d}
                       onClick={() => onDayClick(row.name, d, row.userId)}
-                      className="py-2 px-1 text-center cursor-pointer"
+                      className={`py-2 px-1 text-center cursor-pointer ${isSunday ? "bg-orange-50/40 dark:bg-orange-900/10" : ""}`}
                     >
-                      <span className={`inline-flex items-center justify-center w-6 h-5 rounded text-[10px] font-semibold ${statusCellColors[dayData.status] || "bg-gray-100 text-gray-500"}`}>
+                      <span className={`inline-flex items-center justify-center w-6 h-5 rounded text-[10px] font-semibold ${isSunday ? "ring-1 ring-orange-400 " : ""}${statusCellColors[dayData.status] || "bg-gray-100 text-gray-500"}`}>
                         {statusShortLabels[dayData.status] || "?"}
                       </span>
                     </td>
@@ -1239,9 +1318,109 @@ function MonthlyGridTable({ rows, month, onDayClick }: {
         <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-amber-100 dark:bg-amber-900/40"></span> L = Late</span>
         <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-orange-100 dark:bg-orange-900/40"></span> H = Half Day</span>
         <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-blue-100 dark:bg-blue-900/40"></span> LV = Leave</span>
-        <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-red-100 dark:bg-red-900/40"></span> LWP = Leave Without Pay</span>
-        <span className="flex items-center gap-1"><span className="text-gray-300">-</span> = No Record</span>
+        <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-red-100 dark:bg-red-900/40"></span> A/LWP = Absent/LWP</span>
+        <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-orange-100 dark:bg-orange-900/30 ring-1 ring-orange-400"></span> Ring = Worked on Sunday</span>
+        <span className="flex items-center gap-1"><span className="w-4 h-3 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-500 flex items-center justify-center text-[8px] font-bold">SU</span> = Sunday (Week Off)</span>
       </div>
+    </div>
+  );
+}
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function MonthlyDayDetailTable({ rows, month }: { rows: MonthlyGridRow[]; month: string }) {
+  const [year, mo] = month.split("-").map(Number);
+  const daysInMonth = new Date(year, mo, 0).getDate();
+  const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
+      <div className="p-4 border-b border-gray-100 dark:border-gray-700/50">
+        <h3 className="text-sm font-semibold">Day-wise Detail — Check In / Check Out</h3>
+        <p className="text-xs text-gray-400 mt-1">Full month breakdown for all employees</p>
+      </div>
+      {rows.map((row) => (
+        <div key={row.userId} className="border-b border-gray-100 dark:border-gray-700/50 last:border-0">
+          <div className="px-4 py-2 bg-gray-50 dark:bg-slate-900 flex items-center justify-between">
+            <span className="text-xs font-semibold">{row.name}</span>
+            <span className="text-[10px] text-gray-400">{row.project}</span>
+          </div>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-gray-400 border-b border-gray-100 dark:border-gray-700/50">
+                <th className="text-left py-1 px-3 font-medium w-[80px]">Date</th>
+                <th className="text-left py-1 px-2 font-medium w-[28px]">Day</th>
+                <th className="text-center py-1 px-2 font-medium">In</th>
+                <th className="text-center py-1 px-2 font-medium">Out</th>
+                <th className="text-center py-1 px-2 font-medium">Hrs</th>
+                <th className="text-center py-1 px-2 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50 dark:divide-gray-700/30">
+              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => {
+                const dayData = row.days[d];
+                const cellDate = new Date(year, mo - 1, d);
+                const cellDateStr = cellDate.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+                const dow = cellDate.getDay();
+                const isSunday = dow === 0;
+                const isPast = cellDateStr < todayStr;
+
+                let statusLabel = "-";
+                let rowBg = "";
+                if (dayData) {
+                  statusLabel = statusShortLabels[dayData.status] || dayData.status;
+                  if (isSunday) rowBg = "bg-orange-50/50 dark:bg-orange-900/10";
+                } else if (isSunday) {
+                  statusLabel = "SU";
+                  rowBg = "bg-orange-50/50 dark:bg-orange-900/10";
+                } else if (isPast) {
+                  statusLabel = "A";
+                  rowBg = "bg-red-50/30 dark:bg-red-900/5";
+                }
+
+                const punchIn = dayData?.punchIn
+                  ? new Date(dayData.punchIn).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false })
+                  : isSunday ? "—" : "--";
+                const punchOut = dayData?.punchOut
+                  ? new Date(dayData.punchOut).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false })
+                  : isSunday ? "—" : "--";
+
+                return (
+                  <tr key={d} className={rowBg}>
+                    <td className="py-1.5 px-3 font-medium">
+                      {String(d).padStart(2, "0")}/{String(mo).padStart(2, "0")}
+                    </td>
+                    <td className={`py-1.5 px-2 ${isSunday ? "text-orange-500 font-semibold" : "text-gray-400"}`}>
+                      {DAY_NAMES[dow]}
+                    </td>
+                    <td className="py-1.5 px-2 text-center text-gray-700 dark:text-gray-300">{punchIn}</td>
+                    <td className="py-1.5 px-2 text-center text-gray-700 dark:text-gray-300">{punchOut}</td>
+                    <td className="py-1.5 px-2 text-center text-gray-500">{dayData?.hours || (isSunday ? "—" : "")}</td>
+                    <td className="py-1.5 px-2 text-center">
+                      <span className={`inline-flex items-center justify-center w-7 h-4 rounded text-[9px] font-semibold ${
+                        isSunday && !dayData
+                          ? "bg-orange-100 dark:bg-orange-900/40 text-orange-500"
+                          : dayData
+                          ? (isSunday ? `ring-1 ring-orange-400 ${statusCellColors[dayData.status] || "bg-gray-100 text-gray-500"}` : statusCellColors[dayData.status] || "bg-gray-100 text-gray-500")
+                          : isPast
+                          ? "bg-red-100 dark:bg-red-900/40 text-red-500"
+                          : "text-gray-300"
+                      }`}>
+                        {statusLabel}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <div className="px-4 py-2 bg-gray-50/50 dark:bg-slate-900/50 flex gap-4 text-[10px] text-gray-500">
+            <span>Present: <strong className="text-green-600">{row.totalPresent}</strong></span>
+            <span>Absent: <strong className="text-red-500">{row.totalAbsent}</strong></span>
+            <span>Leave: <strong className="text-blue-500">{row.totalLeave}</strong></span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
