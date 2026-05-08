@@ -125,6 +125,7 @@ export default function ReportsPage() {
   const [leaveRows, setLeaveRows] = useState<LeaveReportRow[]>([]);
   const [notPresentRows, setNotPresentRows] = useState<NotPresentRow[]>([]);
   const [monthlyGrid, setMonthlyGrid] = useState<MonthlyGridRow[]>([]);
+  const [holidayDates, setHolidayDates] = useState<Set<string>>(new Set());
   const [totalCount, setTotalCount] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [dayDetail, setDayDetail] = useState<{ name: string; date: string; rawDate: string; userId: string; punchIn: string; punchOut: string; hours: string; status: string } | null>(null);
@@ -303,7 +304,7 @@ export default function ReportsPage() {
   }, [fetchAttendanceData, project, department, startDate, endDate]);
 
   // Monthly Summary — builds both summary rows AND day-by-day grid
-  const fetchMonthlySummary = useCallback(async (): Promise<{ summaryRows: MonthlySummaryRow[]; gridRows: MonthlyGridRow[] }> => {
+  const fetchMonthlySummary = useCallback(async (): Promise<{ summaryRows: MonthlySummaryRow[]; gridRows: MonthlyGridRow[]; holidayDates: Set<string> }> => {
     const [year, month] = selectedMonth.split("-");
     const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
     const mStart = `${selectedMonth}-01`;
@@ -331,6 +332,19 @@ export default function ReportsPage() {
       } else {
         existing.entries.push(entry);
       }
+    }
+
+    // Ensure every profile appears even if they have zero attendance records
+    for (const p of (profilesList || [])) {
+      if (!userMap.has(p.id)) {
+        userMap.set(p.id, { name: p.full_name, userId: p.id, entries: [] });
+      }
+    }
+
+    // Collect dates declared as company holidays (any employee with status=holiday on that date)
+    const monthHolidayDates = new Set<string>();
+    for (const entry of data) {
+      if (entry.status === "holiday") monthHolidayDates.add(entry.date);
     }
 
     // Build grid data
@@ -391,8 +405,9 @@ export default function ReportsPage() {
 
     gridRows.sort((a, b) => a.name.localeCompare(b.name));
     setMonthlyGrid(gridRows);
+    setHolidayDates(monthHolidayDates);
 
-    return { summaryRows, gridRows };
+    return { summaryRows, gridRows, holidayDates: monthHolidayDates };
   }, [fetchAttendanceData, project, department, selectedMonth]);
 
   // Employee Report
@@ -746,24 +761,30 @@ export default function ReportsPage() {
   const handleDownloadMonthlyDetail = async () => {
     setLoading(true);
     try {
-      const { gridRows } = await fetchMonthlySummary();
+      const { gridRows, holidayDates: fetchedHolidays } = await fetchMonthlySummary();
       const [yr, mo] = selectedMonth.split("-").map(Number);
       const dim = new Date(yr, mo, 0).getDate();
       const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       const rows: string[][] = [];
       for (const r of gridRows) {
         for (let d = 1; d <= dim; d++) {
           const dayData = r.days[d];
           const cellDate = new Date(yr, mo - 1, d);
+          const dateStr = `${yr}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
           const dayName = dayNames[cellDate.getDay()];
           const isSunday = cellDate.getDay() === 0;
+          const isPast = dateStr < todayStr;
           const status = dayData
             ? (statusShortLabels[dayData.status] || dayData.status)
-            : isSunday ? "SU" : "A";
+            : isSunday ? "SU"
+            : fetchedHolidays.has(dateStr) ? "HD"
+            : isPast ? "Absent"
+            : "";
           rows.push([
             r.name,
             r.project,
-            `${yr}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`,
+            dateStr,
             dayName,
             dayData?.punchIn ? new Date(dayData.punchIn).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" }) : "",
             dayData?.punchOut ? new Date(dayData.punchOut).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" }) : "",
@@ -988,7 +1009,7 @@ export default function ReportsPage() {
                       });
                     }}
                   />
-                  <MonthlyDayDetailTable rows={monthlyGrid} month={selectedMonth} />
+                  <MonthlyDayDetailTable rows={monthlyGrid} month={selectedMonth} holidayDates={holidayDates} />
                 </>
               ) : (
                 <div className="text-center py-8 text-sm text-gray-400">
@@ -1336,7 +1357,7 @@ function MonthlyGridTable({ rows, month, onDayClick }: {
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function MonthlyDayDetailTable({ rows, month }: { rows: MonthlyGridRow[]; month: string }) {
+function MonthlyDayDetailTable({ rows, month, holidayDates }: { rows: MonthlyGridRow[]; month: string; holidayDates: Set<string> }) {
   const [year, mo] = month.split("-").map(Number);
   const daysInMonth = new Date(year, mo, 0).getDate();
   const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -1372,6 +1393,7 @@ function MonthlyDayDetailTable({ rows, month }: { rows: MonthlyGridRow[]; month:
                 const dow = cellDate.getDay();
                 const isSunday = dow === 0;
                 const isPast = cellDateStr < todayStr;
+                const isCompanyHoliday = !dayData && !isSunday && holidayDates.has(cellDateStr);
 
                 let statusLabel = "-";
                 let rowBg = "";
@@ -1381,6 +1403,9 @@ function MonthlyDayDetailTable({ rows, month }: { rows: MonthlyGridRow[]; month:
                 } else if (isSunday) {
                   statusLabel = "SU";
                   rowBg = "bg-orange-50/50 dark:bg-orange-900/10";
+                } else if (isCompanyHoliday) {
+                  statusLabel = "HD";
+                  rowBg = "bg-purple-50/30 dark:bg-purple-900/5";
                 } else if (isPast) {
                   statusLabel = "A";
                   rowBg = "bg-red-50/30 dark:bg-red-900/5";
@@ -1408,6 +1433,8 @@ function MonthlyDayDetailTable({ rows, month }: { rows: MonthlyGridRow[]; month:
                       <span className={`inline-flex items-center justify-center w-7 h-4 rounded text-[9px] font-semibold ${
                         isSunday && !dayData
                           ? "bg-orange-100 dark:bg-orange-900/40 text-orange-500"
+                          : isCompanyHoliday
+                          ? "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400"
                           : dayData
                           ? (isSunday ? `ring-1 ring-orange-400 ${statusCellColors[dayData.status] || "bg-gray-100 text-gray-500"}` : statusCellColors[dayData.status] || "bg-gray-100 text-gray-500")
                           : isPast
