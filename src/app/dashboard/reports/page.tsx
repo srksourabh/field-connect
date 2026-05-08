@@ -334,13 +334,6 @@ export default function ReportsPage() {
       }
     }
 
-    // Ensure every profile appears even if they have zero attendance records
-    for (const p of (profilesList || [])) {
-      if (!userMap.has(p.id)) {
-        userMap.set(p.id, { name: p.full_name, userId: p.id, entries: [] });
-      }
-    }
-
     // Collect dates declared as company holidays (any employee with status=holiday on that date)
     const monthHolidayDates = new Set<string>();
     for (const entry of data) {
