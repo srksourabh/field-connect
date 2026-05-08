@@ -253,9 +253,16 @@ export default function ReportsPage() {
       }
     }
 
+    const todayStr = todayIST();
     return Array.from(dayMap.values()).map((entry) => {
-      const ms = entry.firstIn && entry.lastOut
-        ? new Date(entry.lastOut).getTime() - new Date(entry.firstIn).getTime()
+      // For past-day sessions still open (cron not yet run), use virtual auto-close at 23:59:00 IST.
+      // This prevents blank punch-out columns and 0h hours in reports when cron runs after midnight.
+      const effectiveLastOut = entry.lastOut ?? (
+        entry.date < todayStr ? `${entry.date}T23:59:00+05:30` : null
+      );
+
+      const ms = entry.firstIn && effectiveLastOut
+        ? new Date(effectiveLastOut).getTime() - new Date(entry.firstIn).getTime()
         : 0;
       const hours = ms / 3600000;
 
@@ -263,7 +270,7 @@ export default function ReportsPage() {
       // Without punch_out, trust DB status — covers admin overrides, WFH leave inserts, and stale open sessions.
       let correctedStatus = entry.status;
       if (!["on-leave", "holiday", "lwp"].includes(entry.status)
-          && entry.firstIn && entry.lastOut) {
+          && entry.firstIn && effectiveLastOut) {
         if (hours >= 8) correctedStatus = "present";
         else if (hours >= 4) correctedStatus = "half-day";
         else correctedStatus = "absent";
@@ -271,6 +278,7 @@ export default function ReportsPage() {
 
       return {
         ...entry,
+        lastOut: effectiveLastOut,
         status: correctedStatus,
         name: profileMap.get(entry.user_id) || "Unknown",
         ms,
