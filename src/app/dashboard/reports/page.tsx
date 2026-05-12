@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { showToast } from "@/components/ui/Toast";
 import { toISTDateStr, todayIST } from "@/lib/utils";
+import { classifyGhost } from "@/lib/attendance-ghost";
 
 type ReportType = "attendance" | "monthly" | "employee" | "project" | "leave" | "not_present";
 type ReportStatus = "present" | "absent" | "late" | "half-day" | "on-leave" | "holiday" | "lwp";
@@ -226,64 +227,91 @@ export default function ReportsPage() {
       return true;
     });
 
-    // Group by user+date
-    const dayMap = new Map<string, { user_id: string; date: string; firstIn: string | null; lastOut: string | null; status: string; distanceKm: number }>();
+    // Two-pass merge — Bug A fix (see src/lib/attendance-ghost.ts for ghost-row classification).
+    //
+    // Pass 1: group all raw rows by (user_id, IST date), keeping every row in a list.
+    // Pass 2: for each day-group, partition into realRows (classifyGhost === null) and
+    //         ghostRows. If real punches exist, compute firstIn/lastOut/hours exclusively
+    //         from realRows and ignore ghosts entirely. If no real punches exist, fall back
+    //         to the ghost row's status (leave / WFH / rectification) so those days are
+    //         still accounted for correctly.
+    //
+    // Status overrides (on-leave, holiday, lwp, late) from real rows are applied on top —
+    // those are leave-day semantics and remain unchanged.
+
+    // Pass 1 — accumulate all rows per (user_id, date)
+    type DayAccum = {
+      user_id: string;
+      date: string;
+      rows: AttendanceRec[];
+      distanceKm: number;
+    };
+    const accumMap = new Map<string, DayAccum>();
 
     for (const rec of deduped) {
       const ts = rec.punch_in_at || rec.created_at;
       const dateStr = ts ? toISTDateStr(new Date(ts)) : "";
       if (!dateStr) continue;
       const key = `${rec.user_id}_${dateStr}`;
-      const existing = dayMap.get(key);
       const recDistance = (rec as Record<string, unknown>).total_distance_km as number | null;
+      const existing = accumMap.get(key);
       if (!existing) {
-        dayMap.set(key, {
-          user_id: rec.user_id,
-          date: dateStr,
-          firstIn: rec.punch_in_at,
-          lastOut: rec.punch_out_at,
-          status: rec.status || "present",
-          distanceKm: recDistance || 0,
-        });
+        accumMap.set(key, { user_id: rec.user_id, date: dateStr, rows: [rec], distanceKm: recDistance || 0 });
       } else {
-        if (rec.punch_in_at && (!existing.firstIn || rec.punch_in_at < existing.firstIn)) existing.firstIn = rec.punch_in_at;
-        if (rec.punch_out_at && (!existing.lastOut || rec.punch_out_at > existing.lastOut)) existing.lastOut = rec.punch_out_at;
-        if (rec.status === "on-leave" || rec.status === "holiday") existing.status = rec.status;
-        else if (rec.status === "late" && existing.status !== "on-leave" && existing.status !== "holiday") existing.status = "late";
+        existing.rows.push(rec);
         existing.distanceKm += recDistance || 0;
       }
     }
 
+    // Pass 2 — partition real vs ghost, compute merged entry
     const todayStr = todayIST();
-    return Array.from(dayMap.values()).map((entry) => {
+    return Array.from(accumMap.values()).map((accum) => {
+      const realRows = accum.rows.filter((r) => classifyGhost(r) === null);
+      const ghostRows = accum.rows.filter((r) => classifyGhost(r) !== null);
+      const sourceRows = realRows.length > 0 ? realRows : ghostRows;
+
+      // Derive firstIn, lastOut, and base status from sourceRows
+      let firstIn: string | null = null;
+      let lastOut: string | null = null;
+      let baseStatus = "present";
+
+      for (const r of sourceRows) {
+        if (r.punch_in_at && (!firstIn || r.punch_in_at < firstIn)) firstIn = r.punch_in_at;
+        if (r.punch_out_at && (!lastOut || r.punch_out_at > lastOut)) lastOut = r.punch_out_at;
+        // Status overrides — same precedence as before
+        if (r.status === "on-leave" || r.status === "holiday") baseStatus = r.status;
+        else if (r.status === "late" && baseStatus !== "on-leave" && baseStatus !== "holiday") baseStatus = r.status;
+        else if (r.status === "lwp" && baseStatus !== "on-leave" && baseStatus !== "holiday") baseStatus = r.status;
+      }
+
       // For past-day sessions still open (cron not yet run), use virtual auto-close at 23:59:00 IST.
-      // This prevents blank punch-out columns and 0h hours in reports when cron runs after midnight.
-      const effectiveLastOut = entry.lastOut ?? (
-        entry.date < todayStr ? `${entry.date}T23:59:00+05:30` : null
+      const effectiveLastOut = lastOut ?? (
+        accum.date < todayStr ? `${accum.date}T23:59:00+05:30` : null
       );
 
-      const ms = entry.firstIn && effectiveLastOut
-        ? new Date(effectiveLastOut).getTime() - new Date(entry.firstIn).getTime()
+      const ms = firstIn && effectiveLastOut
+        ? new Date(effectiveLastOut).getTime() - new Date(firstIn).getTime()
         : 0;
       const hours = ms / 3600000;
 
       // Recompute from hours only when both punch timestamps exist.
       // Without punch_out, trust DB status — covers admin overrides, WFH leave inserts, and stale open sessions.
-      let correctedStatus = entry.status;
-      if (!["on-leave", "holiday", "lwp"].includes(entry.status)
-          && entry.firstIn && effectiveLastOut) {
+      let correctedStatus = baseStatus;
+      if (!["on-leave", "holiday", "lwp"].includes(baseStatus) && firstIn && effectiveLastOut) {
         if (hours >= 8) correctedStatus = "present";
         else if (hours >= 4) correctedStatus = "half-day";
         else correctedStatus = "absent";
       }
 
       return {
-        ...entry,
+        user_id: accum.user_id,
+        date: accum.date,
+        firstIn,
         lastOut: effectiveLastOut,
         status: correctedStatus,
-        name: profileMap.get(entry.user_id) || "Unknown",
+        name: profileMap.get(accum.user_id) || "Unknown",
         ms,
-        distanceKm: entry.distanceKm,
+        distanceKm: accum.distanceKm,
       };
     });
   }, []);

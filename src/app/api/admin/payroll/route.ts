@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { classifyGhost } from "@/lib/attendance-ghost";
 
 async function verifyUniversalAdmin(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -185,17 +186,29 @@ export async function POST(req: NextRequest) {
     salaryByEmployee.set(entry.employee_id, list);
   }
 
+  // Bug A fix (forward-only — historical payroll runs already stored in hr_payroll are not
+  // affected; this only changes how NEW payroll runs compute the day-status map).
+  //
+  // Ghost rows (synthetic rows from rectification/leave approval) must not override the
+  // status derived from a real punch on the same day. We now:
+  //   1. Fetch punch_out_at so classifyGhost() can detect rectification ghosts.
+  //   2. Group rows per (employee, date) into real vs ghost buckets.
+  //   3. If real punches exist for a day, use the real-punch-derived status only.
+  //   4. If only ghost rows exist, use the ghost status (leave / WFH / rectification).
+  // The downstream consumption of attMap (daysPresent / daysAbsent / lwpDays / leaveDays)
+  // is unchanged — only the values stored in attMap are corrected.
+
   // Batch fetch attendance
   const startIso = `${month}-01T00:00:00+05:30`;
   const endIso = `${month}-${String(daysInMonth).padStart(2, "0")}T23:59:59+05:30`;
-  type AttRec = { user_id: string; punch_in_at: string | null; status: string; created_at: string };
+  type AttRec = { user_id: string; punch_in_at: string | null; punch_out_at: string | null; status: string; created_at: string };
   const allAttendance: AttRec[] = [];
 
   for (let i = 0; i < employee_ids.length; i += 50) {
     const batch = employee_ids.slice(i, i + 50);
     const { data } = await supabaseAdmin
       .from("hr_attendance")
-      .select("user_id, punch_in_at, status, created_at")
+      .select("user_id, punch_in_at, punch_out_at, status, created_at")
       .in("user_id", batch)
       .gte("created_at", startIso)
       .lte("created_at", endIso)
@@ -203,19 +216,42 @@ export async function POST(req: NextRequest) {
     if (data) allAttendance.push(...data);
   }
 
-  const attendanceByEmployee = new Map<string, Map<string, string>>();
+  // Group rows per (employee, date) — separate real punches from ghost rows
+  type DayBucket = { realStatus: string | null; ghostStatus: string | null };
+  const attendanceByEmployee = new Map<string, Map<string, DayBucket>>();
   for (const rec of allAttendance) {
     const ts = rec.punch_in_at || rec.created_at;
     if (!ts) continue;
     const dateStr = new Date(ts).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
-    const empMap = attendanceByEmployee.get(rec.user_id) || new Map<string, string>();
-    if (!empMap.has(dateStr)) {
-      empMap.set(dateStr, rec.status);
-    } else if (rec.status === "on-leave" || rec.status === "lwp") {
-      empMap.set(dateStr, rec.status);
+    const empMap = attendanceByEmployee.get(rec.user_id) || new Map<string, DayBucket>();
+    const bucket = empMap.get(dateStr) || { realStatus: null, ghostStatus: null };
+
+    if (classifyGhost(rec) !== null) {
+      // Ghost row — only record status if no ghost seen yet for this day
+      if (!bucket.ghostStatus) bucket.ghostStatus = rec.status;
+      else if (rec.status === "on-leave" || rec.status === "lwp") bucket.ghostStatus = rec.status;
+    } else {
+      // Real punch row — apply same precedence rules as before
+      if (!bucket.realStatus) {
+        bucket.realStatus = rec.status;
+      } else if (rec.status === "on-leave" || rec.status === "lwp") {
+        bucket.realStatus = rec.status;
+      }
     }
+
+    empMap.set(dateStr, bucket);
     attendanceByEmployee.set(rec.user_id, empMap);
   }
+
+  // Build the final attMap: real punch status wins; fall back to ghost if no real punch
+  const resolvedAttendance = new Map<string, Map<string, string>>();
+  Array.from(attendanceByEmployee.entries()).forEach(([empId, dayMap]) => {
+    const resolved = new Map<string, string>();
+    Array.from(dayMap.entries()).forEach(([dateStr, bucket]) => {
+      resolved.set(dateStr, bucket.realStatus ?? bucket.ghostStatus ?? "present");
+    });
+    resolvedAttendance.set(empId, resolved);
+  });
 
   const results: { employee_id: string; name: string; net_payable: number; status: string }[] = [];
   const todayIST = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -225,7 +261,7 @@ export async function POST(req: NextRequest) {
     if (!salary || salary.length === 0) continue;
 
     const profile = profileMap.get(empId);
-    const attMap = attendanceByEmployee.get(empId) || new Map();
+    const attMap = resolvedAttendance.get(empId) || new Map();
 
     // Count attendance
     let daysPresent = 0, daysAbsent = 0, lwpDays = 0, leaveDays = 0;

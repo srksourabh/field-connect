@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { classifyGhost } from "@/lib/attendance-ghost";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -160,10 +161,16 @@ export async function GET(request: Request) {
   const departmentStats = new Map<string, { hours: number; count: number; late: number }>();
   const weeklyBuckets = new Map<string, { present: Set<string>; hours: number }>();
 
+  // Bug A fix: ghost rows (synthetic rows from rectification/leave approval) must not
+  // contribute to hours, punch-in times, or late counts — those metrics use real punch data.
+  // They DO contribute to workingDaysByEmployee (a leave-approved day still counts as accounted-for)
+  // and to weeklyBuckets.present (for per-week presence counts).
+  // See src/lib/attendance-ghost.ts for the classification logic.
   for (const rec of allRecords) {
     const ts = rec.punch_in_at || rec.created_at;
     const day = new Date(ts).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
+    // Day presence — include ghosts so leave / WFH days count as accounted-for
     if (!workingDaysByEmployee.has(rec.user_id)) workingDaysByEmployee.set(rec.user_id, new Set());
     workingDaysByEmployee.get(rec.user_id)!.add(day);
 
@@ -179,7 +186,10 @@ export async function GET(request: Request) {
     const weekStart = getWeekStart(dateObj);
     if (!weeklyBuckets.has(weekStart)) weeklyBuckets.set(weekStart, { present: new Set(), hours: 0 });
 
-    if (rec.punch_in_at && rec.punch_out_at) {
+    // Skip ghost rows for all time-based metrics
+    const isGhost = classifyGhost(rec) !== null;
+
+    if (!isGhost && rec.punch_in_at && rec.punch_out_at) {
       const dur = (new Date(rec.punch_out_at).getTime() - new Date(rec.punch_in_at).getTime()) / 3600000;
       totalHours += dur;
       recordsWithHours++;
@@ -197,11 +207,11 @@ export async function GET(request: Request) {
       projectStats.get(project)!.hours += dur;
       departmentStats.get(department)!.hours += dur;
 
-      // Weekly
+      // Weekly hours
       weeklyBuckets.get(weekStart)!.hours += dur;
     }
 
-    if (rec.punch_in_at) {
+    if (!isGhost && rec.punch_in_at) {
       const punchIn = new Date(rec.punch_in_at);
       const istTime = punchIn.toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false });
       const [istH, istM] = istTime.split(":").map(Number);
@@ -221,6 +231,10 @@ export async function GET(request: Request) {
 
       projectStats.get(project)!.count++;
       departmentStats.get(department)!.count++;
+    }
+
+    // Weekly presence — include ghosts (leave/WFH days count as present for trend purposes)
+    if (rec.punch_in_at || rec.status === "on-leave") {
       weeklyBuckets.get(weekStart)!.present.add(rec.user_id);
     }
   }
