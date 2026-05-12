@@ -41,3 +41,18 @@ _archived/
 conversation-*.txt
 .serena/
 .claude/
+
+# Local debugging artifacts (build/lint/test logs at repo root)
+/build_err*.txt
+/build_stderr*.txt
+/build_stdout*.txt
+/lint_err*.txt
+/lint_stderr*.txt
+/lint_stdout*.txt
+/tsc_err*.txt
+/tsc_stderr*.txt
+
+# Playwright MCP debugging artifacts
+/chunk-scan*.json
+/prod-*.png
+.playwright-mcp/
