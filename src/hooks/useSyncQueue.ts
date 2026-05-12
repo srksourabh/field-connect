@@ -5,6 +5,7 @@ import { useOnlineStatus } from "./useOnlineStatus";
 import { logError } from "@/lib/utils";
 import {
   getQueue,
+  getDeadLetter,
   removeFromQueue,
   updateQueueItem,
   moveToDeadLetter,
@@ -21,7 +22,13 @@ const FLUSH_INTERVAL_MS = 30_000;
 export function useSyncQueue() {
   const isOnline = useOnlineStatus();
   const [pendingCount, setPendingCount] = useState(0);
+  const [deadLetterCount, setDeadLetterCount] = useState(0);
   const flushingRef = useRef(false);
+
+  useEffect(() => {
+    const count = getDeadLetter().length;
+    setDeadLetterCount(count);
+  }, []);
 
   const flush = useCallback(async () => {
     // Prevent concurrent flushes
@@ -35,36 +42,40 @@ export function useSyncQueue() {
       for (const item of queue) {
         try {
           if (item.type === "punch_in") {
-            const record = await createPunchIn(item.payload as {
+            const result = await createPunchIn(item.payload as {
               user_id: string;
               punch_in_at: string;
               punch_in_lat: number | null;
               punch_in_long: number | null;
             });
+            if (!result.ok) {
+              throw new Error(result.error.message);
+            }
             removeFromQueue(item.id);
 
             // Inject attendance_id into queued location logs that lack one
-            if (record?.id) {
-              const currentQueue = getQueue();
-              for (const qItem of currentQueue) {
-                if (
-                  qItem.type === "location_log" &&
-                  !qItem.payload.attendance_id &&
-                  qItem.payload.user_id === item.payload.user_id
-                ) {
-                  updateQueueItem(qItem.id, {
-                    payload: { ...qItem.payload, attendance_id: record.id },
-                  });
-                }
+            const currentQueue = getQueue();
+            for (const qItem of currentQueue) {
+              if (
+                qItem.type === "location_log" &&
+                !qItem.payload.attendance_id &&
+                qItem.payload.user_id === item.payload.user_id
+              ) {
+                updateQueueItem(qItem.id, {
+                  payload: { ...qItem.payload, attendance_id: result.data.id },
+                });
               }
             }
           } else if (item.type === "punch_out") {
-            await updatePunchOut(item.payload as {
+            const outResult = await updatePunchOut(item.payload as {
               user_id: string;
               punch_out_at: string;
               punch_out_lat: number | null;
               punch_out_long: number | null;
             });
+            if (!outResult.ok) {
+              throw new Error(outResult.error.message);
+            }
             removeFromQueue(item.id);
           } else if (item.type === "location_log") {
             await insertLocationLog(item.payload as {
@@ -95,6 +106,7 @@ export function useSyncQueue() {
           const retries = (item.retryCount ?? 0) + 1;
           if (retries >= MAX_RETRIES) {
             moveToDeadLetter({ ...item, retryCount: retries });
+            setDeadLetterCount(getDeadLetter().length);
             showToast(`Failed to sync ${item.type.replace("_", " ")} after ${MAX_RETRIES} attempts.`, "error");
           } else {
             updateQueueItem(item.id, { retryCount: retries });
@@ -133,7 +145,7 @@ export function useSyncQueue() {
     return () => clearInterval(id);
   }, [flush]);
 
-  return { pendingCount, flush };
+  return { pendingCount, deadLetterCount, flush };
 }
 
 export type { SyncQueueItem };

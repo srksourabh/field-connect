@@ -2,12 +2,16 @@ import { supabase } from "./supabase";
 import { todayISTTimestamp, autoCloseIST, logError } from "./utils";
 import type { HrAttendance } from "./database.types";
 
+export type Result<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: { message: string; code?: string } };
+
 export async function createPunchIn(data: {
   user_id: string;
   punch_in_at: string;
   punch_in_lat: number | null;
   punch_in_long: number | null;
-}): Promise<HrAttendance | null> {
+}): Promise<Result<HrAttendance>> {
   // Guard: if there's already an open session today, return it instead of creating a duplicate
   const today = todayISTTimestamp();
   const { data: existing } = await supabase
@@ -21,7 +25,7 @@ export async function createPunchIn(data: {
 
   if (existing) {
     console.warn("Open session already exists, skipping duplicate punch-in");
-    return existing;
+    return { ok: true, data: existing };
   }
 
   const { data: record, error } = await supabase
@@ -39,9 +43,9 @@ export async function createPunchIn(data: {
 
   if (error) {
     logError("Punch in error:", error);
-    return null;
+    return { ok: false, error: { message: error.message, code: error.code } };
   }
-  return record;
+  return { ok: true, data: record };
 }
 
 export async function updatePunchOut(data: {
@@ -49,7 +53,7 @@ export async function updatePunchOut(data: {
   punch_out_at: string;
   punch_out_lat: number | null;
   punch_out_long: number | null;
-}): Promise<HrAttendance | null> {
+}): Promise<Result<HrAttendance>> {
   // Find today's open record
   const today = todayISTTimestamp();
   const { data: record, error } = await supabase
@@ -67,9 +71,9 @@ export async function updatePunchOut(data: {
 
   if (error) {
     logError("Punch out error:", error);
-    return null;
+    return { ok: false, error: { message: error.message, code: error.code } };
   }
-  return record;
+  return { ok: true, data: record };
 }
 
 export async function getTodayAttendance(userId: string): Promise<HrAttendance | null> {

@@ -57,6 +57,16 @@ export function moveToDeadLetter(item: SyncQueueItem) {
   }
 }
 
+export function getDeadLetter(): SyncQueueItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(DEAD_LETTER_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function clearQueue() {
   localStorage.removeItem(QUEUE_KEY);
 }

@@ -39,7 +39,7 @@ export default function DashboardHome() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const geo = useGeolocation();
   const isOnline = useOnlineStatus();
-  const { pendingCount } = useSyncQueue();
+  const { pendingCount, deadLetterCount } = useSyncQueue();
   const [distanceKm, setDistanceKm] = useState(0);
   const [attendanceId, setAttendanceId] = useState<string | null>(null);
   const [firstPunchIn, setFirstPunchIn] = useState<string | null>(null);
@@ -212,23 +212,21 @@ export default function DashboardHome() {
 
       if (isOnline) {
         const record = await createPunchIn(payload);
-        if (record) {
-          setAttendanceId(record.id);
-          if (!firstPunchIn) setFirstPunchIn(timestamp);
-          // Refresh session list so timeline modal reflects the new punch-in
-          const refreshed = await getTodayAllSessions(userId);
-          if (refreshed) setTodaySessions(refreshed);
-        } else {
-          // Server rejected punch-in — revert local state completely
+        if (!record.ok) {
           punchOut();
-          showToast("Punch-in failed. Please try again.", "error");
+          showToast("Punch-in didn't save. Check your connection and try again.", "error");
           return;
         }
+        setAttendanceId(record.data.id);
+        if (!firstPunchIn) setFirstPunchIn(timestamp);
+        // Refresh session list so timeline modal reflects the new punch-in
+        const refreshed = await getTodayAllSessions(userId);
+        if (refreshed) setTodaySessions(refreshed);
         // Log punch-in location
         if (geo.lat != null && geo.long != null) {
           await insertLocationLog({
             user_id: userId,
-            attendance_id: record?.id ?? null,
+            attendance_id: record.data.id,
             lat: geo.lat,
             long: geo.long,
             source: "punch_in",
@@ -269,7 +267,11 @@ export default function DashboardHome() {
       };
 
       if (isOnline) {
-        await updatePunchOut(payload);
+        const result = await updatePunchOut(payload);
+        if (!result.ok) {
+          showToast("Punch-out didn't save. Check your connection and try again.", "error");
+          return;
+        }
         setLastPunchOut(now);
         // Update attendance status based on 8-hour rule
         await updateAttendanceStatus(userId);
@@ -384,7 +386,7 @@ export default function DashboardHome() {
       </p>
 
       {/* Sync Status */}
-      <SyncStatusBanner isOnline={isOnline} pendingCount={pendingCount} />
+      <SyncStatusBanner isOnline={isOnline} pendingCount={pendingCount} deadLetterCount={deadLetterCount} />
 
       {/* Punch Card */}
       <PunchCard
