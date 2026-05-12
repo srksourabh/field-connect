@@ -4,8 +4,6 @@ name: SW Cache Version Guard
 # Fails if src/ or public/ changed without bumping CACHE_VERSION in public/sw.js.
 
 on:
-  push:
-    branches: ["**"]
   pull_request:
     branches: [main]
 
