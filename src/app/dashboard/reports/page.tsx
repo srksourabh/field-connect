@@ -189,7 +189,10 @@ export default function ReportsPage() {
 
     // Fetch in batches of 50 user IDs to avoid URL length limits
     // and use higher row limits to get full month data
-    const batchSize = 50;
+    // PostgREST server-side cap is 1000 rows per response (Supabase max_rows setting).
+    // 15 users × ~36 rows/user = ~540 rows per batch — safely under the cap.
+    // If you raise this, also raise Supabase max_rows in the dashboard.
+    const batchSize = 15;
     type AttendanceRec = { user_id: string; punch_in_at: string | null; punch_out_at: string | null; status: string; created_at: string; total_distance_km: number | null };
     const allRecords: AttendanceRec[] = [];
 
