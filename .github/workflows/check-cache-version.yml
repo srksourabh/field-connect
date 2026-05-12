@@ -1,0 +1,72 @@
+name: SW Cache Version Guard
+
+# Runs on every push and every PR targeting main.
+# Fails if src/ or public/ changed without bumping CACHE_VERSION in public/sw.js.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-cache-version:
+    name: Check CACHE_VERSION bump
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need HEAD and HEAD^ to compare
+
+      - name: Enforce CACHE_VERSION bump when app files change
+        shell: bash
+        run: |
+          # ── Determine the base commit to diff against ──────────────────────
+          # For a PR, compare against the target branch head.
+          # For a direct push, compare against the previous commit.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE="HEAD^"
+          fi
+
+          echo "Comparing HEAD against: $BASE"
+
+          # ── Check 1: did any app-level file change? ─────────────────────────
+          # We care about src/ and public/ (excluding sw.js itself, since a bump
+          # that only touches sw.js should always pass).
+          CHANGED_APP=$(git diff --name-only "$BASE" HEAD \
+            -- 'src/**' 'public/**' \
+            ':!public/sw.js' \
+            2>/dev/null || true)
+
+          if [ -z "$CHANGED_APP" ]; then
+            echo "No src/ or public/ files changed — CACHE_VERSION bump not required. PASS."
+            exit 0
+          fi
+
+          echo "App files changed:"
+          echo "$CHANGED_APP"
+          echo ""
+
+          # ── Check 2: did CACHE_VERSION actually change? ─────────────────────
+          OLD_VER=$(git show "$BASE":public/sw.js 2>/dev/null \
+            | grep -oP 'CACHE_VERSION\s*=\s*"\K[^"]+' || echo "")
+          NEW_VER=$(git show HEAD:public/sw.js 2>/dev/null \
+            | grep -oP 'CACHE_VERSION\s*=\s*"\K[^"]+' || echo "")
+
+          echo "CACHE_VERSION: $OLD_VER → $NEW_VER"
+          echo ""
+
+          if [ "$OLD_VER" = "$NEW_VER" ]; then
+            echo "::error file=public/sw.js::CACHE_VERSION was NOT bumped."
+            echo ""
+            echo "  App files changed but public/sw.js CACHE_VERSION is still \"$OLD_VER\"."
+            echo "  Open public/sw.js and update the CACHE_VERSION string to today's date"
+            echo "  (format: YYYYMMDD, e.g. \"$(date +%Y%m%d)\") then re-push."
+            exit 1
+          fi
+
+          echo "CACHE_VERSION bumped ($OLD_VER → $NEW_VER). PASS."
