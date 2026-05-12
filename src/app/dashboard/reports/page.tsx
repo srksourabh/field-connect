@@ -883,7 +883,7 @@ export default function ReportsPage() {
             <input
               type="month"
               value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
+              onChange={(e) => { setSelectedMonth(e.target.value); setShowPreview(false); setMonthlyGrid([]); }}
               className="uds-input text-sm dark:[color-scheme:dark]"
             />
           </div>
@@ -926,8 +926,8 @@ export default function ReportsPage() {
           <DataFiltersCard
             project={project}
             department={department}
-            onProjectChange={setProject}
-            onDepartmentChange={setDepartment}
+            onProjectChange={(v) => { setProject(v); setShowPreview(false); setMonthlyGrid([]); }}
+            onDepartmentChange={(v) => { setDepartment(v); setShowPreview(false); setMonthlyGrid([]); }}
           />
         )}
 
