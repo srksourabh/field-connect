@@ -14,6 +14,7 @@ import {
   Save,
   UserPlus,
   Download,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
@@ -334,13 +335,24 @@ export default function EmployeeManagementPage() {
         <h1 className="text-lg font-semibold text-center flex-1">
           Employee Management
         </h1>
-        <Link
-          href="/dashboard/admin/employees"
-          className="p-2 -mr-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
-          title="Add Employee"
-        >
-          <UserPlus className="w-5 h-5 text-primary" />
-        </Link>
+        <div className="flex items-center gap-1">
+          {isUniversal && (
+            <Link
+              href="/dashboard/admin/bulk-upload"
+              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+              title="Bulk Upload Employees"
+            >
+              <Upload className="w-5 h-5 text-primary" />
+            </Link>
+          )}
+          <Link
+            href="/dashboard/admin/employees"
+            className="p-2 -mr-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+            title="Add Employee"
+          >
+            <UserPlus className="w-5 h-5 text-primary" />
+          </Link>
+        </div>
       </header>
 
       {/* Count badges */}
