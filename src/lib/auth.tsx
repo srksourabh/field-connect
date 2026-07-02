@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchProfile]);
 
   const signIn = useCallback(async (phone: string, password: string) => {
-    const email = `${phone}@uds.hr`;
+    const email = `${phone}@fieldconnect.local`;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
     // Kick out all other sessions so only one device is logged in at a time

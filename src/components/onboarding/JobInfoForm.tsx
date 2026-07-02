@@ -48,7 +48,7 @@ export default function JobInfoForm({ data, onChange }: JobInfoFormProps) {
           <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
         </div>
 
-        {/* Project */}
+        {/* Company */}
         <div className="relative">
           <FolderKanban className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
           <select
@@ -57,8 +57,8 @@ export default function JobInfoForm({ data, onChange }: JobInfoFormProps) {
             required
             className="uds-input pl-10 pr-10 appearance-none"
           >
-            <option value="">Select Project *</option>
-            <option value="all">All Projects</option>
+            <option value="">Select Company *</option>
+            <option value="all">All Companies</option>
             <option value="uds-pos">UDS POS</option>
             <option value="in-house">In-House</option>
           </select>

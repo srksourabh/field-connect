@@ -30,7 +30,7 @@ function defaultState(): PunchState {
 }
 
 function storageKey(userId: string): string {
-  return `uds_punch_state_${userId}`;
+  return `fieldconnect_punch_state_${userId}`;
 }
 
 function loadState(userId: string): PunchState {

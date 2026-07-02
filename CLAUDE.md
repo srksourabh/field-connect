@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Context
 
-UDS-HR is a mobile-first PWA for field workforce HR management (punch in/out, attendance, leave, live tracking, team management). It shares a Supabase database with the UDS-POS project. Deployed on Vercel.
+Field Connect is a mobile-first PWA for field workforce HR management (punch in/out, attendance, leave, live tracking, team management). It shares a Supabase database with the UDS-POS project. Deployed on Vercel.
 
 ## Commands
 
@@ -31,7 +31,7 @@ No test runner is configured. Playwright is installed as a devDependency but has
 
 ### Key Patterns
 
-**Auth**: Email format is `${phone}@uds.hr`. Default password: first 4 chars of name + last 4 digits of phone. Single-device sessions (new login kicks out previous). Auth state managed via `AuthProvider` context wrapping the dashboard layout. Middleware checks `sb-*-auth-token` cookie.
+**Auth**: Email format is `${phone}@fieldconnect.local`. Default password: first 4 chars of name + last 4 digits of phone. Single-device sessions (new login kicks out previous). Auth state managed via `AuthProvider` context wrapping the dashboard layout. Middleware checks `sb-*-auth-token` cookie.
 
 **Supabase**: Two clients — `supabase.ts` (browser, untyped `createClient` without generic) and `supabase-admin.ts` (server-only, uses service role key). All tables prefixed `hr_`. RLS enforced. Types in `database.types.ts`.
 

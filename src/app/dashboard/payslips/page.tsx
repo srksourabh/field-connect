@@ -72,7 +72,7 @@ export default function MyPayslipsPage() {
       const logoH = 18;
       if (logoBase64) doc.addImage(logoBase64, "JPEG", L, y, logoW, logoH);
       const hx = L + (logoBase64 ? logoW + 4 : 0);
-      const companyName = company.company_full_name || "Ultimate Digital Solutions";
+      const companyName = company.company_full_name || "Field Connect powered by UDS";
       doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
       doc.text(companyName, hx, y + 5);

@@ -1,6 +1,6 @@
 // Cache version — update on each deploy to bust stale caches
 const CACHE_VERSION = "20260516";
-const CACHE_NAME = `uds-hr-${CACHE_VERSION}`;
+const CACHE_NAME = `field-connect-${CACHE_VERSION}`;
 const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   "/",

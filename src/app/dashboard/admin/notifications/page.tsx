@@ -127,7 +127,7 @@ export default function BroadcastNotificationPage() {
   }
 
   const projectOptions = [
-    { value: "all", label: "All Projects" },
+    { value: "all", label: "All Companies" },
     ...projects.map((p) => ({ value: p.name, label: p.name })),
   ];
 
@@ -187,9 +187,9 @@ export default function BroadcastNotificationPage() {
           />
         </div>
 
-        {/* Target Projects */}
+        {/* Target Companies */}
         <div>
-          <label className="text-xs font-medium text-gray-500 mb-2 block">Target Projects</label>
+          <label className="text-xs font-medium text-gray-500 mb-2 block">Target Companies</label>
           <div className="flex flex-wrap gap-2">
             {projectOptions.map((opt) => (
               <button

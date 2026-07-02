@@ -11,7 +11,7 @@ import { chromium } from "playwright";
 
 const SUPABASE_URL = "https://mzwmebrwmxhfyohulddl.supabase.co";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const SITE_URL = process.env.SITE_URL || "https://uds-hr.vercel.app";
+const SITE_URL = process.env.SITE_URL || "https://Field Connect.vercel.app";
 
 const TEST_PHONE = "9000099901";
 const TEST_NAME = "TestOnboard User";
@@ -69,7 +69,7 @@ async function run() {
   if (!SERVICE_ROLE_KEY) { console.error("Set SUPABASE_SERVICE_ROLE_KEY"); process.exit(1); }
 
   // Pre-cleanup: find if test email already exists
-  const authEmail = `${TEST_PHONE}@uds.hr`;
+  const authEmail = `${TEST_PHONE}@fieldconnect.local`;
   console.log("Pre-cleanup: checking for existing test user...");
   const existing = await sbAuthAdmin(`users?email=${encodeURIComponent(authEmail)}`);
   if (!existing.error && existing.users?.length > 0) {

@@ -5,10 +5,10 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
  * POST /api/admin/repair-accounts
  *
  * Bulk-repairs all legacy employee accounts whose Supabase auth email
- * does not match the expected {phone}@uds.hr format.
+ * does not match the expected {phone}@fieldconnect.local format.
  *
  * For each mismatched account:
- *   1. Updates auth email to {phone}@uds.hr
+ *   1. Updates auth email to {phone}@fieldconnect.local
  *   2. Resets password to the default (first 4 of name + last 4 of phone)
  *
  * Requires super_admin Bearer token.
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    const expectedEmail = `${cleanPhone}@uds.hr`;
+    const expectedEmail = `${cleanPhone}@fieldconnect.local`;
 
     // Get current auth user
     const { data: { user: authUser }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(profile.id);

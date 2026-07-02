@@ -1,4 +1,4 @@
-// Screenshot capture script for UDS-HR User Guide
+// Screenshot capture script for Field Connect User Guide
 // Usage: node scripts/take-screenshots.mjs <phone> <password>
 
 import { chromium } from "playwright";

@@ -57,7 +57,7 @@ Employee self-registration via one-time token (no auth required).
 { "success": true, "message": "Account created for Jane Doe." }
 ```
 
-Creates Supabase auth user (`phone@uds.hr`), profile row (always `employee` role), and blank leave balance. Token is atomically claimed (prevents race conditions).
+Creates Supabase auth user (`phone@fieldconnect.local`), profile row (always `employee` role), and blank leave balance. Token is atomically claimed (prevents race conditions).
 
 | Error | When |
 |-------|------|
@@ -114,7 +114,7 @@ Creates auth user, profile, and blank leave balance.
 { "success": true }
 ```
 
-If `phone` changes, syncs auth email to `newPhone@uds.hr`. If `leave_policy_id` is set, upserts leave balances from the policy.
+If `phone` changes, syncs auth email to `newphone@fieldconnect.local`. If `leave_policy_id` is set, upserts leave balances from the policy.
 
 | Error | When |
 |-------|------|
@@ -176,7 +176,7 @@ Soft-deactivates by setting `deactivated_at`. Pass `restore: true` to reactivate
 { "success": true }
 ```
 
-Resets to default password, fixes auth email to `phone@uds.hr`, invalidates sessions.
+Resets to default password, fixes auth email to `phone@fieldconnect.local`, invalidates sessions.
 
 | Error | When |
 |-------|------|

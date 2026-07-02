@@ -76,9 +76,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Ensure auth email matches phone@uds.hr (fixes legacy accounts with wrong email)
+  // Ensure auth email matches phone@fieldconnect.local (fixes legacy accounts with wrong email)
   const cleanPhone = (targetProfile.phone || "").replace(/\D/g, "").slice(-10);
-  const authEmail = `${cleanPhone}@uds.hr`;
+  const authEmail = `${cleanPhone}@fieldconnect.local`;
 
   // Reset password and fix auth email via Supabase Admin API
   // email_confirm: true ensures the email is immediately confirmed (no confirmation link)

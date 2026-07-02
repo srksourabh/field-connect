@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Field Connect HR - Unified HR Platform",
-  description: "Unified HR platform by Ultimate Digital Solutions — attendance, leave, tracking & more",
+  title: "Field Connect - Unified HR Platform",
+  description: "Unified HR platform by Field Connect powered by UDS — attendance, leave, tracking & more",
   manifest: "/manifest.json",
   icons: {
     icon: "/favicon.svg",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Field Connect HR",
+    title: "Field Connect",
   },
 };
 

@@ -16,8 +16,8 @@ ALTER TABLE hr_profiles
 
 -- 3. Seed company config (idempotent)
 INSERT INTO hr_config (key, value) VALUES
-  ('company_full_name', 'Ultimate Digital Solutions'),
-  ('company_address',   'EC73, 1442 Rajdanga Main Road, Kolkata, West Bengal 700107'),
+  ('company_full_name', 'Field Connect powered by UDS'),
+  ('company_address',   ''),
   ('company_pf_no',     ''),
   ('company_esic_code', '')
 ON CONFLICT (key) DO NOTHING;

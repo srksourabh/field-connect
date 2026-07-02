@@ -51,6 +51,8 @@ const HEADER_ALIASES: Record<string, keyof BulkRow> = {
   mobile_no: "phone",
   "mobile no": "phone",
   "phone no": "phone",
+  company: "project",
+  "company name": "project",
   "date of joining": "date_of_joining",
   doj: "date_of_joining",
   "employee code": "employee_code",

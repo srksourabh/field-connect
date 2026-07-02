@@ -158,7 +158,7 @@ export default function LandingPage() {
           <Link href="/" className="flex items-center gap-2.5">
             <Image
               src="/brands/uds-logo.jpg"
-              alt="UDS - Ultimate Digital Solutions"
+              alt="Field Connect powered by UDS"
               width={100}
               height={40}
               className="h-9 w-auto"
@@ -167,7 +167,7 @@ export default function LandingPage() {
           <div className="hidden sm:flex items-center gap-8 text-sm font-medium text-gray-600">
             <a href="#products" className="hover:text-primary transition-colors">Products</a>
             <a href="#features" className="hover:text-primary transition-colors">Features</a>
-            <a href="#highlights" className="hover:text-primary transition-colors">Why UDS</a>
+            <a href="#highlights" className="hover:text-primary transition-colors">Why Field Connect</a>
           </div>
           <Link
             href="/login"
@@ -206,7 +206,7 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto px-6 w-full">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white text-sm font-medium mb-5 border border-white/20">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              Ultimate Digital Solutions
+              Field Connect powered by UDS
             </div>
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-white mb-4 max-w-3xl">
               {heroSlides[heroIdx].headline}
@@ -266,7 +266,7 @@ export default function LandingPage() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/brands/field-connect-banner.svg"
-                  alt="UDS Field Connect"
+                  alt="Field Connect"
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -276,7 +276,7 @@ export default function LandingPage() {
                     <rect width="32" height="32" rx="6" fill="#137fec" />
                     <path d="M16 6c-4.4 0-8 3.6-8 8 0 6 8 14 8 14s8-8 8-14c0-4.4-3.6-8-8-8zm0 11c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z" fill="white" />
                   </svg>
-                  <h3 className="text-xl font-bold">UDS Field Connect</h3>
+                  <h3 className="text-xl font-bold">Field Connect</h3>
                 </div>
                 <p className="text-gray-500 leading-relaxed">
                   GPS-verified attendance, live field team tracking, leave management,
@@ -406,7 +406,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 py-16">
           <div className="text-center mb-10">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
-              Why UDS HR?
+              Why Field Connect?
             </h2>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
@@ -445,7 +445,7 @@ export default function LandingPage() {
             href="/login"
             className="group inline-flex items-center gap-2 px-10 py-4 bg-primary text-white font-semibold text-lg rounded-2xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/30"
           >
-            Sign in to UDS HR
+            Sign in to Field Connect
             <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
@@ -471,7 +471,7 @@ export default function LandingPage() {
             </span>
           </div>
           <p className="text-sm text-gray-400">
-            &copy; {new Date().getFullYear()} Ultimate Digital Solutions. All rights reserved.
+            &copy; {new Date().getFullYear()} Field Connect powered by UDS. All rights reserved.
           </p>
         </div>
       </footer>

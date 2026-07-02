@@ -6,7 +6,7 @@
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
 
-const PROD_URL = "https://uds-hr.vercel.app";
+const PROD_URL = "https://Field Connect.vercel.app";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -377,7 +377,7 @@ async function main() {
     // Get admin token
     const anonClient = createClient(SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
     const { data: loginData } = await anonClient.auth.signInWithPassword({
-      email: `${phone}@uds.hr`,
+      email: `${phone}@fieldconnect.local`,
       password: pwd,
     });
     const token = loginData.session.access_token;

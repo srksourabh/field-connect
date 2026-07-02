@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
-const DISMISS_KEY = "uds_pwa_dismiss";
+const DISMISS_KEY = "fieldconnect_pwa_dismiss";
 const DISMISS_DAYS = 7;
 
 interface BeforeInstallPromptEvent extends Event {

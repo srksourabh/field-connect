@@ -26,7 +26,7 @@ export default function DataFiltersCard({
         <h3 className="text-sm font-semibold">Filters</h3>
       </div>
       <div className="space-y-4">
-        {/* Project */}
+        {/* Company */}
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
             Project
@@ -37,7 +37,7 @@ export default function DataFiltersCard({
               onChange={(e) => onProjectChange(e.target.value)}
               className="uds-input pr-10 appearance-none text-sm"
             >
-              <option value="">All Projects</option>
+              <option value="">All Companies</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.name}>{p.name}</option>
               ))}

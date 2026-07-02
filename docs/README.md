@@ -1,12 +1,12 @@
-# UDS-HR Documentation
+# Field Connect Documentation
 
-## What is UDS-HR?
+## What is Field Connect?
 
-UDS-HR is a mobile-first Progressive Web App (PWA) for managing field workforce HR operations. It provides punch in/out attendance tracking with GPS verification, leave management, live team tracking on maps, employee onboarding, and analytics — all accessible from a phone browser with offline support.
+Field Connect is a mobile-first Progressive Web App (PWA) for managing field workforce HR operations. It provides punch in/out attendance tracking with GPS verification, leave management, live team tracking on maps, employee onboarding, and analytics — all accessible from a phone browser with offline support.
 
 **Target audience:** Organizations with field employees who need to track attendance, location, and leave from mobile devices without installing native apps.
 
-**Live application:** https://uds-hr.vercel.app
+**Live application:** https://Field Connect.vercel.app
 
 ## Tech Stack
 
@@ -33,8 +33,8 @@ UDS-HR is a mobile-first Progressive Web App (PWA) for managing field workforce 
 
 ```bash
 # Clone the repository
-git clone https://github.com/srksourabh/uds-hr.git
-cd uds-hr
+git clone https://github.com/srksourabh/Field Connect.git
+cd Field Connect
 
 # Install dependencies
 npm install

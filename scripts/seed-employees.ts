@@ -148,7 +148,7 @@ async function main() {
   // Step 0: Create admin user (Sourabh Bhaumik, CEO)
   console.log("\n--- Creating admin user (Sourabh Bhaumik) ---");
   const adminPhone = "9836719911";
-  const adminEmail = `${adminPhone}@uds.hr`;
+  const adminEmail = `${adminPhone}@fieldconnect.local`;
   const adminPassword = generatePassword("Sourabh", adminPhone);
   console.log(`  Email: ${adminEmail}, Password: ${adminPassword}`);
 
@@ -226,7 +226,7 @@ async function main() {
       }
     }
 
-    const email = `${phone}@uds.hr`;
+    const email = `${phone}@fieldconnect.local`;
     const password = generatePassword(name, phone);
 
     // Determine role

@@ -5,16 +5,16 @@
 ### Login Flow
 
 1. User enters their **phone number** and **password** on the login page.
-2. The app constructs an auth email: `{phone}@uds.hr` (e.g., `9876543210@uds.hr`).
+2. The app constructs an auth email: `{phone}@fieldconnect.local` (e.g., `9876543210@fieldconnect.local`).
 3. Calls `supabase.auth.signInWithPassword({ email, password })`.
 4. On success, the session is stored in a cookie (`sb-*-auth-token`) with `max-age` computed from `session.expires_at`.
 5. The `AuthProvider` context loads the user's `hr_profiles` row and caches it in localStorage.
 
 ### Default Credentials
 
-- **Email (auth):** `{phone}@uds.hr`
+- **Email (auth):** `{phone}@fieldconnect.local`
 - **Password:** First 4 characters of name (lowercase, spaces removed) + last 4 digits of phone number.
-- Example: Name "Sourabh Bhaumik", Phone "9876543210" → email `9876543210@uds.hr`, password `sour3210`.
+- Example: Name "Sourabh Bhaumik", Phone "9876543210" → email `9876543210@fieldconnect.local`, password `sour3210`.
 
 All account creation paths (add-employee, onboarding, repair-accounts) enforce this convention.
 
@@ -31,7 +31,7 @@ Only one active session is maintained per user. Logging in on a new device creat
 ### Password Reset
 
 Two mechanisms:
-1. **Admin Reset** (`/api/admin/reset-password`): Admin resets an employee's password to the default. Also fixes auth email to `phone@uds.hr` and invalidates all sessions.
+1. **Admin Reset** (`/api/admin/reset-password`): Admin resets an employee's password to the default. Also fixes auth email to `phone@fieldconnect.local` and invalidates all sessions.
 2. **Self-Service** (`/api/forgot-password`): Employee verifies their identity using their personal email on file, then password is reset to default.
 
 ---

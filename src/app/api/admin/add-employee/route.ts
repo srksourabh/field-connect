@@ -66,9 +66,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Create auth user (auth email must be phone@uds.hr to match login flow)
+  // Create auth user (auth email must be phone@fieldconnect.local to match login flow)
   const cleanPhone = (phone || "").replace(/\D/g, "").slice(-10);
-  const authEmail = `${cleanPhone}@uds.hr`;
+  const authEmail = `${cleanPhone}@fieldconnect.local`;
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: authEmail,
     password: defaultPassword,

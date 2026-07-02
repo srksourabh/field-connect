@@ -9,7 +9,7 @@ import { todayIST, logError } from "@/lib/utils";
 const CAPTURE_INTERVAL_MS = 15 * 60 * 1000;
 
 function todayKey(): string {
-  return `uds_location_captured_${todayIST()}`;
+  return `fieldconnect_location_captured_${todayIST()}`;
 }
 
 function getLastCaptureTime(): number {

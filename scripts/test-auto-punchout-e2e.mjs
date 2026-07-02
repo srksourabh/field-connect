@@ -11,7 +11,7 @@
 
 const SUPABASE_URL = "https://mzwmebrwmxhfyohulddl.supabase.co";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const SITE_URL = process.env.SITE_URL || "https://uds-hr.vercel.app";
+const SITE_URL = process.env.SITE_URL || "https://Field Connect.vercel.app";
 const CRON_SECRET = process.env.CRON_SECRET;
 
 // Use a known test user (super_admin) — we'll create temp attendance records

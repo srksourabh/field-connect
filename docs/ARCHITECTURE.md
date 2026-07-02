@@ -43,7 +43,7 @@
 ## Directory Layout
 
 ```
-uds-hr/
+Field Connect/
 ├── docs/                    # Documentation (this folder)
 ├── public/
 │   ├── manifest.json        # PWA manifest
@@ -102,7 +102,7 @@ uds-hr/
 
 ### Authentication Flow
 
-1. **Login:** User enters phone number + password. The app constructs the auth email as `{phone}@uds.hr` and calls `supabase.auth.signInWithPassword()`.
+1. **Login:** User enters phone number + password. The app constructs the auth email as `{phone}@fieldconnect.local` and calls `supabase.auth.signInWithPassword()`.
 2. **Cookie sync:** On successful login, `AuthProvider` encodes the session as a base64 cookie (`sb-*-auth-token`) with `max-age` derived from `session.expires_at`.
 3. **Middleware:** Edge middleware on `/dashboard/*` routes parses the cookie, decodes the JWT, checks expiry. Expired/missing tokens redirect to `/login`.
 4. **Profile fetch:** `AuthProvider` fetches the user's `hr_profiles` row and caches it in localStorage for offline use.

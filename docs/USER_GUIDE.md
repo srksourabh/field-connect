@@ -1,8 +1,8 @@
-# UDS-HR User Guide
+# Field Connect User Guide
 
-A step-by-step guide with screenshots for every feature. UDS-HR is a mobile-first web app for field workforce HR management — punch in/out, attendance, leave, live GPS tracking, and team management.
+A step-by-step guide with screenshots for every feature. Field Connect is a mobile-first web app for field workforce HR management — punch in/out, attendance, leave, live GPS tracking, and team management.
 
-**App URL:** https://uds-hr.vercel.app
+**App URL:** https://Field Connect.vercel.app
 
 ---
 
@@ -56,7 +56,7 @@ A step-by-step guide with screenshots for every feature. UDS-HR is a mobile-firs
 
 ### 1.1 Opening the App
 
-Open your phone browser and go to **https://uds-hr.vercel.app**
+Open your phone browser and go to **https://Field Connect.vercel.app**
 
 You'll see the landing page:
 
@@ -95,16 +95,16 @@ If you forget your password:
 
 ### 1.4 Installing as an App (PWA)
 
-For the best experience, install UDS-HR as an app on your phone:
+For the best experience, install Field Connect as an app on your phone:
 
 - **Android (Chrome):** A banner will appear at the bottom saying "Add to Home Screen" — tap it.
 - **iPhone (Safari):** Tap the Share button (square with arrow) → tap "Add to Home Screen."
 
-Once installed, UDS-HR opens full-screen like a native app and works even with poor connectivity.
+Once installed, Field Connect opens full-screen like a native app and works even with poor connectivity.
 
 ### 1.5 Single-Device Rule
 
-UDS-HR allows **one active login at a time**. If you log in on a new device, your previous session is automatically ended. This is by design for security.
+Field Connect allows **one active login at a time**. If you log in on a new device, your previous session is automatically ended. This is by design for security.
 
 ---
 
@@ -540,7 +540,7 @@ Scroll down to see visual charts:
 8. Tap **"Add Employee"**.
 
 **What happens:**
-- An account is created with email `{phone}@uds.hr`.
+- An account is created with email `{phone}@fieldconnect.local`.
 - The default password is: first 4 letters of name + last 4 digits of phone.
 - A blank leave balance is created for the current year.
 - Share the credentials with the new employee so they can log in.
@@ -831,7 +831,7 @@ A: First 4 letters of your name (lowercase, no spaces) + last 4 digits of your p
 A: Ask your admin to update your phone number in Employee Management. Your login phone number will be updated. Use the new phone + default password (or ask for a password reset).
 
 **Q: Can I log in on two devices at the same time?**
-A: No. UDS-HR enforces single-device login. Logging in on a new device ends your session on the old device.
+A: No. Field Connect enforces single-device login. Logging in on a new device ends your session on the old device.
 
 **Q: I'm getting "Invalid credentials" even though my password is correct.**
 A: Your password may have been reset by an admin. Try the default password (first 4 of name + last 4 of phone). If that doesn't work, ask your admin to reset it.

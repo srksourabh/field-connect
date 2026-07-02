@@ -78,7 +78,7 @@ async function main() {
     process.stdout.write(`[${i + 1}/${sorted.length}] ${name} (${phone})... `);
 
     try {
-      const authEmail = `${phone}@uds.hr`;
+      const authEmail = `${phone}@fieldconnect.local`;
       const namePart = name.replace(/\s+/g, "").slice(0, 4).toLowerCase();
       const phonePart = phone.slice(-4);
       const password = namePart + phonePart;

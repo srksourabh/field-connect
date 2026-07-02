@@ -14,7 +14,7 @@ import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
 
 // --- Config ---
-const STAGING_URL = process.env.TEST_URL || "https://uds-hr.vercel.app";
+const STAGING_URL = process.env.TEST_URL || "https://Field Connect.vercel.app";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://mzwmebrwmxhfyohulddl.supabase.co";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -49,7 +49,7 @@ function fail(test, reason) {
 
 // Helper: login as a user and get session token
 async function getSessionToken(phone, name) {
-  const email = `${phone}@uds.hr`;
+  const email = `${phone}@fieldconnect.local`;
   const password = name.replace(/\s/g, "").slice(0, 4).toLowerCase() + phone.slice(-4);
 
   const { data, error } = await anonClient.auth.signInWithPassword({ email, password });
@@ -567,7 +567,7 @@ async function testUIFeatures() {
 // ===== MAIN =====
 async function main() {
   console.log("═══════════════════════════════════════════════════");
-  console.log("  UDS-HR Team Feedback — Headless E2E Tests");
+  console.log("  Field Connect Team Feedback — Headless E2E Tests");
   console.log(`  Target: ${STAGING_URL}`);
   console.log(`  Date: ${new Date().toISOString()}`);
   console.log("═══════════════════════════════════════════════════\n");

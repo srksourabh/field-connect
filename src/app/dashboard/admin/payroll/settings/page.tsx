@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { showToast } from "@/components/ui/Toast";
 
 const FIELDS = [
-  { key: "company_full_name", label: "Company Full Name", placeholder: "Ultimate Digital Solutions" },
+  { key: "company_full_name", label: "Company Full Name", placeholder: "Field Connect powered by UDS" },
   { key: "company_address",   label: "Registered Address",  placeholder: "EC73, 1442 Rajdanga Main Road, Kolkata..." },
   { key: "company_pf_no",     label: "PF Registration No.", placeholder: "WBCAL0123456789" },
   { key: "company_esic_code", label: "ESIC Employer Code",  placeholder: "31000012345678901" },

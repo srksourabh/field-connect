@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Create auth user
-      const authEmail = `${phone}@uds.hr`;
+      const authEmail = `${phone}@fieldconnect.local`;
       const namePart = name.replace(/\s+/g, "").slice(0, 4).toLowerCase();
       const phonePart = phone.slice(-4);
       const password = namePart + phonePart;

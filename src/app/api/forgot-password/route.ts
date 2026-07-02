@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Reset password via admin API
-    const authEmail = `${cleanPhone}@uds.hr`;
+    const authEmail = `${cleanPhone}@fieldconnect.local`;
     const { error } = await supabaseAdmin.auth.admin.updateUserById(profile.id, {
       email: authEmail,
       password: newPassword,

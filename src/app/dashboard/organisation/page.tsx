@@ -10,7 +10,7 @@ import { showConfirm } from "@/components/ui/Dialog";
 const sections = [
   { icon: Users, label: "Employees", description: "Manage all employees", href: "/dashboard/admin", color: "text-blue-500 bg-blue-50 dark:bg-blue-900/20" },
   { icon: UserPlus, label: "Add Employee", description: "Register new employee", href: "/dashboard/admin/employees", color: "text-green-500 bg-green-50 dark:bg-green-900/20" },
-  { icon: FolderKanban, label: "Projects", description: "Manage projects", href: "/dashboard/organisation/projects", color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20" },
+  { icon: FolderKanban, label: "Companies", description: "Manage companies", href: "/dashboard/organisation/projects", color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20" },
   { icon: Building2, label: "Departments", description: "Manage departments", href: "/dashboard/organisation/departments", color: "text-purple-500 bg-purple-50 dark:bg-purple-900/20" },
   { icon: Briefcase, label: "Designations", description: "Manage designations", href: "/dashboard/organisation/designations", color: "text-amber-500 bg-amber-50 dark:bg-amber-900/20" },
   { icon: ShieldCheck, label: "Leave Policies", description: "Manage leave policies", href: "/dashboard/organisation/leave-policies", color: "text-teal-500 bg-teal-50 dark:bg-teal-900/20" },

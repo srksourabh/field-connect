@@ -241,7 +241,7 @@ export default function EmployeeManagementPage() {
     const rows = filteredProfiles.map((p) => [
       p.full_name,
       p.phone || "",
-      (p.email && !p.email.endsWith("@uds.hr")) ? p.email : "",
+      (p.email && !p.email.endsWith("@fieldconnect.local")) ? p.email : "",
       p.designation || "",
       p.department || "",
       p.project_id || "",
@@ -412,7 +412,7 @@ export default function EmployeeManagementPage() {
               onChange={(e) => setProjectFilter(e.target.value)}
               className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-sm"
             >
-              <option value="all">All Projects</option>
+              <option value="all">All Companies</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.name}>{p.name}</option>
               ))}

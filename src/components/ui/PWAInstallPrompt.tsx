@@ -31,14 +31,14 @@ export default function PWAInstallPrompt({ variant }: PWAInstallPromptProps) {
           <div className="flex items-center gap-3 mb-3">
             <Image
               src="/icon-192.png"
-              alt="UDS HR"
+              alt="Field Connect"
               width={44}
               height={44}
               className="rounded-xl shadow-sm"
             />
             <div>
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                Install UDS HR
+                Install Field Connect
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 Quick access from your home screen
@@ -85,13 +85,13 @@ export default function PWAInstallPrompt({ variant }: PWAInstallPromptProps) {
         <div className="flex items-center gap-3">
           <Image
             src="/icon-192.png"
-            alt="UDS HR"
+            alt="Field Connect"
             width={48}
             height={48}
             className="rounded-xl shadow-sm flex-shrink-0"
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-800">Install UDS HR</p>
+            <p className="text-sm font-semibold text-gray-800">Install Field Connect</p>
             <p className="text-xs text-gray-500 truncate">
               Add to home screen for instant access
             </p>

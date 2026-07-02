@@ -18,7 +18,7 @@ import {
 } from "@/lib/bulk-upload";
 
 const SAMPLE_HEADERS = [
-  "full_name*", "phone*", "project*", "department*", "designation*",
+  "full_name*", "phone*", "company*", "department*", "designation*",
   "role", "employee_code", "personal_email", "date_of_joining",
   "reporting_manager_phone", "address", "city", "state", "pincode",
   "aadhaar", "pan", "bank_name", "account_no", "ifsc",
@@ -27,7 +27,7 @@ const SAMPLE_HEADERS = [
 ];
 
 const SAMPLE_ROW = [
-  "Ravi Kumar", "9876543210", "Project Alpha", "Engineering", "Software Engineer",
+  "Ravi Kumar", "9876543210", "Company Alpha", "Engineering", "Software Engineer",
   "employee", "EMP001", "ravi@gmail.com", "2024-01-15",
   "9876543211", "123 MG Road", "Kolkata", "West Bengal", "700001",
   "", "", "", "", "",

@@ -111,7 +111,7 @@ export default function LoginPage() {
             <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-lg">
               <Image
                 src="/brands/uds-logo.jpg"
-                alt="UDS - Ultimate Digital Solutions"
+                alt="Field Connect powered by UDS"
                 width={120}
                 height={48}
                 className="h-12 w-auto"

@@ -1,7 +1,7 @@
 {
-  "name": "Field Connect HR",
+  "name": "Field Connect",
   "short_name": "Field Connect",
-  "description": "Unified HR platform by Ultimate Digital Solutions — attendance, leave, tracking & more",
+  "description": "Unified HR platform by Field Connect powered by UDS — attendance, leave, tracking & more",
   "id": "/dashboard",
   "start_url": "/dashboard",
   "display": "standalone",

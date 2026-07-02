@@ -16,7 +16,7 @@ export default function AddEmployeePage() {
   const { profile, session } = useAuth();
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const authEmail = phone ? `${phone.replace(/\D/g, "")}@uds.hr` : "";
+  const authEmail = phone ? `${phone.replace(/\D/g, "")}@fieldconnect.local` : "";
   const [designation, setDesignation] = useState("");
   const [department, setDepartment] = useState("");
   const [project, setProject] = useState("");
@@ -168,14 +168,14 @@ export default function AddEmployeePage() {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Project *</label>
+            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Company *</label>
             <select
               value={project}
               onChange={(e) => setProject(e.target.value)}
               required
               className="w-full px-4 py-3 rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
-              <option value="">Select Project</option>
+              <option value="">Select Company</option>
               {projectOptions.map((p) => (
                 <option key={p.id} value={p.name}>{p.name}</option>
               ))}
