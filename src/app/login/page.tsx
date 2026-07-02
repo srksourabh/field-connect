@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Eye, EyeOff, Phone, Lock, X, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Phone, Lock, X, ArrowLeft, UserCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import PWAInstallPrompt from "@/components/ui/PWAInstallPrompt";
@@ -34,6 +34,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const cleanupDone = useRef(false);
@@ -77,6 +78,36 @@ export default function LoginPage() {
     }
 
     router.replace("/dashboard");
+  };
+
+  const handleDemoLogin = async () => {
+    setError("");
+    setDemoLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/demo-login", { method: "POST" });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Unable to prepare demo account");
+        return;
+      }
+
+      setPhone(data.phone);
+      setPassword(data.password);
+
+      const { error: authError } = await signIn(data.phone, data.password);
+      if (authError) {
+        setError("Demo login failed. Please try again.");
+        return;
+      }
+
+      router.replace("/dashboard");
+    } catch {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setDemoLoading(false);
+    }
   };
 
   return (
@@ -194,10 +225,21 @@ export default function LoginPage() {
               {/* Submit */}
               <button
                 type="submit"
-                disabled={loading || !phone || !password}
+                disabled={loading || demoLoading || !phone || !password}
                 className="w-full py-3 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary/25"
               >
                 {loading ? "Signing in..." : "Sign In"}
+              </button>
+
+              {/* Demo login */}
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                disabled={loading || demoLoading}
+                className="w-full py-3 rounded-xl border border-primary/25 bg-primary/5 text-primary font-semibold text-sm hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              >
+                <UserCheck className="w-4 h-4" />
+                {demoLoading ? "Preparing demo..." : "Login as Demo Admin"}
               </button>
 
               {/* Forgot Password */}
