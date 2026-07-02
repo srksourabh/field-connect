@@ -1,6 +1,6 @@
 # Database Schema
 
-All tables are in the `public` schema with Row-Level Security (RLS) enabled. Supabase project: `mzwmebrwmxhfyohulddl`. Migrations are in `supabase/migrations/` (16 files).
+All tables are in the `public` schema with Row-Level Security (RLS) enabled. Supabase project: `iefwhxxhrycaalhxkfgp`. Migrations are in `supabase/migrations/` (23 files).
 
 ---
 

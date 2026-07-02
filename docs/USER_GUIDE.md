@@ -2,7 +2,7 @@
 
 A step-by-step guide with screenshots for every feature. Field Connect is a mobile-first web app for field workforce HR management — punch in/out, attendance, leave, live GPS tracking, and team management.
 
-**App URL:** https://Field Connect.vercel.app
+**App URL:** https://field-connect.vercel.app
 
 ---
 
@@ -56,7 +56,7 @@ A step-by-step guide with screenshots for every feature. Field Connect is a mobi
 
 ### 1.1 Opening the App
 
-Open your phone browser and go to **https://Field Connect.vercel.app**
+Open your phone browser and go to **https://field-connect.vercel.app**
 
 You'll see the landing page:
 

@@ -6,7 +6,7 @@
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
 
-const PROD_URL = "https://Field Connect.vercel.app";
+const PROD_URL = process.env.TEST_URL || "https://field-connect.vercel.app";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 

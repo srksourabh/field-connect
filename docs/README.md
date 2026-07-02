@@ -6,7 +6,7 @@ Field Connect is a mobile-first Progressive Web App (PWA) for managing field wor
 
 **Target audience:** Organizations with field employees who need to track attendance, location, and leave from mobile devices without installing native apps.
 
-**Live application:** https://Field Connect.vercel.app
+**Live application:** https://field-connect.vercel.app
 
 ## Tech Stack
 

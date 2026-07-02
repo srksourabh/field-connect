@@ -224,6 +224,6 @@ Manager approves
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` |
 | `X-Powered-By` | Removed |
 
-**Image domains:** `mzwmebrwmxhfyohulddl.supabase.co` (Supabase Storage)
+**Image domains:** `iefwhxxhrycaalhxkfgp.supabase.co` (Supabase Storage)
 
 **Auto-deploy:** Pushes to `main` branch trigger automatic Vercel deployment.

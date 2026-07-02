@@ -9,9 +9,9 @@
  * 5. Verifies today's open session is NOT closed by cron
  */
 
-const SUPABASE_URL = "https://mzwmebrwmxhfyohulddl.supabase.co";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://iefwhxxhrycaalhxkfgp.supabase.co";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const SITE_URL = process.env.SITE_URL || "https://Field Connect.vercel.app";
+const SITE_URL = process.env.SITE_URL || "https://field-connect.vercel.app";
 const CRON_SECRET = process.env.CRON_SECRET;
 
 // Use a known test user (super_admin) — we'll create temp attendance records
