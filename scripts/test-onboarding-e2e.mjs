@@ -8,10 +8,12 @@
  * 5. Cleans up test data
  */
 import { chromium } from "playwright";
+import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://iefwhxxhrycaalhxkfgp.supabase.co";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SITE_URL = process.env.SITE_URL || "https://field-connect.vercel.app";
+const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 const TEST_PHONE = "9000099901";
 const TEST_NAME = "TestOnboard User";
@@ -50,6 +52,21 @@ async function sbAuthAdmin(path, method = "GET", body = null) {
   try { return JSON.parse(text); } catch { return text; }
 }
 
+async function findAuthUserByEmail(email) {
+  let page = 1;
+  const perPage = 100;
+
+  while (true) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+
+    const match = data.users.find((user) => user.email?.toLowerCase() === email.toLowerCase());
+    if (match) return match;
+    if (data.users.length < perPage) return null;
+    page++;
+  }
+}
+
 let tokenId = null;
 let createdUserId = null;
 
@@ -58,7 +75,7 @@ async function cleanup() {
   if (createdUserId) {
     try { await sbRest(`hr_leave_balances?user_id=eq.${createdUserId}`, "DELETE"); console.log("  Deleted leave balance"); } catch {}
     try { await sbRest(`hr_profiles?id=eq.${createdUserId}`, "DELETE"); console.log("  Deleted profile"); } catch {}
-    try { await sbAuthAdmin(`users/${createdUserId}`, "DELETE"); console.log("  Deleted auth user"); } catch {}
+    try { await supabaseAdmin.auth.admin.deleteUser(createdUserId); console.log("  Deleted auth user"); } catch {}
   }
   if (tokenId) {
     try { await sbRest(`hr_onboarding_tokens?id=eq.${tokenId}`, "DELETE"); console.log("  Deleted token"); } catch {}
@@ -71,13 +88,13 @@ async function run() {
   // Pre-cleanup: find if test email already exists
   const authEmail = `${TEST_PHONE}@fieldconnect.local`;
   console.log("Pre-cleanup: checking for existing test user...");
-  const existing = await sbAuthAdmin(`users?email=${encodeURIComponent(authEmail)}`);
-  if (!existing.error && existing.users?.length > 0) {
-    const uid = existing.users[0].id;
+  const existing = await findAuthUserByEmail(authEmail);
+  if (existing) {
+    const uid = existing.id;
     console.log(`  Found existing: ${uid} — cleaning up`);
     try { await sbRest(`hr_leave_balances?user_id=eq.${uid}`, "DELETE"); } catch {}
     try { await sbRest(`hr_profiles?id=eq.${uid}`, "DELETE"); } catch {}
-    try { await sbAuthAdmin(`users/${uid}`, "DELETE"); } catch {}
+    try { await supabaseAdmin.auth.admin.deleteUser(uid); } catch {}
     console.log("  Cleaned up previous test user");
   } else {
     console.log("  No existing test user found");
@@ -194,9 +211,9 @@ async function run() {
       console.log("  Screenshot: scripts/onboard-success.png");
 
       // Find the created user ID for cleanup
-      const check = await sbAuthAdmin(`users?email=${encodeURIComponent(authEmail)}`);
-      if (!check.error && check.users?.length > 0) {
-        createdUserId = check.users[0].id;
+      const check = await findAuthUserByEmail(authEmail);
+      if (check) {
+        createdUserId = check.id;
         console.log(`  Created user ID: ${createdUserId}`);
 
         // Verify KYC data was stored in DB
