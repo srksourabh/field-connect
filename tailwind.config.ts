@@ -29,9 +29,20 @@ const config: Config = {
           light: "#F8FAFC",
           success: "#10B981",
         },
+        gold: {
+          DEFAULT: "#d4af37",
+          light: "#e8d5b7",
+          dark: "#c49b2d",
+        },
+        forest: {
+          DEFAULT: "#1b4d3e",
+          light: "#f0f5f2",
+          dark: "#0f2e24",
+        },
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
+        satoshi: ["Satoshi", "sans-serif"],
       },
       borderRadius: {
         DEFAULT: "0.25rem",

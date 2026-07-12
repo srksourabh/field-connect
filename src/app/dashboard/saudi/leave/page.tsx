@@ -6,11 +6,13 @@ import { useAuth } from "@/lib/auth";
 import { CalendarCheck, Check, X } from "lucide-react";
 
 const statusColors: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  approved: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  rejected: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  pending: "bg-amber-100 text-amber-700",
+  approved: "bg-green-100 text-green-700",
+  rejected: "bg-red-100 text-red-700",
+  cancelled: "bg-gray-100 text-gray-600",
 };
+
+const filterTabs = ["", "pending", "approved", "rejected"];
 
 export default function SaudiLeavePage() {
   const { user } = useAuth();
@@ -52,23 +54,21 @@ export default function SaudiLeavePage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Leave Requests</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{requests.length} total requests</p>
-        </div>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-800 font-satoshi">Leave Requests</h1>
+        <p className="text-slate-400 text-sm mt-1">{requests.length} total requests</p>
       </div>
 
       <div className="flex gap-2">
-        {["", "pending", "approved", "rejected"].map((s) => (
+        {filterTabs.map((s) => (
           <button
             key={s}
             onClick={() => { setFilter(s); loadRequests(); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
               filter === s
-                ? "bg-primary text-white"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                ? "bg-forest text-white"
+                : "border border-gold/20 text-slate-500 hover:bg-slate-50"
             }`}
           >
             {s || "All"}
@@ -77,63 +77,59 @@ export default function SaudiLeavePage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="flex justify-center py-16">
+          <div className="w-8 h-8 border-4 border-forest border-t-transparent rounded-full animate-spin" />
         </div>
       ) : requests.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
-          <CalendarCheck className="w-12 h-12 mb-3" />
-          <p className="text-lg font-medium">No leave requests</p>
+        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+          <CalendarCheck className="w-14 h-14 mb-4 opacity-40" />
+          <p className="text-lg font-medium text-slate-500">No leave requests</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700/50">
+        <div className="rounded-[32px] border border-gold/20 bg-white shadow-sm overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700/50">
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Employee</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Dates</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Days</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="w-24 px-4 py-3" />
+              <tr className="border-b border-slate-100">
+                <th className="text-left px-6 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Employee</th>
+                <th className="text-left px-6 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Type</th>
+                <th className="text-left px-6 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Dates</th>
+                <th className="text-left px-6 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Days</th>
+                <th className="text-left px-6 py-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Status</th>
+                <th className="w-32 px-6 py-4" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700/50">
+            <tbody className="divide-y divide-slate-100">
               {requests.map((req) => {
                 const start = new Date(req.start_date);
                 const end = new Date(req.end_date);
                 const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
                 return (
-                  <tr key={req.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-800">
                       {req.saudi_employees?.full_name}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                      {req.saudi_leave_types?.name}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                      {req.start_date} - {req.end_date}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{days}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[req.status]}`}>
+                    <td className="px-6 py-4 text-sm text-slate-500">{req.saudi_leave_types?.name}</td>
+                    <td className="px-6 py-4 text-sm text-slate-500">{req.start_date} - {req.end_date}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-800">{days}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${statusColors[req.status]}`}>
                         {req.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-6 py-4">
                       {req.status === "pending" && (
-                        <div className="flex gap-1">
+                        <div className="flex gap-2">
                           <button
                             onClick={() => handleStatus(req.id, "approved")}
-                            className="p-1 rounded hover:bg-green-100 dark:hover:bg-green-900/30"
+                            className="p-2 rounded-full bg-green-50 hover:bg-green-100 transition-colors"
                             title="Approve"
                           >
                             <Check className="w-4 h-4 text-green-600" />
                           </button>
                           <button
                             onClick={() => handleStatus(req.id, "rejected")}
-                            className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30"
+                            className="p-2 rounded-full bg-red-50 hover:bg-red-100 transition-colors"
                             title="Reject"
                           >
                             <X className="w-4 h-4 text-red-600" />

@@ -3,123 +3,247 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Users, Building2, CalendarCheck, Wallet, ShieldAlert, ShieldCheck, ArrowRight } from "lucide-react";
+import {
+  Users,
+  Building2,
+  CalendarCheck,
+  Wallet,
+  ShieldCheck,
+  Briefcase,
+  ArrowRight,
+  UserCheck,
+} from "lucide-react";
 
 interface SaudiMetrics {
-  employees: number;
+  totalEmployees: number;
+  activeEmployees: number;
   departments: number;
   pendingLeave: number;
   activePayroll: number;
-  expiringDocuments: number;
+  expiringDocs: number;
+  saudiCount: number;
+  expatCount: number;
 }
 
 export default function SaudiDashboardPage() {
   const [metrics, setMetrics] = useState<SaudiMetrics>({
-    employees: 0,
+    totalEmployees: 0,
+    activeEmployees: 0,
     departments: 0,
     pendingLeave: 0,
     activePayroll: 0,
-    expiringDocuments: 0,
+    expiringDocs: 0,
+    saudiCount: 0,
+    expatCount: 0,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadMetrics() {
-      const [empRes, deptRes, leaveRes, payrollRes, docRes] = await Promise.all([
-        supabase.from("saudi_employees").select("id", { count: "exact", head: true }).eq("employment_status", "active"),
-        supabase.from("saudi_departments").select("id", { count: "exact", head: true }),
-        supabase.from("saudi_leave_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("saudi_payroll_runs").select("id", { count: "exact", head: true }).neq("status", "completed"),
-        supabase.from("saudi_documents").select("id", { count: "exact", head: true }).not("expiry_date", "is", null),
-      ]);
+      const all = supabase.from("saudi_employees").select("id", { count: "exact", head: true });
+      const active = supabase.from("saudi_employees").select("id", { count: "exact", head: true }).eq("employment_status", "active");
+      const depts = supabase.from("saudi_departments").select("id", { count: "exact", head: true });
+      const leave = supabase.from("saudi_leave_requests").select("id", { count: "exact", head: true }).eq("status", "pending");
+      const payroll = supabase.from("saudi_payroll_runs").select("id", { count: "exact", head: true }).neq("status", "completed");
+      const docs = supabase.from("saudi_documents").select("id", { count: "exact", head: true }).not("expiry_date", "is", null);
+      const saudi = supabase.from("saudi_employees").select("id", { count: "exact", head: true }).eq("nationality", "saudi");
+      const expat = supabase.from("saudi_employees").select("id", { count: "exact", head: true }).eq("nationality", "expat");
+
+      const [allR, actR, dR, lR, pR, docR, sR, eR] = await Promise.all([all, active, depts, leave, payroll, docs, saudi, expat]);
 
       setMetrics({
-        employees: empRes.count ?? 0,
-        departments: deptRes.count ?? 0,
-        pendingLeave: leaveRes.count ?? 0,
-        activePayroll: payrollRes.count ?? 0,
-        expiringDocuments: docRes.count ?? 0,
+        totalEmployees: allR.count ?? 0,
+        activeEmployees: actR.count ?? 0,
+        departments: dR.count ?? 0,
+        pendingLeave: lR.count ?? 0,
+        activePayroll: pR.count ?? 0,
+        expiringDocs: docR.count ?? 0,
+        saudiCount: sR.count ?? 0,
+        expatCount: eR.count ?? 0,
       });
       setLoading(false);
     }
-
     loadMetrics();
   }, []);
 
-  const cards = [
-    { label: "Active Employees", value: metrics.employees, icon: Users, href: "/dashboard/saudi/employees", color: "text-blue-600 bg-blue-100 dark:bg-blue-900/30" },
-    { label: "Departments", value: metrics.departments, icon: Building2, href: "/dashboard/saudi/departments", color: "text-green-600 bg-green-100 dark:bg-green-900/30" },
-    { label: "Pending Leave", value: metrics.pendingLeave, icon: CalendarCheck, href: "/dashboard/saudi/leave", color: "text-amber-600 bg-amber-100 dark:bg-amber-900/30" },
-    { label: "Active Payroll", value: metrics.activePayroll, icon: Wallet, href: "/dashboard/saudi/payroll", color: "text-purple-600 bg-purple-100 dark:bg-purple-900/30" },
+  const kpis = [
+    { label: "Total Employees", value: metrics.totalEmployees, icon: Briefcase, bg: "bg-[#fdf8f3]", color: "text-[#0288d1]" },
+    { label: "Active Employees", value: metrics.activeEmployees, icon: UserCheck, bg: "bg-[#f0f5f2]", color: "text-forest" },
+    { label: "Pending Leave", value: metrics.pendingLeave, icon: CalendarCheck, bg: "bg-[#fff8e7]", color: "text-gold" },
+    { label: "Departments", value: metrics.departments, icon: Building2, bg: "bg-[#fdf8f3]", color: "text-[#0288d1]" },
   ];
 
+  const saudization = metrics.totalEmployees > 0
+    ? Math.round((metrics.saudiCount / metrics.totalEmployees) * 100)
+    : 0;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Saudi HR Module</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Saudi compliance, payroll, and workforce management</p>
-      </div>
+    <div className="space-y-10">
+      {/* Welcome */}
+      <h1 className="text-4xl font-bold text-[#1a1f26] font-satoshi">
+        Good morning, Leyo!
+      </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {cards.map((card) => (
-          <Link
-            key={card.label}
-            href={card.href}
-            className="block p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center justify-between">
-              <div className={`p-2 rounded-lg ${card.color}`}>
-                <card.icon className="w-5 h-5" />
+      {/* KPI Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {kpis.map((kpi) => {
+          const Icon = kpi.icon;
+          return (
+            <div
+              key={kpi.label}
+              className="bg-white p-6 rounded-[32px] flex items-center gap-6 shadow-sm border border-gold/20"
+            >
+              <div className={`kpi-circle ${kpi.bg}`}>
+                <Icon className={`${kpi.color} text-2xl`} />
               </div>
-              <ArrowRight className="w-4 h-4 text-gray-400" />
+              <div>
+                <div className="text-3xl font-bold text-slate-800">
+                  {loading ? "-" : kpi.value}
+                </div>
+                <div className="text-slate-400 text-sm">{kpi.label}</div>
+              </div>
             </div>
-            <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {loading ? "-" : card.value}
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{card.label}</p>
-          </Link>
-        ))}
+          );
+        })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Quick Actions</h2>
-          <div className="space-y-2">
-            <Link href="/dashboard/saudi/employees/new" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-              <Users className="w-4 h-4 text-primary" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Add New Employee</span>
+      {/* Mid Section */}
+      <div className="grid grid-cols-12 gap-8">
+        {/* Payroll Summary */}
+        <div className="col-span-8 bg-white rounded-[32px] p-8 shadow-sm border border-gold/20">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-xl font-bold text-slate-800">Payroll Summary</h2>
+            <div className="flex gap-6">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-gold rounded-full" />
+                <span className="text-slate-400 text-sm">Total Paid</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-forest rounded-full" />
+                <span className="text-slate-400 text-sm">Active Runs</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-amber-300 rounded-full" />
+                <span className="text-slate-400 text-sm">Pending</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-6 gap-2">
+            {["Jan", "Feb", "Mar", "Apr", "May", "Jun"].map((month, i) => (
+              <div key={month} className="space-y-2">
+                <div className="chart-grid-tile bg-sky-100" style={{ height: `${32 + i * 8}px` }} />
+                <div className="chart-grid-tile bg-forest/20" style={{ height: `${20 + i * 6}px` }} />
+                <div className="chart-grid-tile bg-gold/30" style={{ height: `${12 + i * 4}px` }} />
+                <p className="text-center text-xs text-slate-400 mt-2 font-medium">{month}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Compliance Status */}
+        <div className="col-span-4 bg-white rounded-[32px] p-8 shadow-sm border border-gold/20">
+          <h2 className="text-xl font-bold text-slate-800 mb-8">Compliance Status</h2>
+
+          <div className="space-y-10">
+            <div>
+              <div className="flex items-center gap-4 mb-4">
+                <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">
+                  {metrics.expiringDocs === 0 ? 0 : metrics.expiringDocs}
+                </span>
+                <span className="text-lg font-medium text-slate-700">Expiring Docs</span>
+              </div>
+              <div className="h-4 w-full bg-slate-50 rounded-full overflow-hidden">
+                <div
+                  className="h-full progress-bar-gold"
+                  style={{ width: `${Math.min(metrics.expiringDocs * 10, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-4 mb-4">
+                <span className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center font-bold text-orange-600">
+                  {metrics.activePayroll}
+                </span>
+                <span className="text-lg font-medium text-slate-700">Active Payrolls</span>
+              </div>
+              <div className="h-4 w-full bg-slate-50 rounded-full overflow-hidden">
+                <div
+                  className="h-full progress-bar-sage"
+                  style={{ width: `${Math.min(metrics.activePayroll * 20, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Section */}
+      <div className="grid grid-cols-12 gap-8">
+        {/* Recent Activity */}
+        <div className="col-span-8 bg-white rounded-[32px] p-8 shadow-sm border border-gold/20">
+          <h2 className="text-xl font-bold text-slate-800 mb-8">Quick Actions</h2>
+
+          <div className="flex flex-col gap-3">
+            <Link
+              href="/dashboard/saudi/employees/new"
+              className="bg-slate-50/50 p-6 rounded-2xl flex items-center justify-between hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-forest/10 flex items-center justify-center">
+                  <Users className="text-forest" />
+                </div>
+                <span className="text-lg font-bold text-slate-800">Add New Employee</span>
+              </div>
+              <ArrowRight className="text-slate-400" />
             </Link>
-            <Link href="/dashboard/saudi/payroll" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-              <Wallet className="w-4 h-4 text-primary" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Run Payroll</span>
+
+            <Link
+              href="/dashboard/saudi/payroll"
+              className="bg-slate-50/50 p-6 rounded-2xl flex items-center justify-between hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-forest/10 flex items-center justify-center">
+                  <Wallet className="text-forest" />
+                </div>
+                <span className="text-lg font-bold text-slate-800">Run Payroll</span>
+              </div>
+              <ArrowRight className="text-slate-400" />
             </Link>
-            <Link href="/dashboard/saudi/leave" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-              <CalendarCheck className="w-4 h-4 text-primary" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Approve Leave Requests</span>
+
+            <Link
+              href="/dashboard/saudi/compliance"
+              className="bg-slate-50/50 p-6 rounded-2xl flex items-center justify-between hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-forest/10 flex items-center justify-center">
+                  <ShieldCheck className="text-forest" />
+                </div>
+                <span className="text-lg font-bold text-slate-800">Review Compliance</span>
+              </div>
+              <ArrowRight className="text-slate-400" />
             </Link>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Compliance Alerts</h2>
-          {metrics.expiringDocuments > 0 ? (
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-              <ShieldAlert className="w-5 h-5 text-amber-600 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                  {metrics.expiringDocuments} documents need attention
-                </p>
-                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                  IQAMA, passport, and work permit expiry tracking
-                </p>
+        {/* Saudization Rate */}
+        <div className="col-span-4 bg-white rounded-[32px] p-8 shadow-sm border border-gold/20 overflow-hidden relative">
+          <h2 className="text-xl font-bold text-slate-800 mb-8">Saudization Rate</h2>
+          <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-[#fff8e7] rounded-full opacity-70 border border-gold/10" />
+          <div className="relative z-10 w-full aspect-square flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-5xl font-black text-forest">
+                {loading ? "-" : `${saudization}%`}
+              </div>
+              <div className="text-slate-400 font-medium uppercase tracking-widest text-xs mt-2">
+                Saudi Nationals
+              </div>
+              <div className="mt-4 text-sm text-slate-500">
+                {metrics.saudiCount} / {metrics.totalEmployees} employees
               </div>
             </div>
-          ) : (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-              <ShieldCheck className="w-5 h-5 text-green-600" />
-              <p className="text-sm text-green-700 dark:text-green-300">No compliance issues detected</p>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

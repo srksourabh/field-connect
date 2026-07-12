@@ -7,10 +7,10 @@ import { ArrowLeft, FileText } from "lucide-react";
 import type { SaudiEmployee, SaudiDocument } from "@/lib/saudi/types";
 
 const statusColors: Record<string, string> = {
-  active: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  on_leave: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  suspended: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  terminated: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  active: "bg-green-100 text-green-700",
+  on_leave: "bg-amber-100 text-amber-700",
+  suspended: "bg-red-100 text-red-700",
+  terminated: "bg-gray-100 text-gray-600",
 };
 
 export default function EmployeeDetailPage() {
@@ -35,25 +35,27 @@ export default function EmployeeDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="flex justify-center py-16">
+        <div className="w-8 h-8 border-4 border-forest border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (!employee) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">Employee not found</p>
+      <div className="text-center py-16 text-slate-400">
+        <p className="text-lg font-medium text-slate-500">Employee not found</p>
       </div>
     );
   }
 
+  const totalPackage = Number(employee.salary_basic) + Number(employee.salary_housing) + Number(employee.salary_transport);
+
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-8 max-w-4xl">
       <button
         onClick={() => router.back()}
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+        className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-600 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back
@@ -61,8 +63,8 @@ export default function EmployeeDetailPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{employee.full_name}</h1>
-          <span className={`inline-flex mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[employee.employment_status]}`}>
+          <h1 className="text-3xl font-bold text-slate-800 font-satoshi">{employee.full_name}</h1>
+          <span className={`inline-flex mt-2 px-3 py-1 rounded-full text-xs font-semibold ${statusColors[employee.employment_status]}`}>
             {employee.employment_status.replace("_", " ")}
           </span>
         </div>
@@ -70,49 +72,49 @@ export default function EmployeeDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Compensation</h2>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <p className="text-xs text-gray-500">Basic</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">SAR {Number(employee.salary_basic).toLocaleString()}</p>
+          <div className="rounded-[32px] border border-gold/20 bg-white shadow-sm p-6">
+            <h2 className="text-xl font-bold text-slate-800 mb-6">Compensation</h2>
+            <div className="grid grid-cols-3 gap-6">
+              <div className="p-4 rounded-2xl bg-forest/5">
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Basic</p>
+                <p className="text-2xl font-bold text-slate-800 mt-1">SAR {Number(employee.salary_basic).toLocaleString()}</p>
               </div>
-              <div>
-                <p className="text-xs text-gray-500">Housing</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">SAR {Number(employee.salary_housing).toLocaleString()}</p>
+              <div className="p-4 rounded-2xl bg-forest/5">
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Housing</p>
+                <p className="text-2xl font-bold text-slate-800 mt-1">SAR {Number(employee.salary_housing).toLocaleString()}</p>
               </div>
-              <div>
-                <p className="text-xs text-gray-500">Transport</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">SAR {Number(employee.salary_transport).toLocaleString()}</p>
+              <div className="p-4 rounded-2xl bg-forest/5">
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Transport</p>
+                <p className="text-2xl font-bold text-slate-800 mt-1">SAR {Number(employee.salary_transport).toLocaleString()}</p>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700/50">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Total Package</span>
-                <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                  SAR {(Number(employee.salary_basic) + Number(employee.salary_housing) + Number(employee.salary_transport)).toLocaleString()}
-                </span>
+            <div className="mt-6 pt-6 border-t border-slate-100">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-500">Total Package</span>
+                <span className="text-2xl font-black text-forest">SAR {totalPackage.toLocaleString()}</span>
               </div>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Documents</h2>
+          <div className="rounded-[32px] border border-gold/20 bg-white shadow-sm p-6">
+            <h2 className="text-xl font-bold text-slate-800 mb-6">Documents</h2>
             {documents.length === 0 ? (
-              <p className="text-sm text-gray-400">No documents uploaded</p>
+              <p className="text-sm text-slate-400">No documents uploaded</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {documents.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-4 h-4 text-gray-400" />
+                  <div key={doc.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/50">
+                    <div className="flex items-center gap-4">
+                      <FileText className="w-5 h-5 text-slate-400" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{doc.type}</p>
-                        <p className="text-xs text-gray-500">{doc.file_name}</p>
+                        <p className="text-sm font-semibold text-slate-800 capitalize">{doc.type}</p>
+                        <p className="text-xs text-slate-400">{doc.file_name}</p>
                       </div>
                     </div>
                     {doc.expiry_date && (
-                      <span className="text-xs text-gray-500">Expires: {doc.expiry_date}</span>
+                      <span className="text-xs font-medium text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200">
+                        Expires: {doc.expiry_date}
+                      </span>
                     )}
                   </div>
                 ))}
@@ -122,38 +124,34 @@ export default function EmployeeDetailPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Details</h2>
-            <div className="space-y-3">
+          <div className="rounded-[32px] border border-gold/20 bg-white shadow-sm p-6">
+            <h2 className="text-xl font-bold text-slate-800 mb-6">Details</h2>
+            <div className="space-y-5">
               <div>
-                <p className="text-xs text-gray-500">Nationality</p>
-                <p className="text-sm text-gray-900 dark:text-gray-100 capitalize">{employee.nationality}</p>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Nationality</p>
+                <p className="text-sm font-semibold text-slate-800 mt-1 capitalize">{employee.nationality}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Hire Date</p>
-                <p className="text-sm text-gray-900 dark:text-gray-100">{employee.hire_date}</p>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Hire Date</p>
+                <p className="text-sm font-semibold text-slate-800 mt-1">{employee.hire_date}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">GOSI System</p>
-                <p className="text-sm text-gray-900 dark:text-gray-100 capitalize">{employee.gosi_system ?? "Not set"}</p>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">GOSI System</p>
+                <p className="text-sm font-semibold text-slate-800 mt-1 capitalize">{employee.gosi_system ?? "Not set"}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">GOSI Registration</p>
-                <p className="text-sm text-gray-900 dark:text-gray-100">{employee.gosi_registration_date ?? "Not registered"}</p>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">GOSI Registration</p>
+                <p className="text-sm font-semibold text-slate-800 mt-1">{employee.gosi_registration_date ?? "Not registered"}</p>
               </div>
             </div>
           </div>
 
           {employee.termination_date && (
-            <div className="p-4 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
-              <h2 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-2">Termination</h2>
-              <p className="text-sm text-red-600 dark:text-red-300">
-                Terminated on {employee.termination_date}
-              </p>
+            <div className="rounded-[32px] border border-red-200 bg-red-50 p-6">
+              <h2 className="text-sm font-bold text-red-700 mb-3">Termination</h2>
+              <p className="text-sm text-red-600">Terminated on {employee.termination_date}</p>
               {employee.rehire_eligible && (
-                <p className="text-xs text-red-500 mt-1">
-                  Rehire eligibility: {employee.rehire_eligible}
-                </p>
+                <p className="text-xs text-red-500 mt-2">Rehire eligibility: {employee.rehire_eligible}</p>
               )}
             </div>
           )}

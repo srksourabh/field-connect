@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { ShieldAlert, Clock } from "lucide-react";
+import { ShieldAlert, Clock, ShieldCheck } from "lucide-react";
 import type { SaudiDocument, SaudiComplianceCheck } from "@/lib/saudi/types";
 
 export default function SaudiCompliancePage() {
@@ -34,8 +34,8 @@ export default function SaudiCompliancePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="flex justify-center py-16">
+        <div className="w-8 h-8 border-4 border-forest border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -48,34 +48,37 @@ export default function SaudiCompliancePage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Compliance</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <h1 className="text-3xl font-bold text-slate-800 font-satoshi">Compliance</h1>
+        <p className="text-slate-400 text-sm mt-1">
           Saudi compliance monitoring and document tracking
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-amber-500" />
+        <div className="rounded-[32px] border border-gold/20 bg-white shadow-sm p-6">
+          <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-gold" />
             Expiring Documents
           </h2>
           {expiringDocs.length === 0 ? (
-            <p className="text-sm text-gray-400">No documents expiring in the next 30 days</p>
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-green-50 border border-green-200">
+              <ShieldCheck className="w-5 h-5 text-green-600 shrink-0" />
+              <p className="text-sm text-green-700">No documents expiring in the next 30 days</p>
+            </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {expiringDocs.map((doc) => (
                 <div
                   key={doc.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
+                  className="flex items-center justify-between p-4 rounded-2xl bg-amber-50 border border-amber-200"
                 >
                   <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{doc.type}</p>
-                    <p className="text-xs text-gray-500">{(doc as unknown as { saudi_employees: { full_name: string } }).saudi_employees?.full_name}</p>
+                    <p className="text-sm font-semibold text-slate-800 capitalize">{doc.type}</p>
+                    <p className="text-xs text-slate-500">{(doc as unknown as { saudi_employees: { full_name: string } }).saudi_employees?.full_name}</p>
                   </div>
-                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                  <span className="text-xs font-semibold text-amber-600 bg-amber-100 px-3 py-1 rounded-full">
                     {doc.expiry_date}
                   </span>
                 </div>
@@ -84,32 +87,32 @@ export default function SaudiCompliancePage() {
           )}
         </div>
 
-        <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-amber-500" />
+        <div className="rounded-[32px] border border-gold/20 bg-white shadow-sm p-6">
+          <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5 text-gold" />
             Recent Checks
           </h2>
           {checks.length === 0 ? (
-            <p className="text-sm text-gray-400">No compliance checks recorded</p>
+            <p className="text-sm text-slate-400">No compliance checks recorded</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {checks.slice(0, 10).map((check) => (
                 <div
                   key={check.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+                  className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/50"
                 >
                   <div>
-                    <p className="text-sm text-gray-900 dark:text-gray-100">{check.check_type}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm font-medium text-slate-800">{check.check_type}</p>
+                    <p className="text-xs text-slate-400">
                       {(check as unknown as { saudi_payroll_runs: { period_month: string } }).saudi_payroll_runs?.period_month}
                     </p>
                   </div>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                  <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
                     check.status === "passed"
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      ? "bg-green-100 text-green-700"
                       : check.status === "flagged"
-                      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-red-100 text-red-700"
                   }`}>
                     {check.status}
                   </span>

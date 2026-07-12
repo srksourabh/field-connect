@@ -32,15 +32,15 @@ export default function SaudiDepartmentsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Departments</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{departments.length} departments</p>
+          <h1 className="text-3xl font-bold text-slate-800 font-satoshi">Departments</h1>
+          <p className="text-slate-400 text-sm mt-1">{departments.length} departments</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+          className="inline-flex items-center gap-2 bg-forest text-white rounded-full px-6 py-2.5 font-medium hover:bg-forest-dark transition-colors"
         >
           <Plus className="w-4 h-4" />
           Add Department
@@ -48,18 +48,18 @@ export default function SaudiDepartmentsPage() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="flex gap-3">
+        <form onSubmit={handleCreate} className="flex gap-3 max-w-md">
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Department name"
-            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="flex-1 px-5 py-3 rounded-full border border-gold/20 bg-white text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-gold/30"
             autoFocus
           />
           <button
             type="submit"
-            className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+            className="px-6 py-3 rounded-full bg-forest text-white text-sm font-medium hover:bg-forest-dark transition-colors"
           >
             Save
           </button>
@@ -67,30 +67,30 @@ export default function SaudiDepartmentsPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="flex justify-center py-16">
+          <div className="w-8 h-8 border-4 border-forest border-t-transparent rounded-full animate-spin" />
         </div>
       ) : departments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
-          <Building2 className="w-12 h-12 mb-3" />
-          <p className="text-lg font-medium">No departments yet</p>
+        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+          <Building2 className="w-14 h-14 mb-4 opacity-40" />
+          <p className="text-lg font-medium text-slate-500">No departments yet</p>
           <p className="text-sm mt-1">Create your first department to organize employees.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {departments.map((dept) => (
             <div
               key={dept.id}
-              className="p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark"
+              className="rounded-[32px] border border-gold/20 bg-white shadow-sm p-6 hover:shadow-md transition-shadow"
             >
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                  <Building2 className="w-5 h-5 text-blue-600" />
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-forest/10 flex items-center justify-center">
+                  <Building2 className="w-6 h-6 text-forest" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">{dept.name}</p>
+                  <p className="font-bold text-slate-800 text-lg">{dept.name}</p>
                   {dept.parent_department_id && (
-                    <p className="text-xs text-gray-500">Sub-department</p>
+                    <p className="text-xs text-slate-400">Sub-department</p>
                   )}
                 </div>
               </div>

@@ -63,42 +63,42 @@ export default function NewEmployeePage() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-8 max-w-2xl">
       <button
         onClick={() => router.back()}
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+        className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-600 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back
       </button>
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">New Employee</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Add a new employee to the Saudi module</p>
+        <h1 className="text-3xl font-bold text-slate-800 font-satoshi">New Employee</h1>
+        <p className="text-slate-400 text-sm mt-1">Add a new employee to the Saudi module</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Personal Information</h2>
+        <div className="rounded-[32px] border border-gold/20 bg-white shadow-sm p-6 space-y-5">
+          <h2 className="text-xl font-bold text-slate-800">Personal Information</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name</label>
             <input
               type="text"
               required
               value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full px-5 py-3 rounded-full border border-gold/20 bg-white text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-gold/30"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nationality</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Nationality</label>
               <select
                 value={form.nationality}
                 onChange={(e) => setForm({ ...form, nationality: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full px-5 py-3 rounded-full border border-gold/20 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-gold/30"
               >
                 <option value="saudi">Saudi</option>
                 <option value="expat">Expat</option>
@@ -106,11 +106,11 @@ export default function NewEmployeePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">GOSI System</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">GOSI System</label>
               <select
                 value={form.gosi_system}
                 onChange={(e) => setForm({ ...form, gosi_system: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full px-5 py-3 rounded-full border border-gold/20 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-gold/30"
               >
                 <option value="new">New</option>
                 <option value="old">Old</option>
@@ -120,22 +120,22 @@ export default function NewEmployeePage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hire Date</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Hire Date</label>
               <input
                 type="date"
                 required
                 value={form.hire_date}
                 onChange={(e) => setForm({ ...form, hire_date: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full px-5 py-3 rounded-full border border-gold/20 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-gold/30"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Department</label>
               <select
                 value={form.department_id}
                 onChange={(e) => setForm({ ...form, department_id: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full px-5 py-3 rounded-full border border-gold/20 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-gold/30"
               >
                 <option value="">No department</option>
                 {departments.map((dept) => (
@@ -146,12 +146,12 @@ export default function NewEmployeePage() {
           </div>
         </div>
 
-        <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Salary</h2>
+        <div className="rounded-[32px] border border-gold/20 bg-white shadow-sm p-6 space-y-5">
+          <h2 className="text-xl font-bold text-slate-800">Salary</h2>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Basic Salary (SAR)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Basic (SAR)</label>
               <input
                 type="number"
                 required
@@ -159,65 +159,65 @@ export default function NewEmployeePage() {
                 step="0.01"
                 value={form.salary_basic}
                 onChange={(e) => setForm({ ...form, salary_basic: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full px-5 py-3 rounded-full border border-gold/20 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-gold/30"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Housing Allowance</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Housing</label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={form.salary_housing}
                 onChange={(e) => setForm({ ...form, salary_housing: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full px-5 py-3 rounded-full border border-gold/20 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-gold/30"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Transport Allowance</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Transport</label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={form.salary_transport}
                 onChange={(e) => setForm({ ...form, salary_transport: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full px-5 py-3 rounded-full border border-gold/20 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-gold/30"
               />
             </div>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Saudi Compliance</h2>
+        <div className="rounded-[32px] border border-gold/20 bg-white shadow-sm p-6 space-y-5">
+          <h2 className="text-xl font-bold text-slate-800">Saudi Compliance</h2>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">IQAMA Number</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">IQAMA Number</label>
               <input
                 type="text"
                 value={form.iqama_number_enc}
                 onChange={(e) => setForm({ ...form, iqama_number_enc: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full px-5 py-3 rounded-full border border-gold/20 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-gold/30"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Passport Number</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Passport Number</label>
               <input
                 type="text"
                 value={form.passport_number_enc}
                 onChange={(e) => setForm({ ...form, passport_number_enc: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full px-5 py-3 rounded-full border border-gold/20 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-gold/30"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bank IBAN</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Bank IBAN</label>
             <input
               type="text"
               value={form.bank_iban_enc}
               onChange={(e) => setForm({ ...form, bank_iban_enc: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-surface-dark text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full px-5 py-3 rounded-full border border-gold/20 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-gold/30"
             />
           </div>
         </div>
@@ -226,14 +226,14 @@ export default function NewEmployeePage() {
           <button
             type="submit"
             disabled={submitting}
-            className="px-6 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            className="px-8 py-3 rounded-full bg-forest text-white text-sm font-medium hover:bg-forest-dark disabled:opacity-50 transition-colors"
           >
             {submitting ? "Saving..." : "Create Employee"}
           </button>
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-6 py-2 rounded-lg border border-gray-200 dark:border-gray-700/50 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+            className="px-8 py-3 rounded-full border border-gold/20 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors"
           >
             Cancel
           </button>
