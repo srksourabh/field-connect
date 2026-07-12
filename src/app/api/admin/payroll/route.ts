@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { classifyGhost } from "@/lib/attendance-ghost";
+import saudiPayroll from "@/lib/payroll-saudi";
 
 async function verifyUniversalAdmin(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -346,6 +347,16 @@ export async function POST(req: NextRequest) {
       employerESI = Math.round(adjustedGross * 0.0325 * 100) / 100;
     }
 
+    let gosiInfo: { employerContribution: number; employeeContribution: number; totalContribution: number } | null = null;
+    const profileAny = profile as { state?: string; designation?: string } | null;
+    if (profileAny) {
+      const isSaudi = (profileAny.state || "").toLowerCase().includes("saudi") || (profileAny.designation || "").toLowerCase().includes("saudi");
+      if (isSaudi) {
+        const base = basicAmount || grossEarnings;
+        gosiInfo = saudiPayroll.calcGosiContribution(base, { employerRate: 0.12, employeeRate: 0.10 });
+      }
+    }
+
     const { error } = await supabaseAdmin
       .from("hr_payroll")
       .upsert(
@@ -354,6 +365,11 @@ export async function POST(req: NextRequest) {
           month,
           gross_earnings: grossEarnings,
           total_deductions: totalDeductions,
+          // informational Saudi fields (nullable)
+          gosi_employer: gosiInfo?.employerContribution ?? null,
+          gosi_employee: gosiInfo?.employeeContribution ?? null,
+          gosi_total: gosiInfo?.totalContribution ?? null,
+          esb_amount: gosiInfo ? (saudiPayroll.calcEndOfServiceBenefit(basicAmount, 12)) : null,
           net_payable: netFinal,
           working_days: workingDays,
           days_present: daysPresent,

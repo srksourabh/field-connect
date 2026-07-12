@@ -15,12 +15,12 @@ import {
   QrCode,
   ClipboardList,
   CheckSquare,
-
   LogOut,
   BarChart3,
   Map,
   UserPlus,
   Megaphone,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -58,6 +58,7 @@ const adminItems: NavItem[] = [
   { href: "/dashboard/admin/leaves", icon: TreePalm, label: "Leave Allotment", roles: ["admin"] },
   { href: "/dashboard/admin/map", icon: Map, label: "Team Map", roles: ["admin"] },
   { href: "/dashboard/admin/notifications", icon: Megaphone, label: "Broadcast", roles: ["admin"] },
+  { href: "/dashboard/admin/companies", icon: Building2, label: "Companies", roles: ["super_admin"] },
 ];
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
